@@ -36,7 +36,7 @@ impl Encryptor {
     #[inline]
     /// Perform homomorphic division
     pub fn homomorphic_div_plain(&self, lhs: &Ciphertext, rhs: Plaintext) -> Ciphertext {
-        let raw_quotient = Polynomial::divide_coeff(&lhs.0, rhs);
+        let raw_quotient = Polynomial::divide_factor(&lhs.0, rhs);
         Ciphertext(Polynomial::mod_reduce(
             &raw_quotient,
             self.config().modulus(),

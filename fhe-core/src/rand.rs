@@ -58,10 +58,16 @@ macro_rules! impl_randrange {
 
 impl_randrange!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
 
+/// Generate a random instance of type `T` in the given range.
 pub fn rand_range<T: RandRange>(r: core::ops::Range<T>) -> RandResult<<T as Add>::Output> {
     let rd = unsafe { rand::<T>() }?;
     let modulus = r.end - r.start;
     Ok(RandRange::rem_euclid(rd, modulus) + r.start)
+}
+
+/// Generate a random number in the given range using a Gaussian distribution.
+pub fn rand_range_gaussian(_r: core::ops::Range<i64>) -> RandResult<i64> {
+    todo!("Gaussian distribution")
 }
 
 /// Result type for `rand` function.

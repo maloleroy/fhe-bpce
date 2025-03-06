@@ -41,9 +41,6 @@ impl Polynomial {
     #[must_use = "This method does not modify the polynomial, it returns a new one instead"]
     /// Polynomial addition
     pub fn add(&self, other: &Self) -> Self {
-        // TODO: Scale accordingly
-        assert_eq!(self.scale(), other.scale());
-
         let max_len = self.coeffs.len().max(other.coeffs.len());
         let mut result = Vec::with_capacity(max_len);
 
@@ -51,18 +48,20 @@ impl Polynomial {
         for i in 0..max_len {
             let a = self.coeffs.get(i).copied().unwrap_or(0);
             let b = other.coeffs.get(i).copied().unwrap_or(0);
-            result.push(a + b);
+            let to_push = if self.scale() >= other.scale() {
+                a + round(b as f64 * (self.scale() / other.scale()))
+            } else {
+                round(a as f64 * (other.scale() / self.scale())) + b
+            };
+            result.push(to_push);
         }
 
-        Self::new(result, self.scale())
+        Self::new(result, self.scale().max(other.scale()))
     }
 
     #[must_use = "This method does not modify the polynomial, it returns a new one instead"]
     /// Polynomial subtraction
     pub fn subtract(&self, other: &Self) -> Self {
-        // TODO: Scale accordingly
-        assert_eq!(self.scale(), other.scale());
-
         let max_len = self.coeffs.len().max(other.coeffs.len());
         let mut result = Vec::with_capacity(max_len);
 
@@ -70,32 +69,37 @@ impl Polynomial {
         for i in 0..max_len {
             let a = self.coeffs.get(i).copied().unwrap_or(0);
             let b = other.coeffs.get(i).copied().unwrap_or(0);
-            result.push(a - b);
+            let to_push = if self.scale() >= other.scale() {
+                a - round(b as f64 * (self.scale() / other.scale()))
+            } else {
+                round(a as f64 * (other.scale() / self.scale())) - b
+            };
+            result.push(to_push);
         }
 
-        Self::new(result, self.scale())
+        Self::new(result, self.scale().max(other.scale()))
     }
 
     #[must_use = "This method does not modify the polynomial, it returns a new one instead"]
     /// Coefficient by coefficient multiplication
     pub fn multiply_coeff(&self, other: &Self) -> Self {
-        // TODO: Scale accordingly
-        assert_eq!(self.scale(), other.scale());
+        let max_scale = self.scale().max(other.scale());
+        let min_scale = self.scale().min(other.scale());
 
         let result_coeffs = self
             .coeffs()
             .iter()
             .zip(other.coeffs().iter())
-            .map(|(a, b)| round((*a as f64 * *b as f64) / self.scale()) as _)
+            .map(|(a, b)| round((*a as f64 * *b as f64) / min_scale) as _)
             .collect();
 
         // Create a new polynomial with rounded coefficients
-        Self::new(result_coeffs, self.scale())
+        Self::new(result_coeffs, max_scale)
     }
 
     #[must_use = "This method does not modify the polynomial, it returns a new one instead"]
     /// Divide the coefficient by coefficient
-    pub fn divide_coeff(&self, rhs: f64) -> Self {
+    pub fn divide_factor(&self, rhs: f64) -> Self {
         let result_coeffs = self
             .coeffs()
             .iter()
