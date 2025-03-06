@@ -112,7 +112,7 @@ mod tests {
     #[cfg(miri)]
     #[test]
     fn test_rand_slice() {
-        let mut slice = [MaybeUninit::uninit(); 10_u32];
+        let mut slice = [MaybeUninit::<u32>::uninit(); 10];
         rand_slice(&mut slice).unwrap();
     }
 
