@@ -4,6 +4,8 @@ stages:
 
 rust_stable:
   stage: check
+  tags:
+    - docker
   image: rust:stable
   script:
     - rustc --version
@@ -14,6 +16,8 @@ rust_stable:
 
 rust_nightly_miri:
   stage: test
+  tags:
+    - docker
   image: rustlang/rust:nightly
   before_script:
     - rustup component add miri
