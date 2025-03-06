@@ -1,19 +1,24 @@
-use std::sync::atomic::AtomicUsize;
-
 use ckks_lib::{
     cipher::{Decryptor, Encryptor},
     config::Config,
     key::generate_keys,
 };
+use core::sync::atomic::AtomicUsize;
+use rand::{Rng, rng};
 
-const MAX_MONEY: f64 = 100.0;
-const AMOUNT: usize = 100;
+const MAX_VALUE: f64 = 100.0;
+const AMOUNT: usize = 10_000_000;
 
+/// Simulate reading from a stream (DB, ...)
 fn fake_read() -> Option<f64> {
     static REMAINING: AtomicUsize = AtomicUsize::new(AMOUNT);
 
     let remaining = REMAINING.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
-    if remaining > 0 { Some(10.0) } else { None }
+    if remaining > 0 {
+        Some(rng().random_range(0.0..MAX_VALUE))
+    } else {
+        None
+    }
 }
 
 fn main() {
@@ -32,7 +37,6 @@ fn main() {
 
     mean_e = encryptor.homomorphic_div_plain(&mean_e, AMOUNT as f64);
 
-    // TODO: Homomorphic divide plain
     let decrypted = decryptor.decrypt(&mean_e)[0];
 
     println!("decrypted: {}", decrypted);

@@ -5,10 +5,12 @@ edition = "2024"
 
 [dependencies]
 ckks-lib = { path = "ckks-lib" }
+[dev-dependencies]
+rand = "0.9.0"
 
 [workspace]
 members = ["ckks-lib", "fhe-core"]
 
 [workspace.dependencies]
 fhe-core = { path = "fhe-core" }
-zeroize = { version = "1.8.1", features = ["alloc", "derive", "simd"] }
+zeroize = { version = "1.8.1", features = ["alloc", "derive"] }
