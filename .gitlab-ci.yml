@@ -1,6 +1,5 @@
 stages:
   - check
-  - test
 
 rust_stable:
   stage: check
@@ -17,7 +16,7 @@ rust_stable:
     - cargo test --workspace
 
 rust_nightly_miri:
-  stage: test
+  stage: check
   tags:
     - docker
   image: rustlang/rust:nightly
