@@ -6,7 +6,7 @@ rust_stable:
   stage: check
   tags:
     - docker
-  image: rust:stable
+  image: rust:latest
   script:
     - rustc --version
     - cargo build
