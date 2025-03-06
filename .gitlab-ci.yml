@@ -4,9 +4,13 @@ stages:
 
 rust_stable:
   stage: check
-  image: rust:stable
-  script:
+  tags:
+    - docker
+  image: rust:latest
+  before_script:
     - rustc --version
+    - rustup component add clippy rustfmt
+  script:
     - cargo build
     - cargo fmt -- --check
     - cargo clippy -- -D warnings
@@ -14,6 +18,8 @@ rust_stable:
 
 rust_nightly_miri:
   stage: test
+  tags:
+    - docker
   image: rustlang/rust:nightly
   before_script:
     - rustup component add miri
