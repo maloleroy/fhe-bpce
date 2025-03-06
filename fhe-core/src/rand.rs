@@ -9,6 +9,10 @@ use core::{
 /// # Safety
 ///
 /// Any arbitrary sequence of bytes (of len `size_of::<T>()`) is a valid instance of type `T`.
+///
+/// # Errors
+///
+/// Returns an error is randomness fails to be generated.
 pub unsafe fn rand<T: Sized>() -> RandResult<T> {
     let mut value = MaybeUninit::<T>::uninit();
 
@@ -25,6 +29,10 @@ pub unsafe fn rand<T: Sized>() -> RandResult<T> {
 }
 
 /// Randomly fills the given slice with random bytes using `getrandom`.
+///
+/// # Errors
+///
+/// Returns an error is randomness fails to be generated.
 pub fn rand_slice<T: Sized>(slice: &mut [MaybeUninit<T>]) -> RandResult<()> {
     // Safety:
     // Thanks to `size_of_val`, we can safely interpret the memory as a slice of bytes.
@@ -59,6 +67,10 @@ macro_rules! impl_randrange {
 impl_randrange!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
 
 /// Generate a random instance of type `T` in the given range.
+///
+/// # Errors
+///
+/// Returns an error is randomness fails to be generated.
 pub fn rand_range<T: RandRange>(r: core::ops::Range<T>) -> RandResult<<T as Add>::Output> {
     let rd = unsafe { rand::<T>() }?;
     let modulus = r.end - r.start;
@@ -66,6 +78,10 @@ pub fn rand_range<T: RandRange>(r: core::ops::Range<T>) -> RandResult<<T as Add>
 }
 
 /// Generate a random number in the given range using a Gaussian distribution.
+///
+/// # Errors
+///
+/// Returns an error is randomness fails to be generated.
 pub fn rand_range_gaussian(_r: core::ops::Range<i64>) -> RandResult<i64> {
     todo!("Gaussian distribution")
 }
