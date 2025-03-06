@@ -1,3 +1,17 @@
+```
+          .                            .                      .
+  .                  .             -)------+====+       .
+                           -)----====    ,'   ,'   .                 .
+              .                  `.  `.,;___,'                .
+                                   `, |____l_\
+                    _,.....------c==]""______ |,,,,,,.....____ _
+    .      .       "-:______________  |____l_|]'''''''''''       .     .
+                                  ,'"",'.   `.
+         .                 -)-----====   `.   `.
+                     .            -)-------+====+       .            .
+             .                               .
+```
+
 # Homomorphic Encryption Library
 
 This repository is a pure Rust crate that provides a simple interface to homomorphic encryption schemes.
