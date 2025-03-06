@@ -1,6 +1,7 @@
 use crate::polynomial::Coeff;
 
 #[derive(Debug, Clone, Copy)]
+/// CKKS configuration parameters
 pub struct Config {
     /// Polynomial degree (N)
     degree: usize,

@@ -10,6 +10,7 @@ pub struct Encryptor {
     config: Config,
 }
 
+/// Struct for CKKS ciphertext
 pub struct Ciphertext(pub(crate) Polynomial);
 
 impl Encryptor {

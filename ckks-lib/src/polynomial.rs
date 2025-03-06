@@ -11,6 +11,7 @@ use zeroize::Zeroize;
 pub type Coeff = i64;
 
 #[derive(Debug, Clone, Zeroize)]
+/// Polynomial backend struct for CKKS operations
 pub struct Polynomial {
     /// Coefficients for the polynomial
     coeffs: Vec<Coeff>,

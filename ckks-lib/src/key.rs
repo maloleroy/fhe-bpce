@@ -3,6 +3,7 @@ use fhe_core::rand::rand_range;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[derive(Debug, Clone)]
+/// Public key
 pub struct PublicKey {
     p0: Polynomial,
     p1: Polynomial,
@@ -25,6 +26,11 @@ impl PublicKey {
 }
 
 #[derive(Debug, Clone, Zeroize, ZeroizeOnDrop)]
+/// Secret key
+///
+/// # Notes
+///
+/// The key is automatically zeroized when it goes out of scope
 pub struct SecretKey {
     p: Polynomial,
 }
