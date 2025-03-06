@@ -12,14 +12,12 @@ pub struct PublicKey {
 impl PublicKey {
     #[must_use]
     #[inline]
-    /// Encrypt a plaintext
     pub const fn p0(&self) -> &Polynomial {
         &self.p0
     }
 
     #[must_use]
     #[inline]
-    /// Encrypt a plaintext
     pub const fn p1(&self) -> &Polynomial {
         &self.p1
     }
@@ -38,7 +36,6 @@ pub struct SecretKey {
 impl SecretKey {
     #[must_use]
     #[inline]
-    /// Encrypt a plaintext
     pub const fn p(&self) -> &Polynomial {
         &self.p
     }
@@ -49,11 +46,16 @@ impl SecretKey {
 ///
 /// # Panics
 ///
-/// Panics if randomness fails to be generated
-pub fn generate_keys(config: Config) -> (PublicKey, SecretKey) {
+/// Panics if randomness fails to be generated, or if any noise value is non-positive
+pub fn generate_keys(config: Config, max_noise: i64, error_noise: i64) -> (PublicKey, SecretKey) {
+    assert!(
+        max_noise.is_positive() && error_noise.is_positive(),
+        "Noises must be positive"
+    );
+
     let skey = {
         let coeffs = (0..config.degree())
-            .map(|_| rand_range::<i64>(1..100).unwrap())
+            .map(|_| rand_range::<i64>(1..max_noise).unwrap())
             .collect();
         SecretKey {
             p: Polynomial::new(coeffs, 1.0),
@@ -63,7 +65,7 @@ pub fn generate_keys(config: Config) -> (PublicKey, SecretKey) {
     let pkey = {
         let p1 = {
             let coeffs = (0..config.degree())
-                .map(|_| rand_range::<i64>(1..100).unwrap())
+                .map(|_| rand_range::<i64>(1..max_noise).unwrap())
                 .collect();
             Polynomial::new(coeffs, 1.0)
         };
@@ -74,7 +76,7 @@ pub fn generate_keys(config: Config) -> (PublicKey, SecretKey) {
                 .coeffs()
                 .iter()
                 .zip(p1.coeffs())
-                .map(|(&sk, &r)| -sk * r + rand_range::<i64>(-10..10).unwrap())
+                .map(|(&sk, &r)| -sk * r + rand_range::<i64>(-error_noise..error_noise).unwrap())
                 .collect();
             Polynomial::new(coeffs, 1.0)
         };

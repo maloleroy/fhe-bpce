@@ -23,7 +23,7 @@ fn fake_read() -> Option<f64> {
 
 fn main() {
     let config = Config::new(4096, 100_000_000_007);
-    let (pkey, skey) = generate_keys(config);
+    let (pkey, skey) = generate_keys(config, 100, 10);
 
     let encryptor = Encryptor::new(pkey, config);
     let decryptor = Decryptor::new(skey, config);
