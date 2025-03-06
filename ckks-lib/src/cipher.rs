@@ -93,7 +93,7 @@ mod tests {
         const PRECISION: f64 = 5e-2;
 
         let config = Config::new(2048, 100_000_007);
-        let (pkey, skey) = crate::key::generate_keys(config);
+        let (pkey, skey) = crate::key::generate_keys(config, 100, 10);
 
         let encryptor = Encryptor::new(pkey, config);
         let decryptor = Decryptor::new(skey, config);
