@@ -1,0 +1,14 @@
+[package]
+name = "bpce-fhe"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+ckks-lib = { path = "ckks-lib" }
+
+[workspace]
+members = ["ckks-lib", "fhe-core"]
+
+[workspace.dependencies]
+fhe-core = { path = "fhe-core" }
+zeroize = { version = "1.8.1", features = ["alloc", "derive", "simd"] }
