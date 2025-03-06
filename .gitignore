@@ -1,2 +1,6 @@
 # Built files
 /target
+*.aux
+*.log
+*.out
+*.synctex.gz
