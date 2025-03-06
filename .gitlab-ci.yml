@@ -1,0 +1,21 @@
+stages:
+  - check
+  - test
+
+rust_stable:
+  stage: check
+  image: rust:stable
+  script:
+    - rustc --version
+    - cargo build
+    - cargo fmt -- --check
+    - cargo clippy -- -D warnings
+    - cargo test --workspace
+
+rust_nightly_miri:
+  stage: test
+  image: rustlang/rust:nightly
+  before_script:
+    - rustup component add miri
+  script:
+    - cargo miri test -p fhe-core
