@@ -27,7 +27,12 @@ impl Encryptor {
         self.config
     }
 
+    #[must_use]
     /// Encrypt plaintext values
+    ///
+    /// # Panics
+    ///
+    /// Panics if the scaling factor is not positive.
     pub fn encrypt(&self, plaintext: &[Plaintext], scale: f64) -> Ciphertext {
         assert!(scale > 0.0, "Scaling factor must be positive");
         let encoded = Polynomial::encode(plaintext, scale);
@@ -52,11 +57,14 @@ pub struct Decryptor {
 }
 
 impl Decryptor {
+    #[must_use]
+    #[inline]
     /// Constructor to create a new CKKS Decryptor
-    pub fn new(skey: SecretKey, config: Config) -> Self {
+    pub const fn new(skey: SecretKey, config: Config) -> Self {
         Self { skey, config }
     }
 
+    #[must_use]
     /// Decrypt ciphertext
     pub fn decrypt(&self, ciphertext: &Ciphertext) -> Vec<Plaintext> {
         // FIXME: Do we have to do this?

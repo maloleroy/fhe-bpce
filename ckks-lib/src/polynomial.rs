@@ -1,4 +1,5 @@
 //! Polynomial backend for fast operations in CKKS contexts
+#![allow(clippy::cast_precision_loss)] // For casting i64 to f64
 use crate::Plaintext;
 use alloc::vec::Vec;
 use fhe_core::{

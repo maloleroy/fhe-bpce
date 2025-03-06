@@ -14,14 +14,25 @@ pub fn powi(mut base: f64, mut exp: u16) -> f64 {
 
 #[must_use]
 /// Rounds an `f64` to the specified number of decimal places.
+///
+/// ## Warning
+///
+/// On very big numbers (or very high number of decimal places),
+/// this function may return incorrect results.
 pub fn round_to(x: f64, decimal_places: u16) -> f64 {
     let factor = powi(10.0, decimal_places);
-    round(x * factor) as f64 / factor
+    #[allow(clippy::cast_precision_loss)]
+    (round(x * factor) as f64 / factor)
 }
 
 #[must_use]
 /// Rounds a given value to the nearest integer
+///
+/// ## Warning
+///
+/// On very big numbers (> `i64::MAX`), this function may return incorrect results.
 pub fn round(x: f64) -> i64 {
+    #[allow(clippy::cast_possible_truncation)]
     let floor = x as i64;
     #[allow(clippy::cast_precision_loss)]
     let fract = x - floor as f64;

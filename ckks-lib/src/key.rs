@@ -40,6 +40,10 @@ impl SecretKey {
 
 #[must_use]
 /// Generate a fresh pair of keys
+///
+/// # Panics
+///
+/// Panics if randomness fails to be generated
 pub fn generate_keys(config: Config) -> (PublicKey, SecretKey) {
     let skey = {
         let coeffs = (0..config.degree())
