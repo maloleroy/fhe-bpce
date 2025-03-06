@@ -92,16 +92,17 @@ mod tests {
         // FIXME: It often fails
         const PRECISION: f64 = 5e-2;
 
-        let config = Config::new(2048, 100_000_007);
-        let (pkey, skey) = crate::key::generate_keys(config, 100, 10);
+        let config = Config::new(4096, 100_000_007);
+        let (pkey, skey) = crate::key::generate_keys(config, 10, 1);
 
         let encryptor = Encryptor::new(pkey, config);
         let decryptor = Decryptor::new(skey, config);
 
         let plaintext = vec![1.0, 2.0, 3.0, 4.0, 5.0];
-        let ciphertext = encryptor.encrypt(&plaintext, 1.0);
+        let ciphertext = encryptor.encrypt(&plaintext, 1e5);
         let decrypted = decryptor.decrypt(&ciphertext);
 
+        println!("decrypted: {:?}", decrypted);
         for (p, d) in plaintext.iter().zip(decrypted.iter()) {
             assert!((p - d).abs() < PRECISION);
         }

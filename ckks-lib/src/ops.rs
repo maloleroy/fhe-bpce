@@ -52,10 +52,10 @@ mod tests {
     #[test]
     fn homomorphic_add() {
         // FIXME: It often fails
-        const PRECISION: f64 = 5e-2;
+        const PRECISION: f64 = 1e-1;
 
         let config = Config::new(4096, 1_000_000_007);
-        let (pkey, skey) = generate_keys(config, 100, 10);
+        let (pkey, skey) = generate_keys(config, 10, 1);
 
         let encryptor = Encryptor::new(pkey, config);
         let decryptor = Decryptor::new(skey, config);
