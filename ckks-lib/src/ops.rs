@@ -9,53 +9,38 @@ impl Encryptor {
     #[inline]
     /// Perform homomorphic addition
     pub fn homomorphic_add(&self, lhs: &Ciphertext, rhs: &Ciphertext) -> Ciphertext {
-        let raw_sum = Polynomial::add(&lhs.0, &rhs.0);
-        Ciphertext(Polynomial::mod_reduce(&raw_sum, self.config().modulus()))
-    }
-
-    #[must_use]
-    #[inline]
-    /// Perform homomorphic subtraction
-    pub fn homomorphic_sub(&self, lhs: &Ciphertext, rhs: &Ciphertext) -> Ciphertext {
-        let raw_diff = Polynomial::subtract(&lhs.0, &rhs.0);
-        Ciphertext(Polynomial::mod_reduce(&raw_diff, self.config().modulus()))
-    }
-
-    #[must_use]
-    #[inline]
-    /// Perform homomorphic multiplication
-    pub fn homomorphic_mul(&self, lhs: &Ciphertext, rhs: &Ciphertext) -> Ciphertext {
-        let raw_product = Polynomial::multiply_coeff(&lhs.0, &rhs.0);
-        Ciphertext(Polynomial::mod_reduce(
-            &raw_product,
-            self.config().modulus(),
-        ))
+        let raw_sum0 = Polynomial::add(&lhs.c0, &rhs.c0);
+        let raw_sum1 = Polynomial::add(&lhs.c1, &rhs.c1);
+        Ciphertext {
+            c0: Polynomial::mod_reduce(&raw_sum0, self.config().modulus()),
+            c1: Polynomial::mod_reduce(&raw_sum1, self.config().modulus()),
+        }
     }
 
     #[must_use]
     #[inline]
     /// Perform homomorphic division
     pub fn homomorphic_div_plain(&self, lhs: &Ciphertext, rhs: Plaintext) -> Ciphertext {
-        let raw_quotient = Polynomial::divide_factor(&lhs.0, rhs);
-        Ciphertext(Polynomial::mod_reduce(
-            &raw_quotient,
-            self.config().modulus(),
-        ))
+        todo!()
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{cipher::Decryptor, config::Config, key::generate_keys};
+    use crate::{
+        cipher::Decryptor,
+        config::{Config, Gdp},
+        key::generate_keys,
+    };
 
     #[test]
     fn homomorphic_add() {
         // FIXME: It often fails
         const PRECISION: f64 = 1e-1;
 
-        let config = Config::new(4096, 1_000_000_007);
-        let (pkey, skey) = generate_keys(config, 10, 1);
+        let config = Config::new(4096, 1_000_000_007, Gdp::Tc128);
+        let (pkey, skey) = generate_keys(config);
 
         let encryptor = Encryptor::new(pkey, config);
         let decryptor = Decryptor::new(skey, config);

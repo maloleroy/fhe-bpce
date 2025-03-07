@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 ckks-lib = { path = "ckks-lib" }
+libm = "0.2.11"
 [dev-dependencies]
 rand = "0.9.0"
 

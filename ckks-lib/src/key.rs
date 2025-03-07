@@ -1,5 +1,8 @@
 use crate::{config::Config, polynomial::Polynomial};
-use fhe_core::rand::rand_range;
+use fhe_core::{
+    f64::round,
+    rand::{rand_gaussian_truncated, rand_range},
+};
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 #[derive(Debug, Clone)]
@@ -47,15 +50,11 @@ impl SecretKey {
 /// # Panics
 ///
 /// Panics if randomness fails to be generated, or if any noise value is non-positive
-pub fn generate_keys(config: Config, max_noise: i64, error_noise: i64) -> (PublicKey, SecretKey) {
-    assert!(
-        max_noise.is_positive() && error_noise.is_positive(),
-        "Noises must be positive"
-    );
-
+pub fn generate_keys(config: Config) -> (PublicKey, SecretKey) {
     let skey = {
         let coeffs = (0..config.degree())
-            .map(|_| rand_range::<i64>(1..max_noise).unwrap())
+            // Generate random coefficients in {-1, 0, 1}
+            .map(|_| rand_range::<i64>(-1..2).unwrap())
             .collect();
         SecretKey {
             p: Polynomial::new(coeffs, 1.0),
@@ -65,7 +64,8 @@ pub fn generate_keys(config: Config, max_noise: i64, error_noise: i64) -> (Publi
     let pkey = {
         let p1 = {
             let coeffs = (0..config.degree())
-                .map(|_| rand_range::<i64>(1..max_noise).unwrap())
+                // Generate random coefficients in {0, 1, ..., q-1}
+                .map(|_| rand_range::<i64>(0..config.modulus()).unwrap())
                 .collect();
             Polynomial::new(coeffs, 1.0)
         };
@@ -76,7 +76,16 @@ pub fn generate_keys(config: Config, max_noise: i64, error_noise: i64) -> (Publi
                 .coeffs()
                 .iter()
                 .zip(p1.coeffs())
-                .map(|(&sk, &r)| -sk * r + rand_range::<i64>(-error_noise..error_noise).unwrap())
+                .map(|(&sk, &r)| {
+                    // Gaussian distribution bounded by beta
+                    let e = rand_gaussian_truncated(
+                        config.gdp().mu(),
+                        config.gdp().sigma(),
+                        config.gdp().beta(),
+                    )
+                    .unwrap();
+                    -r * sk + round(e)
+                })
                 .collect();
             Polynomial::new(coeffs, 1.0)
         };

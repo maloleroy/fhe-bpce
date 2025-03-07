@@ -4,6 +4,5 @@
 #![forbid(unsafe_op_in_unsafe_fn)]
 
 /// Re-export of a Finite Field maths crate.
-pub use ff;
 pub mod f64;
 pub mod rand;
