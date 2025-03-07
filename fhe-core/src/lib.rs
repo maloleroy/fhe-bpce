@@ -3,5 +3,9 @@
 #![warn(clippy::nursery, clippy::pedantic)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 pub mod f64;
+pub mod fq;
 pub mod rand;
