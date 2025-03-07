@@ -2,10 +2,7 @@
 #![allow(clippy::cast_precision_loss)] // For casting i64 to f64
 use crate::Plaintext;
 use alloc::vec::Vec;
-use fhe_core::{
-    f64::{round, round_to},
-    rand::rand_range,
-};
+use fhe_core::f64::{round, round_to};
 use zeroize::Zeroize;
 
 pub type Coeff = i64;
@@ -191,13 +188,6 @@ impl Polynomial {
             .collect();
 
         Self::new(result_coeffs, self.scale())
-    }
-
-    /// Add noise to coefficients in place
-    pub fn add_noise(&mut self, noise: i64) {
-        self.coeffs
-            .iter_mut()
-            .for_each(|coeff| *coeff += rand_range(-noise..noise).unwrap());
     }
 
     #[must_use]

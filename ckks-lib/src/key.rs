@@ -1,7 +1,7 @@
 use crate::{config::Config, polynomial::Polynomial};
 use fhe_core::{
     f64::round,
-    rand::{rand_gaussian_truncated, rand_range},
+    rand::distributions::{Distribution, Gaussian, Truncated, Uniform},
 };
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -52,9 +52,11 @@ impl SecretKey {
 /// Panics if randomness fails to be generated, or if any noise value is non-positive
 pub fn generate_keys(config: Config) -> (PublicKey, SecretKey) {
     let skey = {
+        let u = Uniform::<i64>::new(-1..=1);
+
         let coeffs = (0..config.degree())
             // Generate random coefficients in {-1, 0, 1}
-            .map(|_| rand_range::<i64>(-1..2).unwrap())
+            .map(|_| u.sample().unwrap())
             .collect();
         SecretKey {
             p: Polynomial::new(coeffs, 1.0),
@@ -62,15 +64,21 @@ pub fn generate_keys(config: Config) -> (PublicKey, SecretKey) {
     };
 
     let pkey = {
+        let u = Uniform::<i64>::new(0..=config.modulus() - 1);
+
         let p1 = {
             let coeffs = (0..config.degree())
                 // Generate random coefficients in {0, 1, ..., q-1}
-                .map(|_| rand_range::<i64>(0..config.modulus()).unwrap())
+                .map(|_| u.sample().unwrap())
                 .collect();
             Polynomial::new(coeffs, 1.0)
         };
 
         let p0 = {
+            let g = Gaussian::new(config.gdp().mu(), config.gdp().sigma());
+            let beta = config.gdp().beta();
+            let t = Truncated::new(g, -beta..=beta);
+
             let coeffs = skey
                 .p
                 .coeffs()
@@ -78,12 +86,7 @@ pub fn generate_keys(config: Config) -> (PublicKey, SecretKey) {
                 .zip(p1.coeffs())
                 .map(|(&sk, &r)| {
                     // Gaussian distribution bounded by beta
-                    let e = rand_gaussian_truncated(
-                        config.gdp().mu(),
-                        config.gdp().sigma(),
-                        config.gdp().beta(),
-                    )
-                    .unwrap();
+                    let e = t.sample().unwrap();
                     -r * sk + round(e)
                 })
                 .collect();

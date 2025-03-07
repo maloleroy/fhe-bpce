@@ -4,7 +4,7 @@ use crate::key::{PublicKey, SecretKey};
 use crate::polynomial::Polynomial;
 use alloc::vec::Vec;
 use fhe_core::f64::round;
-use fhe_core::rand::{rand_gaussian_truncated, rand_range};
+use fhe_core::rand::distributions::{Distribution, Gaussian, Truncated, Uniform};
 
 /// Struct for CKKS encryption
 pub struct Encryptor {
@@ -58,40 +58,31 @@ impl Encryptor {
         let encoded = Polynomial::encode(plaintext, scale);
 
         let u = {
+            let u = Uniform::<i64>::new(-1..=1);
+
             let coeffs = (0..self.config().degree())
-                .map(|_| rand_range::<i64>(-1..2).unwrap())
+                .map(|_| u.sample().unwrap())
                 .collect();
             Polynomial::new(coeffs, 1.0)
         };
 
         let e1 = {
+            let g = Gaussian::new(self.config().gdp().mu(), self.config().gdp().sigma());
+            let beta = self.config().gdp().beta();
+            let t = Truncated::new(g, -beta..=beta);
+
             let coeffs = (0..self.config().degree())
-                .map(|_| {
-                    round(
-                        rand_gaussian_truncated(
-                            self.config().gdp().mu(),
-                            self.config().gdp().sigma(),
-                            self.config().gdp().beta(),
-                        )
-                        .unwrap(),
-                    )
-                })
+                .map(|_| round(t.sample().unwrap()))
                 .collect();
             Polynomial::new(coeffs, 1.0)
         };
-
         let e2 = {
+            let g = Gaussian::new(self.config().gdp().mu(), self.config().gdp().sigma());
+            let beta = self.config().gdp().beta();
+            let t = Truncated::new(g, -beta..=beta);
+
             let coeffs = (0..self.config().degree())
-                .map(|_| {
-                    round(
-                        rand_gaussian_truncated(
-                            self.config().gdp().mu(),
-                            self.config().gdp().sigma(),
-                            self.config().gdp().beta(),
-                        )
-                        .unwrap(),
-                    )
-                })
+                .map(|_| round(t.sample().unwrap()))
                 .collect();
             Polynomial::new(coeffs, 1.0)
         };
