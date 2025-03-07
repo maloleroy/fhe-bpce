@@ -88,13 +88,13 @@ impl Encryptor {
         };
 
         let c0 = {
-            let pku = Polynomial::multiply_coeff(&self.pkey.p0(), &u);
+            let pku = Polynomial::multiply_coeff(self.pkey.p0(), &u);
             let pkue = Polynomial::add(&pku, &e1);
             Polynomial::add(&pkue, &encoded)
         };
 
         let c1 = {
-            let pku = Polynomial::multiply_coeff(&self.pkey.p1(), &u);
+            let pku = Polynomial::multiply_coeff(self.pkey.p1(), &u);
             Polynomial::add(&pku, &e2)
         };
 

@@ -31,7 +31,7 @@ impl Polynomial {
     ///
     /// Panics if n is not a power of two.
     pub fn cyclotomic(n: usize) -> Self {
-        assert_eq!(n.count_ones(), 1, "n must be a power of 2");
+        assert!(n.is_power_of_two(), "n must be a power of 2");
 
         let mut coeffs = vec![0; n + 1];
         coeffs[0] = 1;
@@ -150,7 +150,7 @@ impl Polynomial {
     #[must_use = "This method does not modify the polynomial, it returns a new one instead"]
     /// Remainder of polynomial division
     pub fn rem(&self, rhs: &Self) -> Self {
-        fn compute_degree(coeffs: &[Coeff]) -> usize {
+        const fn compute_degree(coeffs: &[Coeff]) -> usize {
             let mut i = coeffs.len();
             while i > 0 && coeffs[i - 1] == 0 {
                 i -= 1;

@@ -64,6 +64,7 @@ pub fn generate_keys(config: Config) -> (PublicKey, SecretKey) {
     };
 
     let pkey = {
+        #[allow(clippy::range_minus_one)]
         let u = Uniform::<i64>::new(0..=config.modulus() - 1);
 
         let p1 = {
