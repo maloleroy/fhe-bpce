@@ -3,6 +3,11 @@ use core::ops::{Add, RangeInclusive, Sub};
 
 pub trait Distribution {
     type Output;
+    /// Sample a random value from the distribution.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error if randomness fails to be generated.
     fn sample(&self) -> RandResult<Self::Output>;
 }
 

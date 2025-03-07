@@ -15,7 +15,12 @@ impl Config {
     #[must_use]
     #[inline]
     /// Constructor to create a new Config
+    ///
+    /// # Panics
+    ///
+    /// Panics if the degree is not a power of 2
     pub const fn new(degree: usize, modulus: Coeff, gdp: Gdp) -> Self {
+        assert!(degree.is_power_of_two(), "degree must be a power of 2");
         Self {
             degree,
             modulus,
