@@ -1,3 +1,5 @@
+//! `std` f64 utilities
+
 #[must_use]
 #[inline]
 /// Fast exponentiation

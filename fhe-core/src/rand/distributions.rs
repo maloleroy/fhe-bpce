@@ -6,7 +6,7 @@ pub trait Distribution {
     fn sample(&self) -> RandResult<Self::Output>;
 }
 
-// Trait for types that can be used as a range for random number generation.
+/// Trait for types that can be used as a range for random number generation.
 ///
 /// This trait is implemented for all integer types and floating point types.
 pub trait RandRange: Copy + Add + Sub + Sized {
