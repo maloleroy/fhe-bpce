@@ -1,5 +1,4 @@
 //! CKKS Backend
-#![cfg_attr(not(test), no_std)]
 #![warn(clippy::nursery, clippy::pedantic)]
 #![forbid(unsafe_code)]
 
