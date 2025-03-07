@@ -6,3 +6,6 @@ edition = "2024"
 [dependencies]
 getrandom = "0.3.1"
 libm = "0.2.11"
+
+[features]
+alloc = []
