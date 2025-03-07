@@ -3,6 +3,7 @@ use core::ops::{Add, RangeInclusive, Sub};
 
 pub trait Distribution {
     type Output;
+    #[must_use]
     /// Sample a random value from the distribution.
     ///
     /// # Errors
