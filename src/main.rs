@@ -1,6 +1,10 @@
 use bpce_fhe::config::Config;
 use log::LevelFilter;
 
+#[global_allocator]
+/// Improve allocation performance and security
+static GLOBAL_ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 const CONFIG: Config = Config::Ckks(ckks_lib::config::Config::new(
     1 << 11,
     1_000_000_007,
