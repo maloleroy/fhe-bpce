@@ -28,6 +28,23 @@ impl Polynomial {
 
     #[must_use]
     #[inline]
+    /// Constructor to create a new cyclotomic Polynomial with given coefficients
+    ///
+    /// # Panics
+    ///
+    /// Panics if n is not a power of two.
+    pub fn cyclotomic(n: usize) -> Self {
+        assert_eq!(n.count_ones(), 1, "n must be a power of 2");
+
+        let mut coeffs = vec![0; n + 1];
+        coeffs[0] = 1;
+        coeffs[n] = 1;
+
+        Self::new(coeffs, 1.0)
+    }
+
+    #[must_use]
+    #[inline]
     /// Get the coefficients of the polynomial
     pub fn coeffs(&self) -> &[Coeff] {
         &self.coeffs
@@ -83,6 +100,21 @@ impl Polynomial {
     }
 
     #[must_use = "This method does not modify the polynomial, it returns a new one instead"]
+    /// Polynomial multiplication
+    pub fn multiply(&self, other: &Self) -> Self {
+        let max_degree = self.coeffs.len() + other.coeffs.len() - 1;
+        let mut result = vec![0; max_degree];
+
+        for i in 0..self.coeffs.len() {
+            for j in 0..other.coeffs.len() {
+                result[i + j] += self.coeffs()[i] * other.coeffs()[j];
+            }
+        }
+
+        Self::new(result, self.scale() * other.scale())
+    }
+
+    #[must_use = "This method does not modify the polynomial, it returns a new one instead"]
     /// Coefficient by coefficient multiplication
     pub fn multiply_coeff(&self, other: &Self) -> Self {
         let max_scale = self.scale().max(other.scale());
@@ -116,6 +148,36 @@ impl Polynomial {
     pub fn negation(&self) -> Self {
         let negated_coeffs = self.coeffs.iter().map(|&c| -c).collect();
         Self::new(negated_coeffs, self.scale())
+    }
+
+    #[must_use = "This method does not modify the polynomial, it returns a new one instead"]
+    /// Remainder of polynomial division
+    pub fn rem(&self, rhs: &Self) -> Self {
+        fn compute_degree(coeffs: &[Coeff]) -> usize {
+            let mut i = coeffs.len();
+            while i > 0 && coeffs[i - 1] == 0 {
+                i -= 1;
+            }
+            i
+        }
+
+        let mut self_coeffs = self.coeffs().to_vec();
+        let mut self_degree = compute_degree(self.coeffs());
+        let rhs_degree = compute_degree(rhs.coeffs());
+
+        while self_degree >= rhs_degree {
+            let shift = self_degree - rhs_degree;
+            let factor = self_coeffs[self_degree - 1] / rhs.coeffs()[rhs_degree - 1];
+
+            for i in 0..rhs_degree {
+                self_coeffs[shift + i] -= rhs.coeffs()[i] * factor;
+            }
+
+            self_coeffs[self_degree - 1] = 0;
+            self_degree = compute_degree(&self_coeffs);
+        }
+
+        Self::new(self_coeffs, self.scale())
     }
 
     #[must_use = "This method does not modify the polynomial, it returns a new one instead"]
