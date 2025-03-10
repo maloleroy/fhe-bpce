@@ -137,18 +137,18 @@ mod tests {
         // FIXME: It often fails
         const PRECISION: f64 = 5e-2;
 
-        let config = Config::new(4096, 100_000_007, Gdp::Tc128);
+        let config = Config::new(4096, 10_000_000_007, Gdp::Tc128);
         let (pkey, skey) = crate::key::generate_keys(config);
 
         let encryptor = Encryptor::new(pkey, config);
         let decryptor = Decryptor::new(skey, config);
 
         let plaintext = vec![1.0, 2.0, 3.0, 4.0, 5.0];
-        let ciphertext = encryptor.encrypt(&plaintext, 1e5);
+        let ciphertext = encryptor.encrypt(&plaintext, 1e6);
         let decrypted = decryptor.decrypt(&ciphertext);
 
-        println!("decrypted: {:?}", decrypted);
         for (p, d) in plaintext.iter().zip(decrypted.iter()) {
+            println!("plaintex: {} ; decrypted: {}", p, d);
             assert!((p - d).abs() < PRECISION);
         }
     }

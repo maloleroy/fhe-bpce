@@ -182,25 +182,15 @@ impl Polynomial {
     ///
     /// For P(x) = ∑ a_i x^i, we have:
     ///   R(x) = ∑_{j=0}^{2^n-1}  (∑_{k ≥ 0} (-1)^k a_{j+k·2^n}) x^j.
-    pub fn rem_cyclo(&self, n: usize, modulus: i64) -> Polynomial {
-        let mod_val = |x: i64| -> i64 {
-            let mut r = x % modulus;
-            if r < 0 {
-                r += modulus;
-            }
-            r
-        };
-        let m = 1 << n; // m = 2^n
-        let mut r = vec![0i64; m];
+    pub fn rem_cyclo(&self, n: u32, modulus: i64) -> Polynomial {
+        let m = 1_usize.checked_shl(n).unwrap();
+        let mut r = vec![0_i64; m];
         // For each coefficient a_i, we "fold" according to i mod m with a sign (-1)^(i/m)
         for (i, &coeff) in self.coeffs.iter().enumerate() {
             let j = i % m;
             let k = i / m;
-            if k % 2 == 0 {
-                r[j] = mod_val(r[j] + coeff);
-            } else {
-                r[j] = mod_val(r[j] - coeff);
-            }
+            let signed_coeff = coeff * if k & 1 == 0 { 1 } else { -1 };
+            r[j] = (r[j] + signed_coeff).rem_euclid(modulus);
         }
         Self::new(r, self.scale())
     }
@@ -319,10 +309,10 @@ mod tests {
     #[test]
     fn test_rem_cyclo() {
         let n = 2;
-        let modulus = 10_000_000_000_000_007;
+        let modulus = 100_000_007;
         let poly = Polynomial::new(vec![4, 2, 0, 5, 3], 1.0);
         let result = poly.rem_cyclo(n, modulus);
-        let expected = vec![3, 0, 0, 0, 0];
+        let expected = vec![1, 2, 0, 5];
         assert_eq!(result.coeffs(), expected);
     }
 }
