@@ -24,6 +24,18 @@ impl Polynomial {
     }
 
     #[must_use]
+    /// Computes the degree of the polynomial.
+    ///
+    /// This is an expensive operation, as it iterates over all coefficients.
+    pub fn degree(&self) -> usize {
+        let mut d = self.coeffs.len();
+        while d > 0 && self.coeffs[d - 1] == 0 {
+            d -= 1;
+        }
+        d
+    }
+
+    #[must_use]
     #[inline]
     /// Get the coefficients of the polynomial
     pub fn coeffs(&self) -> &[Coeff] {

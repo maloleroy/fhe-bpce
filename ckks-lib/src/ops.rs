@@ -30,7 +30,7 @@ mod tests {
     use super::*;
     use crate::{
         cipher::Decryptor,
-        config::{Config, Gdp},
+        config::{Config, GaussianDistribParams},
         key::generate_keys,
     };
 
@@ -39,7 +39,7 @@ mod tests {
         // FIXME: It often fails
         const PRECISION: f64 = 1e-1;
 
-        let config = Config::new(4096, 1_000_000_007, Gdp::Tc128);
+        let config = Config::new(4096, 1_000_000_007, GaussianDistribParams::TC128);
         let (pkey, skey) = generate_keys(config);
 
         let encryptor = Encryptor::new(pkey, config);

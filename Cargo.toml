@@ -9,6 +9,7 @@ libm = "0.2.11"
 log = "0.4.26"
 mimalloc = { version = "0.1.43", features = ["secure"] }
 pretty_env_logger = "0.5.0"
+rouille = { git = "https://github.com/bnjbvr/rouille.git" }
 tokio = { version = "1.43.0", features = ["full"] }
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
