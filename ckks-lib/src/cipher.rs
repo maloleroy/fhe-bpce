@@ -133,7 +133,7 @@ impl Decryptor {
 
 #[cfg(test)]
 mod tests {
-    use crate::config::Gdp;
+    use crate::config::GaussianDistribParams;
 
     use super::*;
 
@@ -142,7 +142,7 @@ mod tests {
         // FIXME: It often fails
         const PRECISION: f64 = 5e-2;
 
-        let config = Config::new(4096, 10_000_000_007, Gdp::Tc128);
+        let config = Config::new(4096, 10_000_000_007, GaussianDistribParams::TC128);
         let (pkey, skey) = crate::key::generate_keys(config);
 
         let encryptor = Encryptor::new(pkey, config);

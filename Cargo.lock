@@ -63,6 +63,7 @@ dependencies = [
  "mimalloc",
  "pretty_env_logger",
  "rand",
+ "rouille",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -408,6 +409,19 @@ name = "regex-syntax"
 version = "0.8.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
+
+[[package]]
+name = "rouille"
+version = "0.1.0"
+source = "git+https://github.com/bnjbvr/rouille.git#d6583b7bcd93620caa0fb4888f9be2e98ce25f82"
+dependencies = [
+ "rouille_compilogenese",
+]
+
+[[package]]
+name = "rouille_compilogenese"
+version = "0.1.0"
+source = "git+https://github.com/bnjbvr/rouille.git#d6583b7bcd93620caa0fb4888f9be2e98ce25f82"
 
 [[package]]
 name = "rustc-demangle"
