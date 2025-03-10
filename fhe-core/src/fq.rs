@@ -30,7 +30,6 @@ impl<const Q: usize> FqInt64<Q> {
 impl<const Q: usize> Add for FqInt64<Q> {
     type Output = Self;
 
-    #[must_use]
     #[inline]
     /// Add two FqInt64
     fn add(self, rhs: Self) -> Self::Output {
@@ -41,7 +40,6 @@ impl<const Q: usize> Add for FqInt64<Q> {
 impl<const Q: usize> Sub for FqInt64<Q> {
     type Output = Self;
 
-    #[must_use]
     #[inline]
     /// Subtract two FqInt64
     fn sub(self, rhs: Self) -> Self::Output {
@@ -52,7 +50,6 @@ impl<const Q: usize> Sub for FqInt64<Q> {
 impl<const Q: usize> Mul for FqInt64<Q> {
     type Output = Self;
 
-    #[must_use]
     #[inline]
     /// Multiply two FqInt64
     fn mul(self, rhs: Self) -> Self::Output {
