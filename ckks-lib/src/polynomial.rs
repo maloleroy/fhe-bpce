@@ -25,23 +25,6 @@ impl Polynomial {
 
     #[must_use]
     #[inline]
-    /// Constructor to create a new cyclotomic Polynomial with given coefficients
-    ///
-    /// # Panics
-    ///
-    /// Panics if n is not a power of two.
-    pub fn cyclotomic(n: usize) -> Self {
-        assert!(n.is_power_of_two(), "n must be a power of 2");
-
-        let mut coeffs = vec![0; n + 1];
-        coeffs[0] = 1;
-        coeffs[n] = 1;
-
-        Self::new(coeffs, 1.0)
-    }
-
-    #[must_use]
-    #[inline]
     /// Get the coefficients of the polynomial
     pub fn coeffs(&self) -> &[Coeff] {
         &self.coeffs
@@ -186,11 +169,15 @@ impl Polynomial {
         let m = 1_usize.checked_shl(n).unwrap();
         let mut r = vec![0_i64; m];
         // For each coefficient a_i, we "fold" according to i mod m with a sign (-1)^(i/m)
-        for (i, &coeff) in self.coeffs.iter().enumerate() {
-            let j = i % m;
-            let k = i / m;
-            let signed_coeff = coeff * if k & 1 == 0 { 1 } else { -1 };
-            r[j] = (r[j] + signed_coeff).rem_euclid(modulus);
+        let mut j = 0; // i % m
+        let mut k = 1; // if (i / m) % 2 == 0 { 1 } else { -1 }
+        for &coeff in &self.coeffs {
+            r[j] = (r[j] + coeff * k).rem_euclid(modulus);
+            j += 1;
+            if j >= m {
+                j = 0;
+                k = -k;
+            }
         }
         Self::new(r, self.scale())
     }
