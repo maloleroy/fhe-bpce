@@ -178,6 +178,34 @@ impl Polynomial {
     }
 
     #[must_use = "This method does not modify the polynomial, it returns a new one instead"]
+    /// Computes the remainder of the division by the cyclotomic polynomial X^(2^n) + 1.
+    ///
+    /// For P(x) = ∑ a_i x^i, we have:
+    ///   R(x) = ∑_{j=0}^{2^n-1}  (∑_{k ≥ 0} (-1)^k a_{j+k·2^n}) x^j.
+    pub fn rem_cyclo(&self, n: usize, modulus: i64) -> Polynomial {
+        let mod_val = |x: i64| -> i64 {
+            let mut r = x % modulus;
+            if r < 0 {
+                r += modulus;
+            }
+            r
+        };
+        let m = 1 << n; // m = 2^n
+        let mut r = vec![0i64; m];
+        // For each coefficient a_i, we "fold" according to i mod m with a sign (-1)^(i/m)
+        for (i, &coeff) in self.coeffs.iter().enumerate() {
+            let j = i % m;
+            let k = i / m;
+            if k % 2 == 0 {
+                r[j] = mod_val(r[j] + coeff);
+            } else {
+                r[j] = mod_val(r[j] - coeff);
+            }
+        }
+        Self::new(r, self.scale())
+    }
+
+    #[must_use = "This method does not modify the polynomial, it returns a new one instead"]
     /// Modular reduction of coefficients
     pub fn mod_reduce(&self, modulus: Coeff) -> Self {
         let result_coeffs = self
@@ -277,5 +305,24 @@ mod tests {
 
         let decoded = poly.decode();
         assert_eq!(decoded, vec![1.2, 2.0, 3.0]);
+    }
+
+    #[test]
+    fn test_rem() {
+        let poly1 = Polynomial::new(vec![0, 0, 1], 1.0);
+        let poly2 = Polynomial::new(vec![1, 1], 1.0);
+
+        let result = poly1.rem(&poly2);
+        assert_eq!(result.coeffs(), &[1, 0, 0]);
+    }
+
+    #[test]
+    fn test_rem_cyclo() {
+        let n = 2;
+        let modulus = 10_000_000_000_000_007;
+        let poly = Polynomial::new(vec![4, 2, 0, 5, 3], 1.0);
+        let result = poly.rem_cyclo(n, modulus);
+        let expected = vec![3, 0, 0, 0, 0];
+        assert_eq!(result.coeffs(), expected);
     }
 }
