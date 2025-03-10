@@ -120,9 +120,14 @@ impl Decryptor {
     /// Decrypt ciphertext
     pub fn decrypt(&self, ciphertext: &Ciphertext) -> Vec<Plaintext> {
         let c1sk_raw = Polynomial::multiply(ciphertext.c1(), self.skey.p());
-        let c1sk = Polynomial::rem(&c1sk_raw, &Polynomial::cyclotomic(self.config.degree()));
+        let c1sk = Polynomial::rem_cyclo(
+            &c1sk_raw,
+            self.config.degree_as_power_of_two(),
+            self.config.modulus(),
+        );
         let encoded = Polynomial::add(ciphertext.c0(), &c1sk);
-        Polynomial::decode(&encoded)
+        let encoded_rem = Polynomial::mod_reduce(&encoded, self.config.modulus());
+        Polynomial::decode(&encoded_rem)
     }
 }
 

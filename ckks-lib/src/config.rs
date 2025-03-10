@@ -4,6 +4,8 @@ use crate::polynomial::Coeff;
 /// CKKS configuration parameters
 pub struct Config {
     /// Polynomial degree (N)
+    ///
+    /// `degree` is a power of two
     degree: usize,
     /// Modulus (q)
     modulus: Coeff,
@@ -33,6 +35,13 @@ impl Config {
     /// Get the degree parameter
     pub const fn degree(&self) -> usize {
         self.degree
+    }
+
+    #[must_use]
+    #[inline]
+    /// Get the degree parameter as a power of two.
+    pub const fn degree_as_power_of_two(&self) -> u32 {
+        self.degree.trailing_zeros()
     }
 
     #[must_use]
