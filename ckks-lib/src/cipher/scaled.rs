@@ -157,3 +157,49 @@ impl<const P: i64, const N: u32> ScaledPolynomial<P, N> {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Use example parameters for testing.
+    const P: i64 = 10_000_000_007;
+    const N: u32 = 12;
+    const SCALE: f64 = 1e6;
+
+    #[test]
+    fn test_encode_decode_round_trip() {
+        // Arrange: Some sample plaintexts and a scaling factor.
+        let plaintext: Vec<f64> = vec![1.234, 2.345, 3.456, 0.0, 5.678];
+
+        // Act: Encode and then decode.
+        let scaled_poly = ScaledPolynomial::<P, N>::encode(&plaintext, SCALE);
+        let decoded = scaled_poly.decode();
+
+        // Assert: Check that the decoded values match the originals within tolerance.
+        assert_eq!(decoded.len(), plaintext.len());
+        for (orig, dec) in plaintext.into_iter().zip(decoded.into_iter()) {
+            assert!(
+                (orig - dec).abs() < 1e-3,
+                "Original {} differs from decoded {}",
+                orig,
+                dec
+            );
+        }
+    }
+
+    #[test]
+    fn test_encode_and_decode_zero_threshold() {
+        // Arrange: Values nearly zero (under decode's TRESHOLD) should decode to 0.0.
+        let plaintext: Vec<f64> = vec![1e-11, 2.5e-11];
+
+        // Act: Encode and decode.
+        let scaled_poly = ScaledPolynomial::<P, N>::encode(&plaintext, SCALE);
+        let decoded = scaled_poly.decode();
+
+        // Assert: Values below the threshold become 0.0.
+        for dec in decoded {
+            assert_eq!(dec, 0.0);
+        }
+    }
+}
