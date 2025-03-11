@@ -116,10 +116,39 @@ impl<const P: i64, const N: u32> ScaledPolynomial<P, N> {
     #[inline]
     /// Multiply two polynomials
     pub fn multiply(lhs: &Self, rhs: &Self) -> Self {
-        todo!()
+        let mut coeffs = Vec::with_capacity(lhs.p.len() + rhs.p.len() - 1);
+        for i in 0..lhs.p.len() {
+            for j in 0..rhs.p.len() {
+                let to_push =
+                    round(lhs.p.coeffs()[i].as_i64() as f64 * rhs.p.coeffs()[j].as_i64() as f64);
+                let idx = i + j;
+                if idx < coeffs.len() {
+                    coeffs[idx] += to_push;
+                } else {
+                    coeffs.push(to_push);
+                }
+            }
+        }
+
+        let p = Self {
+            p: Polynomial::new(coeffs),
+            scale: lhs.scale() * rhs.scale(),
+        };
+        p.rescale(lhs.scale().max(rhs.scale()))
     }
 
-    fn rescale(&mut self) {
-        todo!()
+    fn rescale(self, scale: f64) -> Self {
+        let coeffs = self
+            .p
+            .coeffs()
+            .iter()
+            .map(|&c| round(c.as_i64() as f64 / scale))
+            .collect();
+
+        let p = Polynomial::new(coeffs);
+        Self {
+            p,
+            scale: self.scale() / scale,
+        }
     }
 }

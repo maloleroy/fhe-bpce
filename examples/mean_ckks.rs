@@ -37,7 +37,7 @@ fn main() {
 
     mean_e = encryptor.homomorphic_div_plain(&mean_e, AMOUNT as f64);
 
-    let decrypted = decryptor.decrypt(&mean_e, 1e6)[0];
+    let decrypted = decryptor.decrypt(&mean_e)[0];
 
     println!("decrypted: {}", decrypted);
 }
