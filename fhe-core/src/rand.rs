@@ -49,6 +49,9 @@ pub type RandResult<T> = Result<T, getrandom::Error>;
 #[cfg(test)]
 mod tests {
     #[cfg(miri)]
+    use super::*;
+
+    #[cfg(miri)]
     #[test]
     fn test_rand_slice() {
         let mut slice = [MaybeUninit::<u32>::uninit(); 10];
