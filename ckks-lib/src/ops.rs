@@ -66,10 +66,10 @@ mod tests {
         let rhs = encryptor.encrypt(&[5.0, 6.0, 7.0, 8.0], 1e7);
 
         let sum = encryptor.homomorphic_add(&lhs, &rhs);
-        let decrypted = decryptor.decrypt(&sum, 1e7);
+        let decrypted = decryptor.decrypt(&sum);
 
-        println!("decrypted: {:?}", decrypted);
-        for (p, d) in decrypted.iter().zip([6.0, 8.0, 10.0, 12.0].iter()) {
+        for (d, p) in decrypted.iter().zip([6.0, 8.0, 10.0, 12.0].iter()) {
+            println!("plaintex: {} ; decrypted: {}", p, d);
             assert!((p - d).abs() < PRECISION);
         }
     }

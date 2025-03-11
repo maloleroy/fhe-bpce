@@ -103,12 +103,7 @@ impl<const P: i64, const N: u32> Decryptor<P, N> {
 
     #[must_use]
     /// Decrypt ciphertext
-    pub fn decrypt(&self, ciphertext: &Ciphertext<P, N>, scale: f64) -> Vec<Plaintext> {
-        /// Threshold for considering values as zero
-        const TRESHOLD: f64 = 1e-10;
-        /// Number of decimal places for rounding
-        const DECIMAL_PLACES: u16 = 3;
-
+    pub fn decrypt(&self, ciphertext: &Ciphertext<P, N>) -> Vec<Plaintext> {
         let c1sk = ScaledPolynomial::multiply(
             &ciphertext.c1,
             &ScaledPolynomial::new(self.skey.p().clone(), 1.0),
@@ -137,7 +132,7 @@ mod tests {
 
         let plaintext = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let ciphertext = encryptor.encrypt(&plaintext, 1e6);
-        let decrypted = decryptor.decrypt(&ciphertext, 1e6);
+        let decrypted = decryptor.decrypt(&ciphertext);
 
         for (p, d) in plaintext.iter().zip(decrypted.iter()) {
             println!("plaintex: {} ; decrypted: {}", p, d);
