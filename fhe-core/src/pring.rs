@@ -148,11 +148,13 @@ impl<const P: i64, const N: u32> Polynomial<P, N> {
     ///
     /// This is an expensive operation, as it iterates over the coefficients.
     pub fn degree(&self) -> usize {
-        let mut d = self.coeffs.len();
-        while d > 0 && self.coeffs[d - 1].0 == 0 {
-            d -= 1;
-        }
-        d
+        self.coeffs
+            .iter()
+            .enumerate()
+            .rev()
+            .find(|&(_, &c)| c.as_i64() != 0)
+            .map(|(i, _)| i)
+            .unwrap_or(0)
     }
 
     #[must_use]
