@@ -4,8 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+const-primes = { version = "0.10.3", features = ["fast_test"] }
 getrandom = "0.3.1"
 libm = "0.2.11"
+zeroize = { workspace = true, optional = true }
 
 [features]
 alloc = []
+zeroize = ["dep:zeroize"]
