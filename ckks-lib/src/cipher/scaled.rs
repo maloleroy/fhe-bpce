@@ -125,8 +125,10 @@ impl<const P: i64, const N: u32> ScaledPolynomial<P, N> {
                     round(lhs.p.coeffs()[i].as_i64() as f64 * rhs.p.coeffs()[j].as_i64() as f64);
                 let idx = i + j;
                 if idx < coeffs.len() {
-                    coeffs[idx] =
-                        (coeffs[idx] as i128 + to_push as i128).rem_euclid(P as i128) as i64;
+                    coeffs[idx] = i64::try_from(
+                        (i128::from(coeffs[idx]) + i128::from(to_push)).rem_euclid(i128::from(P)),
+                    )
+                    .unwrap();
                 } else {
                     coeffs.push(to_push);
                 }
