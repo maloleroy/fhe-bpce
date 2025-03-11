@@ -62,7 +62,9 @@ impl<const P: i64> Mul for Coeff<P> {
     type Output = Self;
     #[inline]
     fn mul(self, rhs: Self) -> Self {
-        Self((self.0 * rhs.0).rem_euclid(P))
+        let lhs_128 = i128::from(self.0);
+        let rhs_128 = i128::from(rhs.0);
+        Self((lhs_128 * rhs_128).rem_euclid(P.into()).try_into().unwrap())
     }
 }
 
