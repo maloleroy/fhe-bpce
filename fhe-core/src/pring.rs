@@ -79,7 +79,7 @@ impl<const P: i64> Neg for Coeff<P> {
 
 impl<const P: i64> From<Coeff<P>> for i64 {
     #[inline]
-    fn from(coeff: Coeff<P>) -> i64 {
+    fn from(coeff: Coeff<P>) -> Self {
         coeff.0
     }
 }
@@ -104,7 +104,12 @@ impl<const P: i64, const N: u32> Polynomial<P, N> {
     }
 
     #[must_use]
-    pub fn random<D: Distribution>(d: D) -> Self
+    /// Generate a random polynomial using a given distribution
+    ///
+    /// # Panics
+    ///
+    /// Panics if the distribution fails to generate randomness.
+    pub fn random<D: Distribution>(d: &D) -> Self
     where
         D::Output: Into<i64>,
     {
@@ -119,6 +124,13 @@ impl<const P: i64, const N: u32> Polynomial<P, N> {
     /// Get the len of the coefficients
     pub fn len(&self) -> usize {
         self.coeffs.len()
+    }
+
+    #[must_use]
+    #[inline]
+    /// Return wether the polynomial is empty
+    pub fn is_empty(&self) -> bool {
+        self.coeffs.len() == 0
     }
 
     #[must_use]
@@ -187,9 +199,6 @@ impl<const P: i64, const N: u32> Polynomial<P, N> {
     /// Computes the remainder of the division by the cyclotomic polynomial X^(2^n) + 1.
     ///
     /// This is the core function of this module.
-    ///
-    /// For P(x) = ∑ a_i x^i, we have:
-    ///   R(x) = ∑_{j=0}^{2^n-1}  (∑_{k ≥ 0} (-1)^k a_{j+k·2^n}) x^j.
     fn rem_cyclo(self) -> Self {
         // Computing the degree is expensive.
         // As degree <= len, we simply check if len < 2^N.

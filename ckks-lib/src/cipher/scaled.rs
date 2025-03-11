@@ -1,3 +1,5 @@
+#![allow(clippy::cast_precision_loss)]
+
 use fhe_core::{
     f64::{round, round_to},
     pring::{Coeff, Polynomial},
@@ -14,14 +16,14 @@ pub struct ScaledPolynomial<const P: i64, const N: u32> {
 impl<const P: i64, const N: u32> ScaledPolynomial<P, N> {
     #[must_use]
     #[inline]
-    /// Constructor to create a new ScaledPolynomial
+    /// Constructor to create a new `ScaledPolynomial`
     pub const fn new(p: Polynomial<P, N>, scale: f64) -> Self {
         Self { p, scale }
     }
 
     #[must_use]
     #[inline]
-    /// Encode plaintexts into a ScaledPolynomial
+    /// Encode plaintexts into a `ScaledPolynomial`
     pub fn encode(p: &[Plaintext], scale: f64) -> Self {
         let coeffs = p.iter().map(|&x| round(x * scale)).collect();
         Self {
@@ -32,7 +34,7 @@ impl<const P: i64, const N: u32> ScaledPolynomial<P, N> {
 
     #[must_use]
     #[inline]
-    /// Decode the ScaledPolynomial into plaintexts
+    /// Decode the `ScaledPolynomial` into plaintexts
     pub fn decode(&self) -> Vec<Plaintext> {
         /// Threshold for considering values as zero
         const TRESHOLD: f64 = 1e-10;
