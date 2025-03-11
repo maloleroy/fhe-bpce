@@ -80,7 +80,9 @@ pub fn generate_keys<const P: i64, const N: u32>(
                 .map(|(&sk, &r)| {
                     // Gaussian distribution bounded by beta
                     let e = t.sample().unwrap();
-                    -r.as_i64() * sk.as_i64() + round(e)
+                    let r_128 = i128::from(r.as_i64());
+                    let sk_128 = i128::from(sk.as_i64());
+                    i64::try_from((-r_128 * sk_128).rem_euclid(P.into())).unwrap() + round(e)
                 })
                 .collect();
             Polynomial::new(coeffs)

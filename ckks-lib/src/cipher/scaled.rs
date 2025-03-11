@@ -118,14 +118,15 @@ impl<const P: i64, const N: u32> ScaledPolynomial<P, N> {
     #[inline]
     /// Multiply two polynomials
     pub fn multiply(lhs: &Self, rhs: &Self) -> Self {
-        let mut coeffs = Vec::with_capacity(lhs.p.len() + rhs.p.len() - 1);
+        let mut coeffs = Vec::<i64>::with_capacity(lhs.p.len() + rhs.p.len() - 1);
         for i in 0..lhs.p.len() {
             for j in 0..rhs.p.len() {
                 let to_push =
                     round(lhs.p.coeffs()[i].as_i64() as f64 * rhs.p.coeffs()[j].as_i64() as f64);
                 let idx = i + j;
                 if idx < coeffs.len() {
-                    coeffs[idx] += to_push;
+                    coeffs[idx] += to_push.rem_euclid(P);
+                    coeffs[idx] = coeffs[idx].rem_euclid(P);
                 } else {
                     coeffs.push(to_push);
                 }
