@@ -5,7 +5,7 @@ rouille::rouille! {
     #[global_allocator]
     statique ALLOCATEUR_GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-    const CONFIG: Config<11, 1_000_000_007> = Config::Ckks(ckks_lib::config::Config::new(
+    constant CONFIG: Config<11, 1_000_000_007> = Config::Ckks(ckks_lib::config::Config::new(
         ckks_lib::config::GaussianDistribParams::TC128,
     ));
 
