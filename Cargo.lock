@@ -105,6 +105,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "const-primes"
+version = "0.10.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2e5fb0d1ba5c6617068320cca1f446b4c3a685895775132513b6890479171e91"
+dependencies = [
+ "machine-prime",
+]
+
+[[package]]
 name = "env_logger"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -121,8 +130,10 @@ dependencies = [
 name = "fhe-core"
 version = "0.1.0"
 dependencies = [
+ "const-primes",
  "getrandom",
  "libm",
+ "zeroize",
 ]
 
 [[package]]
@@ -209,6 +220,12 @@ name = "log"
 version = "0.4.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "30bde2b3dc3671ae49d8e2e9f044c7c005836e7a023ee57cffa25ab82764bb9e"
+
+[[package]]
+name = "machine-prime"
+version = "1.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6dc82d8f07dbce4617251b99e6abd8b3c5758ac52fe74151fd0fb0b3c8945fee"
 
 [[package]]
 name = "memchr"

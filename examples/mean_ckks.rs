@@ -22,7 +22,7 @@ fn fake_read() -> Option<f64> {
 }
 
 fn main() {
-    let config = Config::new(4096, 10_000_000_000_000_007, GaussianDistribParams::TC128);
+    let config = Config::<10_000_000_000_000_007, 12>::new(GaussianDistribParams::TC128);
     let (pkey, skey) = generate_keys(config);
 
     let encryptor = Encryptor::new(pkey, config);
@@ -37,7 +37,7 @@ fn main() {
 
     mean_e = encryptor.homomorphic_div_plain(&mean_e, AMOUNT as f64);
 
-    let decrypted = decryptor.decrypt(&mean_e)[0];
+    let decrypted = decryptor.decrypt(&mean_e, 1e6)[0];
 
     println!("decrypted: {}", decrypted);
 }
