@@ -49,7 +49,7 @@ impl<const P: i64, const N: u32> Encryptor<P, N> {
 
         let u = {
             let u = Uniform::<i64>::new(-1..=1);
-            Polynomial::random(u)
+            Polynomial::random(&u)
         };
 
         let e1 = {

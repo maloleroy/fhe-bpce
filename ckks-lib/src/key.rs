@@ -57,7 +57,7 @@ pub fn generate_keys<const P: i64, const N: u32>(
     let skey = {
         let u = Uniform::<i64>::new(-1..=1);
         SecretKey {
-            p: Polynomial::random(u),
+            p: Polynomial::random(&u),
         }
     };
 
@@ -65,7 +65,7 @@ pub fn generate_keys<const P: i64, const N: u32>(
         #[allow(clippy::range_minus_one)]
         let u = Uniform::<i64>::new(0..=P - 1);
 
-        let p1 = { Polynomial::random(u) };
+        let p1 = { Polynomial::random(&u) };
 
         let p0 = {
             let g = Gaussian::new(config.gdp().mu(), config.gdp().sigma());
