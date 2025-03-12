@@ -160,12 +160,64 @@ impl<const P: i64, const N: u32> ScaledPolynomial<P, N> {
 
 #[cfg(test)]
 mod tests {
+    use std::vec;
+
     use super::*;
 
     // Use example parameters for testing.
     const P: i64 = 10_000_000_007;
     const N: u32 = 12;
     const SCALE: f64 = 1e6;
+
+    #[test]
+    fn test_scaled_polynomial_new() {
+        let coeffs = vec![1, 2, 3, 4, 5];
+        let p = Polynomial::new(coeffs);
+
+        let scaled_poly = ScaledPolynomial::<P, N>::new(p, SCALE);
+
+        for (i, &c) in scaled_poly.polynomial().coeffs().iter().enumerate() {
+            assert_eq!(c.as_i64(), i as i64 + 1);
+        }
+        assert_eq!(scaled_poly.scale(), SCALE);
+    }
+
+    #[test]
+    fn test_scaled_polynomial_encode() {
+        let plaintext: Vec<f64> = vec![1.234, 2.345, 3.456, 0.0, 5.678];
+
+        let scaled_poly = ScaledPolynomial::<P, N>::encode(&plaintext, SCALE);
+
+        for (i, &c) in scaled_poly.polynomial().coeffs().iter().enumerate() {
+            assert_eq!(c.as_i64(), round(plaintext[i] * SCALE));
+        }
+        assert_eq!(scaled_poly.scale(), SCALE);
+    }
+
+    #[test]
+    fn test_scaled_polynomial_decode() {
+        let plaintext: Vec<f64> = vec![1.234, 2.3e-13, 3.456, 0.0, 5.678];
+        let decoded = ScaledPolynomial::<P, N>::encode(&plaintext, SCALE).decode();
+        let expected = vec![1.234, 0.0, 3.456, 0.0, 5.678];
+
+        assert_eq!(decoded.len(), plaintext.len());
+        for (orig, dec) in decoded.into_iter().zip(expected.into_iter()) {
+            assert_eq!(orig, dec);
+        }
+    }
+
+    #[test]
+    fn test_scaled_polynomial_add() {
+        let lhs = ScaledPolynomial::<P, N>::encode(&[1., 2., 3.], 20.);
+        let rhs = ScaledPolynomial::<P, N>::encode(&[4., 5., 6.], 50.);
+
+        let sum = ScaledPolynomial::<P, N>::add(&lhs, &rhs);
+
+        let expected = ScaledPolynomial::<P, N>::encode(&[2.6, 4., 5.4], 20.);
+
+        assert_eq!(sum.polynomial().coeffs(), expected.polynomial().coeffs());
+        assert_eq!(sum.scale(), expected.scale());
+    }
 
     #[test]
     fn test_encode_decode_round_trip() {
