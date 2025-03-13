@@ -4,5 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-fhe-core = { workspace = true }
+fhe-core = { workspace = true, features = ["alloc", "zeroize"] }
 zeroize = { workspace = true }
