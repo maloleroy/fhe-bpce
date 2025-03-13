@@ -1,8 +1,0 @@
-[package]
-name = "api"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-ckks-lib = { path = "../ckks-lib" }
-sealy = "0.2.0"
