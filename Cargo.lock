@@ -27,6 +27,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "api"
+version = "0.1.0"
+dependencies = [
+ "ckks-lib",
+ "sealy",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -191,6 +199,14 @@ version = "0.1.0"
 dependencies = [
  "getrandom",
  "libm",
+ "zeroize",
+]
+
+[[package]]
+name = "fhe-select"
+version = "0.1.0"
+dependencies = [
+ "api",
  "zeroize",
 ]
 
