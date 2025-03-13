@@ -84,6 +84,7 @@ dependencies = [
  "pretty_env_logger",
  "rand",
  "rouille",
+ "seal-lib",
  "tokio",
  "tracing",
  "tracing-subscriber",
