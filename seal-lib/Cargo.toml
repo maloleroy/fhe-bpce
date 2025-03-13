@@ -4,4 +4,5 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+bincode = { workspace = true }
 sealy = "0.2.0"
