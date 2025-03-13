@@ -57,7 +57,7 @@ impl<const P: i64, const N: u32> Encryptor<P, N> {
             let beta = self.config().gdp().beta();
             let t = Truncated::new(g, -beta..=beta);
 
-            let coeffs = (0..N).map(|_| round(t.sample().unwrap())).collect();
+            let coeffs = (0..(1 << N)).map(|_| round(t.sample().unwrap())).collect();
             Polynomial::new(coeffs)
         };
         let e2 = {
@@ -65,7 +65,7 @@ impl<const P: i64, const N: u32> Encryptor<P, N> {
             let beta = self.config().gdp().beta();
             let t = Truncated::new(g, -beta..=beta);
 
-            let coeffs = (0..N).map(|_| round(t.sample().unwrap())).collect();
+            let coeffs = (0..(1 << N)).map(|_| round(t.sample().unwrap())).collect();
             Polynomial::new(coeffs)
         };
 
@@ -106,7 +106,7 @@ impl<const P: i64, const N: u32> Decryptor<P, N> {
     pub fn decrypt(&self, ciphertext: &Ciphertext<P, N>) -> Vec<Plaintext> {
         let c1sk = ScaledPolynomial::multiply(
             &ciphertext.c1,
-            &ScaledPolynomial::new(self.skey.p().clone(), 1.0),
+            &ScaledPolynomial::new(self.skey.p().clone(), ciphertext.c0.scale()),
         );
         let encoded = ScaledPolynomial::add(&ciphertext.c0, &c1sk);
         encoded.decode()
@@ -116,8 +116,57 @@ impl<const P: i64, const N: u32> Decryptor<P, N> {
 #[cfg(test)]
 mod tests {
     use crate::config::GaussianDistribParams;
-
     use super::*;
+
+    #[test]
+    fn test_encrypt_only() {
+        let config = Config::<10_000_000_007, 12>::new(GaussianDistribParams::TC128);
+        let (pkey, _skey) = crate::key::generate_keys(config);
+        let encryptor = Encryptor::new(pkey, config);
+
+        let plaintext = vec![1.0, 2.0, 3.0];
+        let scale = 1e6;
+
+        let ciphertext = encryptor.encrypt(&plaintext, scale);
+
+        let non_zero_ct0 = ciphertext
+            .c0
+            .polynomial()
+            .coeffs()
+            .iter()
+            .any(|&c| c.as_i64() != 0);
+        let non_zero_ct1 = ciphertext
+            .c1
+            .polynomial()
+            .coeffs()
+            .iter()
+            .any(|&c| c.as_i64() != 0);
+
+        assert!(
+            non_zero_ct0 || non_zero_ct1,
+            "At least one ciphertext component should be non-zero"
+        );
+    }
+
+    #[test]
+    fn test_encrypt_decrypt_scalar() {
+        const PRECISION: f64 = 5e-2;
+
+        let config = Config::<10_000_000_007, 12>::new(GaussianDistribParams::TC128);
+        let (pkey, skey) = crate::key::generate_keys(config);
+
+        let encryptor = Encryptor::new(pkey, config);
+        let decryptor = Decryptor::new(skey, config);
+
+        let plaintext = vec![1.0];
+        let ciphertext = encryptor.encrypt(&plaintext, 1e6);
+        let decrypted = decryptor.decrypt(&ciphertext);
+
+        for (p, d) in plaintext.iter().zip(decrypted.iter()) {
+            println!("plaintex: {} ; decrypted: {}", p, d);
+            assert!((p - d).abs() < PRECISION);
+        }
+    }
 
     #[test]
     fn test_encrypt_decrypt() {

@@ -228,7 +228,6 @@ impl<const P: i64, const N: u32> Polynomial<P, N> {
 }
 
 impl<const P: i64, const N: u32> PartialEq for Polynomial<P, N> {
-    #[inline]
     fn eq(&self, other: &Self) -> bool {
         let min_len = self.len().min(other.len());
         if self.coeffs[..min_len] != other.coeffs[..min_len] {
@@ -241,6 +240,16 @@ impl<const P: i64, const N: u32> PartialEq for Polynomial<P, N> {
         } else {
             true
         }
+    }
+}
+
+impl<const P: i64, const N: u32> Neg for Polynomial<P, N> {
+    type Output = Self;
+    fn neg(mut self) -> Self::Output {
+        for coeff in self.coeffs.iter_mut() {
+            *coeff = coeff.neg();
+        }
+        self
     }
 }
 
@@ -266,10 +275,121 @@ mod tests {
     }
 
     #[test]
-    fn test_polynomial() {
-        let p1 = Polynomial::<7, 3>::new(vec![1, 2, 3, 4, 5, 6, 7, 8]);
-        let p2 = Polynomial::<7, 3>::new(vec![8, 7, 6, 5, 4, 3, 2, 1]);
+    fn test_polynomial_new() {
+        let p = Polynomial::<7, 3>::new(vec![1, 2, 3, 4, 5, 6, 7, 8]);
+        assert_eq!(p.coeffs().len(), 8);
+    }
 
-        // TODO: Other tests
+    #[test]
+    fn test_polynomial_random() {
+        let u = crate::rand::distributions::Uniform::<i64>::new(-1..=1);
+        let p = Polynomial::<7, 10>::random(&u);
+        let first_coeff = p.coeffs()[0].as_i64();
+        // assert that at least one coefficient is different from first_coeff
+        assert!(p.coeffs().iter().any(|&c| c.as_i64() != first_coeff));
+    }
+
+    #[test]
+    fn test_polynomial_len() {
+        let p = Polynomial::<7, 3>::new(vec![1, 2, 3, 4, 5, 6, 7, 8]);
+        assert_eq!(p.len(), 8);
+    }
+
+    #[test]
+    fn test_polynomial_is_empty() {
+        assert!(Polynomial::<7, 3>::new(vec![]).is_empty());
+        assert!(!Polynomial::<7, 3>::new(vec![1, 2, 3, 4, 5, 6, 7, 8]).is_empty());
+    }
+
+    #[test]
+    fn test_polynomial_coeffs() {
+        const P: i64 = 7;
+        let p = Polynomial::<P, 3>::new(vec![1, 2, 3, 4, 5, 6, 7, 8]);
+        println!("{:?}", p.coeffs());
+        for (i, &c) in p.coeffs().iter().enumerate() {
+            assert_eq!(c.as_i64(), (i as i64 + 1) % P);
+        }
+    }
+
+    #[test]
+    fn test_polynomial_degree() {
+        const P: i64 = 7;
+        const N: u32 = 3; // max degree is 2^N - 1
+        let p1 = Polynomial::<P, N>::new(vec![1, 2, 0, 4]);
+        assert_eq!(p1.degree(), 3);
+        let p2 = Polynomial::<P, N>::new(vec![0, 0, 0, -4]);
+        assert_eq!(Polynomial::<P, N>::add(&p1, &p2).degree(), 1);
+    }
+
+    #[test]
+    fn test_polynomial_add() {
+        const P: i64 = 7;
+        const N: u32 = 3;
+        let p1 = Polynomial::<P, N>::new(vec![1, 2, 3, 4]);
+        let p2 = Polynomial::<P, N>::new(vec![-1, -2, -3, -4]);
+        let sum: Polynomial<7, 3> = Polynomial::<P, N>::add(&p1, &p2);
+        for &c in sum.coeffs().iter() {
+            assert_eq!(c.as_i64(), 0);
+        }
+    }
+
+    #[test]
+    fn test_polynomial_sub() {
+        const P: i64 = 7;
+        const N: u32 = 3;
+        let p1 = Polynomial::<P, N>::new(vec![1, 2, 3, 4]);
+        let p2 = Polynomial::<P, N>::new(vec![1, 2, 3, 4]);
+        let sub: Polynomial<7, 3> = Polynomial::<P, N>::sub(&p1, &p2);
+        for &c in sub.coeffs().iter() {
+            assert_eq!(c.as_i64(), 0);
+        }
+    }
+
+    #[test]
+    fn test_polynomial_multiply() {
+        const P: i64 = 11;
+        const N: u32 = 3;
+        let p1 = Polynomial::<P, N>::new(vec![1, 2, 3, 4]);
+        let p2 = Polynomial::<P, N>::new(vec![1, 4, 10, 9, 3, 2, 5]);
+        let mul = Polynomial::<P, N>::multiply(&p1, &p1);
+        for (&c_mul, &c_p2) in mul.coeffs().iter().zip(p2.coeffs().iter()) {
+            assert_eq!(c_mul, c_p2);
+        }
+    }
+
+    #[test]
+    fn test_polynomial_rem_cyclo() {
+        const P: i64 = 7;
+        const N: u32 = 2;
+        let p = Polynomial::<P, N>::new(vec![1, 2, 3, 4, 5, 6, 7, 8]);
+        let rem = p.rem_cyclo();
+        let expected = Polynomial::<P, N>::new(vec![3, 3, 3, 3]);
+        println!("{:?}", rem.coeffs());
+        for (&c_rem, &c_expected) in rem.coeffs().iter().zip(expected.coeffs().iter()) {
+            assert_eq!(c_rem, c_expected);
+        }
+    }
+
+    #[test]
+    fn test_polynomial_eq() {
+        const P: i64 = 7;
+        const N: u32 = 3;
+        let p1 = Polynomial::<P, N>::new(vec![1, 2, 3, 4]);
+        let p2 = Polynomial::<P, N>::new(vec![1, 2, 3, 4]);
+        assert_eq!(p1, p2);
+        let p3 = Polynomial::<P, N>::new(vec![1, 2, 3, 4, 5]);
+        assert_ne!(p1, p3);
+    }
+
+    #[test]
+    fn test_polynomial_neg() {
+        const P: i64 = 7;
+        const N: u32 = 3;
+        let p = Polynomial::<P, N>::new(vec![1, 2, 3, 4]);
+        let neg = -p;
+        let expected = Polynomial::<P, N>::new(vec![6, 5, 4, 3]);
+        for (&c_neg, &c_expected) in neg.coeffs().iter().zip(expected.coeffs().iter()) {
+            assert_eq!(c_neg, c_expected);
+        }
     }
 }
