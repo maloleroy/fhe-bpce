@@ -57,3 +57,11 @@ impl CkksContext {
         Decryptor::new(self.context(), secret_key).unwrap()
     }
 }
+
+impl Clone for CkksContext {
+    fn clone(&self) -> Self {
+        let params = self.0.get_encryption_parameters().unwrap();
+        let sl = self.0.get_security_level().unwrap();
+        Self(Context::new(&params, false, sl).unwrap())
+    }
+}
