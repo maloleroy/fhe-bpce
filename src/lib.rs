@@ -38,7 +38,7 @@ impl Decode<Context> for Ciphertext {
 struct ExchangeData {
     // FIXME: Replace with ciphertext struct
     lhs: Vec<Ciphertext>,
-    rhs: Option<Vec<Ciphertext>>,
+    rhs: Vec<Option<Ciphertext>>,
     operation: Vec<ops::Operation>,
 }
 
@@ -48,7 +48,7 @@ impl Decode<Context> for ExchangeData {
     ) -> Result<Self, bincode::error::DecodeError> {
         Ok(Self {
             lhs: Vec::<Ciphertext>::decode(decoder)?,
-            rhs: Option::<Vec<Ciphertext>>::decode(decoder)?,
+            rhs: Vec::<Option<Ciphertext>>::decode(decoder)?,
             operation: Vec::<ops::Operation>::decode(decoder)?,
         })
     }
