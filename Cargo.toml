@@ -15,7 +15,7 @@ tokio = { version = "1.43.0", features = ["full"] }
 zeroize = { workspace = true }
 
 [workspace]
-members = ["ckks-lib", "fhe-core", "seal-lib"]
+members = ["ckks-lib", "fhe-core", "seal-lib", "fhe-select"]
 
 [workspace.dependencies]
 bincode = "2.0.1"
