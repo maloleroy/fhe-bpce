@@ -1,26 +1,43 @@
 use crate::{
     Plaintext,
-    cipher::{Ciphertext, Encryptor},
-    polynomial::Polynomial,
+    cipher::{Ciphertext, Encryptor, scaled::ScaledPolynomial},
 };
 
-impl Encryptor {
+impl<const P: i64, const N: u32> Encryptor<P, N> {
     #[must_use]
     #[inline]
     /// Perform homomorphic addition
-    pub fn homomorphic_add(&self, lhs: &Ciphertext, rhs: &Ciphertext) -> Ciphertext {
-        let raw_sum0 = Polynomial::add(&lhs.c0, &rhs.c0);
-        let raw_sum1 = Polynomial::add(&lhs.c1, &rhs.c1);
+    pub fn homomorphic_add(
+        &self,
+        lhs: &Ciphertext<P, N>,
+        rhs: &Ciphertext<P, N>,
+    ) -> Ciphertext<P, N> {
         Ciphertext {
-            c0: Polynomial::mod_reduce(&raw_sum0, self.config().modulus()),
-            c1: Polynomial::mod_reduce(&raw_sum1, self.config().modulus()),
+            c0: ScaledPolynomial::add(&lhs.c0, &rhs.c0),
+            c1: ScaledPolynomial::add(&lhs.c1, &rhs.c1),
         }
     }
 
     #[must_use]
     #[inline]
-    /// Perform homomorphic division
-    pub fn homomorphic_div_plain(&self, lhs: &Ciphertext, rhs: Plaintext) -> Ciphertext {
+    /// Perform homomorphic division by a plaintext
+    pub fn homomorphic_div_plain(
+        &self,
+        _lhs: &Ciphertext<P, N>,
+        _rhs: Plaintext,
+    ) -> Ciphertext<P, N> {
+        todo!()
+    }
+
+    #[must_use]
+    #[inline]
+    /// Perform homomorphic multiplication
+    pub fn homomorphic_multiplication(
+        &self,
+        _lhs: &Ciphertext<P, N>,
+        _rhs: Plaintext,
+    ) -> Ciphertext<P, N> {
+        // This is in here that we will have to perform RESCALE
         todo!()
     }
 }
@@ -39,7 +56,7 @@ mod tests {
         // FIXME: It often fails
         const PRECISION: f64 = 1e-1;
 
-        let config = Config::new(4096, 1_000_000_007, GaussianDistribParams::TC128);
+        let config = Config::<1_000_000_007, 12>::new(GaussianDistribParams::TC128);
         let (pkey, skey) = generate_keys(config);
 
         let encryptor = Encryptor::new(pkey, config);
@@ -51,8 +68,8 @@ mod tests {
         let sum = encryptor.homomorphic_add(&lhs, &rhs);
         let decrypted = decryptor.decrypt(&sum);
 
-        println!("decrypted: {:?}", decrypted);
-        for (p, d) in decrypted.iter().zip([6.0, 8.0, 10.0, 12.0].iter()) {
+        for (d, p) in decrypted.iter().zip([6.0, 8.0, 10.0, 12.0].iter()) {
+            println!("plaintex: {} ; decrypted: {}", p, d);
             assert!((p - d).abs() < PRECISION);
         }
     }

@@ -7,5 +7,6 @@
 extern crate alloc;
 
 pub mod f64;
-pub mod fq;
+#[cfg(feature = "alloc")]
+pub mod pring;
 pub mod rand;
