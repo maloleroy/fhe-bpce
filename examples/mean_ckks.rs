@@ -22,7 +22,7 @@ fn fake_read() -> Option<f64> {
 }
 
 fn main() {
-    let config = Config::new(4096, 10_000_000_000_000_007, GaussianDistribParams::TC128);
+    let config = Config::<10_000_000_000_000_007, 12>::new(GaussianDistribParams::TC128);
     let (pkey, skey) = generate_keys(config);
 
     let encryptor = Encryptor::new(pkey, config);

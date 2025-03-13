@@ -1,54 +1,37 @@
-use crate::polynomial::Coeff;
-
 #[derive(Debug, Clone, Copy)]
 /// CKKS configuration parameters
-pub struct Config {
-    /// Polynomial degree (N)
-    ///
-    /// `degree` is a power of two
-    degree: usize,
-    /// Modulus (q)
-    modulus: Coeff,
+pub struct Config<const P: i64, const N: u32> {
     /// Parameters for the Gaussian Distribution
     gdp: GaussianDistribParams,
 }
 
-impl Config {
+impl<const P: i64, const N: u32> Config<P, N> {
     #[must_use]
     #[inline]
     /// Constructor to create a new Config
-    ///
-    /// # Panics
-    ///
-    /// Panics if the degree is not a power of 2
-    pub const fn new(degree: usize, modulus: Coeff, gdp: GaussianDistribParams) -> Self {
-        assert!(degree.is_power_of_two(), "degree must be a power of 2");
-        Self {
-            degree,
-            modulus,
-            gdp,
-        }
+    pub const fn new(gdp: GaussianDistribParams) -> Self {
+        Self { gdp }
     }
 
     #[must_use]
     #[inline]
     /// Get the degree parameter
     pub const fn degree(&self) -> usize {
-        self.degree
+        1 << N
     }
 
     #[must_use]
     #[inline]
     /// Get the degree parameter as a power of two.
     pub const fn degree_as_power_of_two(&self) -> u32 {
-        self.degree.trailing_zeros()
+        N
     }
 
     #[must_use]
     #[inline]
     /// Get the modulus parameter
-    pub const fn modulus(&self) -> Coeff {
-        self.modulus
+    pub const fn modulus(&self) -> i64 {
+        P
     }
 
     #[must_use]
