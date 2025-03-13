@@ -1,15 +1,19 @@
+//! `std` f64 utilities
+
 #[must_use]
+#[inline]
 /// Fast exponentiation
-pub fn powi(mut base: f64, mut exp: u16) -> f64 {
-    let mut result = 1.0;
-    while exp > 0 {
-        if exp % 2 == 1 {
-            result *= base;
-        }
-        base *= base;
-        exp /= 2;
-    }
-    result
+pub fn powi(base: f64, exp: u16) -> f64 {
+    libm::pow(base, f64::from(exp))
+    // let mut result = 1.0;
+    // while exp > 0 {
+    //     if exp % 2 == 1 {
+    //         result *= base;
+    //     }
+    //     base *= base;
+    //     exp /= 2;
+    // }
+    // result
 }
 
 #[must_use]
@@ -26,6 +30,7 @@ pub fn round_to(x: f64, decimal_places: u16) -> f64 {
 }
 
 #[must_use]
+#[inline]
 /// Rounds a given value to the nearest integer
 ///
 /// ## Warning
@@ -33,15 +38,7 @@ pub fn round_to(x: f64, decimal_places: u16) -> f64 {
 /// On very big numbers (> `i64::MAX`), this function may return incorrect results.
 pub fn round(x: f64) -> i64 {
     #[allow(clippy::cast_possible_truncation)]
-    let floor = x as i64;
-    #[allow(clippy::cast_precision_loss)]
-    let fract = x - floor as f64;
-
-    if fract.abs() >= 0.5 {
-        floor + floor.signum()
-    } else {
-        floor
-    }
+    (libm::round(x) as i64)
 }
 
 #[cfg(test)]

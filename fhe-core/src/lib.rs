@@ -3,7 +3,10 @@
 #![warn(clippy::nursery, clippy::pedantic)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 
-/// Re-export of a Finite Field maths crate.
-pub use ff;
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 pub mod f64;
+#[cfg(feature = "alloc")]
+pub mod pring;
 pub mod rand;

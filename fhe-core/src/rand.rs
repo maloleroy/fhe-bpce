@@ -1,8 +1,7 @@
 //! CSRNG backed by `getrandom`
-use core::{
-    mem::MaybeUninit,
-    ops::{Add, Sub},
-};
+use core::mem::MaybeUninit;
+
+pub mod distributions;
 
 /// Generate a random value of type `T` using `getrandom`.
 ///
@@ -44,70 +43,13 @@ pub fn rand_slice<T: Sized>(slice: &mut [MaybeUninit<T>]) -> RandResult<()> {
     Ok(())
 }
 
-/// Trait for types that can be used as a range for random number generation.
-///
-/// This trait is implemented for all integer types and floating point types.
-pub trait RandRange: Copy + Add + Sub + Sized {
-    #[must_use]
-    /// Calculates the least nonnegative remainder of self (mod rhs).
-    fn rem_euclid(self, rhs: <Self as Sub>::Output) -> Self;
-}
-
-macro_rules! impl_randrange {
-    ($($t:ty),*) => {
-        $(impl RandRange for $t {
-            #[inline]
-            fn rem_euclid(self, rhs: <Self as Sub>::Output) -> Self {
-                self.rem_euclid(rhs)
-            }
-        })*
-    };
-}
-
-impl_randrange!(u8, u16, u32, u64, u128, i8, i16, i32, i64, i128);
-
-/// Generate a random instance of type `T` in the given range.
-///
-/// # Errors
-///
-/// Returns an error is randomness fails to be generated.
-pub fn rand_range<T: RandRange>(r: core::ops::Range<T>) -> RandResult<<T as Add>::Output> {
-    let rd = unsafe { rand::<T>() }?;
-    let modulus = r.end - r.start;
-    Ok(RandRange::rem_euclid(rd, modulus) + r.start)
-}
-
-/// Generate a random number in the given range using a Gaussian distribution.
-///
-/// # Errors
-///
-/// Returns an error is randomness fails to be generated.
-pub fn rand_range_gaussian(_r: core::ops::Range<i64>) -> RandResult<i64> {
-    todo!("Gaussian distribution")
-}
-
 /// Result type for `rand` function.
 pub type RandResult<T> = Result<T, getrandom::Error>;
 
 #[cfg(test)]
 mod tests {
+    #[cfg(miri)]
     use super::*;
-
-    #[test]
-    fn test_rand_range() {
-        macro_rules! test_rand_range {
-            ($t:ty, $range:expr, $nb:expr) => {{
-                for _ in 0..$nb {
-                    let rd = rand_range($range).unwrap();
-                    assert!($range.contains(&rd));
-                }
-            }};
-        }
-
-        test_rand_range!(u8, 3..42, 15);
-        test_rand_range!(u32, 3..42, 20);
-        test_rand_range!(i64, -178..99999, 20);
-    }
 
     #[cfg(miri)]
     #[test]

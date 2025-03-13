@@ -1,6 +1,6 @@
 use ckks_lib::{
     cipher::{Decryptor, Encryptor},
-    config::Config,
+    config::{Config, GaussianDistribParams},
     key::generate_keys,
 };
 use core::sync::atomic::AtomicUsize;
@@ -22,16 +22,16 @@ fn fake_read() -> Option<f64> {
 }
 
 fn main() {
-    let config = Config::new(4096, 100_000_000_007);
-    let (pkey, skey) = generate_keys(config, 100, 10);
+    let config = Config::<10_000_000_000_000_007, 12>::new(GaussianDistribParams::TC128);
+    let (pkey, skey) = generate_keys(config);
 
     let encryptor = Encryptor::new(pkey, config);
     let decryptor = Decryptor::new(skey, config);
 
-    let mut mean_e = encryptor.encrypt(&[0.0], 1e7);
+    let mut mean_e = encryptor.encrypt(&[0.0], 1e6);
 
     while let Some(amount) = fake_read() {
-        let ciphertext = encryptor.encrypt(&[amount], 1e7);
+        let ciphertext = encryptor.encrypt(&[amount], 1e6);
         mean_e = encryptor.homomorphic_add(&mean_e, &ciphertext);
     }
 
