@@ -1,11 +1,12 @@
-use api::*;
+use seal_lib::*;
+use seal_lib::context::*;
 
 struct SelectableItem<const P: i64, const N: u32, const F: usize> {
-    ciphertext: Ciphertext<P, N>,
-    flags: [Ciphertext<P, N>; F],
+    ciphertext: Ciphertext,
+    flags: [Ciphertext; F],
 }
 
-impl <const P: i64, const N: u32, const F: usize> SelectableItem<P, N, F> {
+impl<const P: i64, const N: u32, const F: usize> SelectableItem<P, N, F> {
     pub fn from(value: f64) -> Self {
         SelectableItem {
             ciphertext: Ciphertext::from(value),
@@ -16,16 +17,14 @@ impl <const P: i64, const N: u32, const F: usize> SelectableItem<P, N, F> {
 
 struct SelectableCollection<const P: i64, const N: u32, const F: usize> {
     items: Vec<SelectableItem<P, N, F>>,
-    encryptor: Encryptor<P, N>,
-    decryptor: Decryptor<P, N>
+    context: CkksContext,
 }
 
-impl <const P: i64, const N: u32, const F: usize> SelectableCollection<P, N, F> {
+impl<const P: i64, const N: u32, const F: usize> SelectableCollection<P, N, F> {
     pub fn new() -> Self {
         SelectableCollection {
             items: Vec::new(),
-            encryptor: Encryptor::new(),
-            decryptor: Decryptor::new()
+            context: CkksContext::new(DegreeType::D4096, DegreeType::D4096, SecurityLevel::TC128),
         }
     }
 
@@ -38,11 +37,7 @@ impl <const P: i64, const N: u32, const F: usize> SelectableCollection<P, N, F> 
     }
 
     pub fn push_plain(&mut self, item: f64) {
-        let item = SelectableItem {
-            ciphertext: Ciphertext::from(item),
-            flags: [Ciphertext::new(); F],
-        };
-        self.items.push(item);
+        self.items.push(SelectableItem::from(item));
     }
 }
 
@@ -62,10 +57,7 @@ mod tests {
     #[test]
     fn test_push() {
         let mut collection = SelectableCollection::<P, N, F>::new();
-        let item = SelectableItem {
-            ciphertext: Ciphertext::new(),
-            flags: [Ciphertext::new(), Ciphertext::new()],
-        };
+        let item = SelectableItem::from(1.0);
         collection.push(item);
         assert_eq!(collection.len(), 1);
     }
