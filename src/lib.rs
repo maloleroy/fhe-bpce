@@ -8,11 +8,13 @@ pub mod ops;
 use bincode::{Decode, Encode};
 
 #[derive(Encode)]
+/// A wrapper around the different homomorphic encryption ciphertexts.
 pub enum Ciphertext {
     Seal(seal_lib::Ciphertext),
 }
 
 #[derive(Clone)]
+/// A wrapper around the different homomorphic encryption contexts.
 pub enum Context {
     Seal(seal_lib::context::CkksContext),
 }
@@ -32,6 +34,7 @@ impl Decode<Context> for Ciphertext {
 }
 
 #[derive(Encode)]
+/// The data that will be exchanged by the client and the server.
 struct ExchangeData {
     // FIXME: Replace with ciphertext struct
     lhs: Vec<Ciphertext>,
@@ -43,13 +46,10 @@ impl Decode<Context> for ExchangeData {
     fn decode<D: bincode::de::Decoder<Context = Context>>(
         decoder: &mut D,
     ) -> Result<Self, bincode::error::DecodeError> {
-        let ctx = decoder.context().clone();
-        let mut dc = decoder.with_context(ctx);
-
         Ok(Self {
-            lhs: Vec::<Ciphertext>::decode(&mut dc)?,
-            rhs: Option::<Vec<Ciphertext>>::decode(&mut dc)?,
-            operation: Vec::<ops::Operation>::decode(&mut dc)?,
+            lhs: Vec::<Ciphertext>::decode(decoder)?,
+            rhs: Option::<Vec<Ciphertext>>::decode(decoder)?,
+            operation: Vec::<ops::Operation>::decode(decoder)?,
         })
     }
 }
