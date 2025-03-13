@@ -65,24 +65,22 @@ pub fn generate_keys<const P: i64, const N: u32>(
         #[allow(clippy::range_minus_one)]
         let u = Uniform::<i64>::new(0..=P - 1);
 
-        let p1 = { Polynomial::random(&u) };
+        let p1 = Polynomial::random(&u);
 
         let p0 = {
             let g = Gaussian::new(config.gdp().mu(), config.gdp().sigma());
             let beta = config.gdp().beta();
             let t = Truncated::new(g, -beta..=beta);
 
-            let coeffs = skey
-                .p
+            let ask = Polynomial::multiply(&(-p1.clone()), skey.p());
+
+            let coeffs = ask
                 .coeffs()
                 .iter()
-                .zip(p1.coeffs())
-                .map(|(&sk, &r)| {
+                .map(|&c| {
                     // Gaussian distribution bounded by beta
                     let e = t.sample().unwrap();
-                    let r_128 = i128::from(r.as_i64());
-                    let sk_128 = i128::from(sk.as_i64());
-                    i64::try_from((-r_128 * sk_128).rem_euclid(P.into())).unwrap() + round(e)
+                    c.as_i64() + round(e)
                 })
                 .collect();
             Polynomial::new(coeffs)
