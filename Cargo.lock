@@ -98,6 +98,7 @@ name = "bpce-fhe"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "fhe-core",
  "log",
  "mimalloc",
  "pretty_env_logger",
@@ -137,14 +138,6 @@ name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "baf1de4339761588bc0619e3cbc0120ee582ebb74b53b4efbf79117bd2da40fd"
-
-[[package]]
-name = "ckks-lib"
-version = "0.1.0"
-dependencies = [
- "fhe-core",
- "zeroize",
-]
 
 [[package]]
 name = "clang-sys"
@@ -189,6 +182,7 @@ dependencies = [
 name = "fhe-core"
 version = "0.1.0"
 dependencies = [
+ "bincode",
  "getrandom",
  "libm",
  "zeroize",
@@ -198,7 +192,7 @@ dependencies = [
 name = "fhe-select"
 version = "0.1.0"
 dependencies = [
- "bpce-fhe",
+ "fhe-core",
  "seal-lib",
  "zeroize",
 ]
@@ -417,9 +411,9 @@ dependencies = [
 
 [[package]]
 name = "prettyplease"
-version = "0.2.30"
+version = "0.2.31"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1ccf34da56fc294e7d4ccf69a85992b7dfb826b7cf57bac6a70bba3494cc08a"
+checksum = "5316f57387668042f561aae71480de936257848f9c43ce528e311d89a07cadeb"
 dependencies = [
  "proc-macro2",
  "syn",
@@ -517,6 +511,7 @@ name = "seal-lib"
 version = "0.1.0"
 dependencies = [
  "bincode",
+ "fhe-core",
  "sealy",
 ]
 

@@ -1,10 +1,101 @@
-use seal_lib::context::{CkksContext, DegreeType, Evaluator, SecurityLevel};
+use seal_lib::Ciphertext;
 
 rouille::rouille! {
     utilisons ::log comme journal;
+    utilisons seal_lib::{CkksHOperation, SealCkksCS, context::SealCkksContext comme ContexteCkks , DegreeType comme TypeDeDegré, SecurityLevel comme NiveauDeSécurité};
+    utilisons std::sync::mpsc::{channel comme canal, Sender comme Émetteur, Receiver comme Récepteur};
+    utilisons std::thread::spawn comme lancer;
+    utilisons fhe_core::api::CryptoSystem comme _;
+
+    utilisons bpce_fhe::exchange::ExchangeData comme ÉchangeDeDonnées;
 
     #[global_allocator]
     statique ALLOCATEUR_GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
+    constant CONFIGURATION: bincode::config::Configuration = bincode::config::standard();
+
+    // Cette fonction sera lancée sur le serveur
+    fonction serveur(r: Récepteur<Vec<u8>>, e: Émetteur<Vec<u8>>) {
+        journal::info!("[SERVEUR] Lancement du serveur...");
+
+        soit contexte = ContexteCkks::new(TypeDeDegré::D2048, TypeDeDegré::D2048, NiveauDeSécurité::TC128);
+        soit systeme = SealCkksCS::new(contexte.clone(), 1e6);
+
+        journal::info!("[SERVEUR] Serveur lancé.");
+
+        journal::debug!("[SERVEUR] Réception des données chiffrées...");
+
+        soit données_encodées = r.recv().déballer();
+        soit (données_à_échanger, _): (ÉchangeDeDonnées<SealCkksCS>, _) = bincode::decode_from_slice_with_context(&données_encodées, CONFIGURATION, contexte).déballer();
+
+        journal::info!("[SERVEUR] Opérations sur les données chiffrées...");
+
+        soit mutable résultats: Vec<Box<Ciphertext>> = Vec::new();
+        pour (mdg, mdd, op) de données_à_échanger.iter_over_data() {
+            soit résultat = selon op {
+                CkksHOperation::Add => {
+                    systeme.operate(CkksHOperation::Add, mdg, mdd.map(|m| m.as_ref()))
+                }
+                CkksHOperation::Mul => {
+                    systeme.operate(CkksHOperation::Mul, mdg, mdd.map(|m| m.as_ref()))
+                }
+                _ => {
+                    oups!("[SERVEUR] Opération non supportée.");
+                }
+            };
+            résultats.pousser(résultat);
+        }
+
+        journal::debug!("[SERVEUR] Renvoi des résultats chiffrés...");
+
+        soit résultats_encodés = bincode::encode_to_vec(résultats, CONFIGURATION).déballer();
+
+        e.send(résultats_encodés).déballer();
+
+        journal::debug!("[SERVEUR] Extinction.");
+    }
+
+    fonction client(e: Émetteur<Vec<u8>>, r: Récepteur<Vec<u8>>) {
+        journal::info!("[CLIENT] Lancement du client...");
+
+        soit contexte = ContexteCkks::new(TypeDeDegré::D2048, TypeDeDegré::D2048, NiveauDeSécurité::TC128);
+        soit systeme = SealCkksCS::new(contexte.clone(), 1e6);
+
+        journal::info!("[CLIENT] Client lancé.");
+
+        soit membres_de_gauche = vec![2.0, 5.0];
+        soit membres_de_droite = vec![3.0, 2.0];
+        debug_assert_eq!(membres_de_gauche.len(), membres_de_droite.len());
+        soit opérations = vec![CkksHOperation::Add, CkksHOperation::Mul];
+        debug_assert_eq!(membres_de_gauche.len(), opérations.len());
+        journal::info!("[CLIENT] Opérandes: {:?} ; {:?}", membres_de_gauche, membres_de_droite);
+        journal::info!("[CLIENT] Opérations : {:?}", opérations);
+
+        journal::debug!("[CLIENT] Chiffrement des données...");
+
+        soit membres_de_gauche_chiffrés: Vec<_> = membres_de_gauche.iter().map(|m| systeme.cipher(m)).collect();
+        soit membres_de_droite_chiffrés: Vec<_> = membres_de_droite.iter().map(|m| Quelque(systeme.cipher(m))).collect();
+
+        soit données_à_échanger = ÉchangeDeDonnées::<SealCkksCS>::new(membres_de_gauche_chiffrés, membres_de_droite_chiffrés, opérations);
+
+        journal::debug!("[CLIENT] Envoi des données chiffrées...");
+
+        soit données_encodées = bincode::encode_to_vec(données_à_échanger, CONFIGURATION).déballer();
+
+        e.send(données_encodées).déballer();
+
+        journal::debug!("[CLIENT] Réception des résultats chiffrés...");
+
+        soit résultats_encodés = r.recv().déballer();
+
+        soit (résultats, _): (Vec<Box<Ciphertext>>, _) = bincode::decode_from_slice_with_context(&résultats_encodés, CONFIGURATION, contexte).déballer();
+
+        journal::debug!("[CLIENT] Déchiffrement des résultats...");
+
+        soit résultats_déchiffrés: Vec<_> = résultats.iter().map(|r| systeme.decipher(r)).collect();
+
+        journal::info!("[CLIENT] Résultats : {:?}", résultats_déchiffrés);
+    }
 
     fonction principale() {
         pretty_env_logger::formatted_builder()
@@ -16,35 +107,13 @@ rouille::rouille! {
             )
             .init();
 
-        journal::info!("Starting FHE client...");
+        soit (c_émetteur, c_récepteur) = canal::<Vec<u8>>();
+        soit (r_émetteur, r_récepteur) = canal::<Vec<u8>>();
 
-        soit context = CkksContext::new(DegreeType::D2048, DegreeType::D2048, SecurityLevel::TC128);
+        let h_client = lancer(|| client(c_émetteur, r_récepteur));
+        let h_serveur = lancer(|| serveur(c_récepteur, r_émetteur));
 
-        soit (skey, pkey) = context.generate_keys();
-
-        soit encryptor = context.encryptor(&pkey);
-        soit decryptor = context.decryptor(&skey);
-        soit evaluator = context.evaluator();
-        soit encoder = context.encoder(1e6);
-
-        journal::info!("FHE client started.");
-
-        soit plaintext1 = vec![1.0, 2.0, 3.0];
-        soit plaintext2 = vec![4.0, 5.0, 6.0];
-        assert_eq!(plaintext1.len(), plaintext2.len());
-        soit plain_sum = plaintext1.iter().zip(plaintext2.iter()).map(|(a, b)| a + b).collect::<Vec<f64>>();
-
-        soit encoded1 = encoder.encode_f64(&plaintext1).déballer();
-        soit encoded2 = encoder.encode_f64(&plaintext2).déballer();
-        soit ciphertext1 = encryptor.encrypt(&encoded1).déballer();
-        soit ciphertext2 = encryptor.encrypt(&encoded2).déballer();
-        soit ciphertext = evaluator.add(&ciphertext1, &ciphertext2).déballer();
-        soit decrypted = decryptor.decrypt(&ciphertext).déballer();
-        soit decoded = encoder.decode_f64(&decrypted).déballer();
-
-        journal::info!("Computing sum of {:?} and {:?}", &plaintext1, &plaintext2);
-        journal::info!("Plain: {:?} ; Homomorphic: {:?}", &plain_sum, &decoded[..plaintext1.len()]);
-
-        journal::info!("Shutting down FHE client...");
+        h_client.join().déballer();
+        h_serveur.join().déballer();
     }
 }
