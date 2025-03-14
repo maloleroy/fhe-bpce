@@ -3,12 +3,25 @@
 pub mod context;
 pub use bincode::{Decode, Encode};
 use context::CkksContext;
-pub use sealy::{BFVEncoder, BFVEvaluator, CKKSEncoder, CKKSEvaluator, Decryptor};
+pub use sealy::{
+    BFVEncoder, BFVEvaluator, CKKSEncoder, CKKSEvaluator, Decryptor, DegreeType, Plaintext,
+    SecurityLevel,
+};
 use sealy::{FromBytes, ToBytes};
 
 pub type Encryptor = sealy::Encryptor<sealy::Asym>;
 
 pub struct Ciphertext(sealy::Ciphertext);
+
+impl Ciphertext {
+    pub fn new(encryptor: &Encryptor, x: &Plaintext) -> Self {
+        Self(encryptor.encrypt(x).unwrap())
+    }
+
+    pub fn decrypt(&self, decryptor: &Decryptor) -> Plaintext {
+        decryptor.decrypt(&self.0).unwrap()
+    }
+}
 
 impl Encode for Ciphertext {
     fn encode<E: bincode::enc::Encoder>(
