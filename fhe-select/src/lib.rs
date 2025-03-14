@@ -2,4 +2,6 @@
 #![warn(clippy::nursery, clippy::pedantic)]
 #![forbid(unsafe_code)]
 
-pub mod selectable_collection;
+mod selectable_collection;
+
+pub use selectable_collection::{SelectableCollection, SelectableItem};

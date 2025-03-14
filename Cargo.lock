@@ -198,6 +198,7 @@ dependencies = [
 name = "fhe-select"
 version = "0.1.0"
 dependencies = [
+ "bpce-fhe",
  "seal-lib",
  "zeroize",
 ]

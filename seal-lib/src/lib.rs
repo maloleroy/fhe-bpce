@@ -4,14 +4,15 @@ pub mod context;
 pub use bincode::{Decode, Encode};
 use context::CkksContext;
 pub use sealy::{
-    BFVEncoder, BFVEvaluator, CKKSEncoder, CKKSEvaluator, Decryptor, DegreeType, Plaintext,
-    SecurityLevel,
+    BFVEncoder, BFVEvaluator, CKKSEncoder, CKKSEvaluator, Decryptor, DegreeType, Plaintext, Evaluator,
+    SecurityLevel, PublicKey, SecretKey
 };
 use sealy::{FromBytes, ToBytes};
 
 pub type Encryptor = sealy::Encryptor<sealy::Asym>;
 
-pub struct Ciphertext(sealy::Ciphertext);
+#[derive(Clone)]
+pub struct Ciphertext(pub sealy::Ciphertext);
 
 impl Ciphertext {
     pub fn new(encryptor: &Encryptor, x: &Plaintext) -> Self {
