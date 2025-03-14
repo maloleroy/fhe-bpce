@@ -115,8 +115,8 @@ impl<const P: i64, const N: u32> Decryptor<P, N> {
 
 #[cfg(test)]
 mod tests {
-    use crate::config::GaussianDistribParams;
     use super::*;
+    use crate::config::GaussianDistribParams;
 
     #[test]
     fn test_encrypt_only() {

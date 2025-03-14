@@ -1,31 +1,25 @@
-use bpce_fhe::{Ciphertext, Context, Decryptor, Encryptor};
-use seal_lib::{
-    context::{CkksContext, Evaluator},
-};
+use fhe_core::api::CryptoSystem;
 
-pub struct SelectableItem<const P: i64, const N: u32, const F: usize> {
-    ciphertext: bpce_fhe::Ciphertext,
-    flags: [Ciphertext; F],
+pub struct SelectableItem<const P: i64, const N: u32, const F: usize, C: CryptoSystem> {
+    ciphertext: C::CiphertextHandle,
+    // flags: [C::CiphertextHandle; F],
 }
 
-impl<const P: i64, const N: u32, const F: usize> SelectableItem<P, N, F> {
-    pub fn new(value: f64, encryptor: &Encryptor) -> Self {
+impl<const P: i64, const N: u32, const F: usize, C: CryptoSystem> SelectableItem<P, N, F, C> {
+    pub fn new(value: &C::Plaintext, cs: &C) -> Self {
         SelectableItem {
-            ciphertext: encryptor.encrypt_f64(value),
-            flags: core::array::from_fn(|_| encryptor.encrypt_f64(0.)),
+            ciphertext: cs.cipher(value),
+            // flags: core::array::from_fn(|_| cs.cipher(0.0)),
         }
     }
 }
 
-pub struct SelectableCollection<const P: i64, const N: u32, const F: usize> {
-    items: Vec<SelectableItem<P, N, F>>,
-    context: Context,
-    encryptor: bpce_fhe::Encryptor,
-    evaluator: bpce_fhe::Evaluator,
-    decryptor: bpce_fhe::Decryptor,
+pub struct SelectableCollection<const P: i64, const N: u32, const F: usize, C: CryptoSystem> {
+    items: Vec<SelectableItem<P, N, F, C>>,
+    cs: C,
 }
 
-impl<const P: i64, const N: u32, const F: usize> SelectableCollection<P, N, F> {
+impl<const P: i64, const N: u32, const F: usize, C: CryptoSystem> SelectableCollection<P, N, F, C> {
     pub fn new(context: Context) -> Self {
         let seal_ctx = match &context {
             Context::Seal(seal_ctx) => seal_ctx,

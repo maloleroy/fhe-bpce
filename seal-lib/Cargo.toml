@@ -5,4 +5,5 @@ edition = "2024"
 
 [dependencies]
 bincode = { workspace = true }
+fhe-core = { workspace = true }
 sealy = "0.2.0"
