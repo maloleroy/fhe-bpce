@@ -1,11 +1,10 @@
-use seal_lib::Ciphertext;
-
 rouille::rouille! {
     utilisons ::log comme journal;
-    utilisons seal_lib::{CkksHOperation, SealCkksCS, context::SealCkksContext comme ContexteCkks , DegreeType comme TypeDeDegré, SecurityLevel comme NiveauDeSécurité};
+    utilisons seal_lib::{Ciphertext, CkksHOperation, SealCkksCS, context::SealCkksContext comme ContexteCkks , DegreeType comme TypeDeDegré, SecurityLevel comme NiveauDeSécurité};
     utilisons std::sync::mpsc::{channel comme canal, Sender comme Émetteur, Receiver comme Récepteur};
     utilisons std::thread::spawn comme lancer;
     utilisons fhe_core::api::CryptoSystem comme _;
+    utilisons std::time::Instant;
 
     utilisons bpce_fhe::exchange::ExchangeData comme ÉchangeDeDonnées;
 
@@ -30,6 +29,8 @@ rouille::rouille! {
 
         journal::info!("[SERVEUR] Opérations sur les données chiffrées...");
 
+        soit début = Instant::now();
+
         soit mutable résultats: Vec<Box<Ciphertext>> = Vec::new();
         pour (mdg, mdd, op) de données_à_échanger.iter_over_data() {
             soit résultat = selon op {
@@ -45,6 +46,9 @@ rouille::rouille! {
             };
             résultats.pousser(résultat);
         }
+
+        soit fin = début.elapsed();
+        journal::info!("[SERVEUR] Temps d'opération: {:?}", fin);
 
         journal::debug!("[SERVEUR] Renvoi des résultats chiffrés...");
 

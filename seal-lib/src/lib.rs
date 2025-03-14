@@ -1,6 +1,4 @@
 //! Convenient wrapper around Microsoft SEAL library.
-
-pub mod context;
 pub use bincode::{Decode, Encode};
 use fhe_core::api::CryptoSystem;
 pub use sealy::{
@@ -8,6 +6,9 @@ pub use sealy::{
     Plaintext, PublicKey, SecretKey, SecurityLevel,
 };
 use sealy::{FromBytes, ToBytes};
+
+pub mod context;
+mod impls;
 
 #[derive(Clone)]
 /// Ciphertext from Microsoft SEAL.
@@ -96,12 +97,12 @@ impl CryptoSystem for SealCkksCS {
         match operation {
             CkksHOperation::Add => {
                 let rhs = rhs.expect("Addition requires two operands.");
-                let result = self.evaluator.add(&lhs.0, &rhs.0).unwrap();
+                let result = impls::homom_add(&self.evaluator, &lhs.0, &rhs.0);
                 Box::new(Ciphertext(result))
             }
             CkksHOperation::Mul => {
                 let rhs = rhs.expect("Multiplication requires two operands.");
-                let result = self.evaluator.multiply(&lhs.0, &rhs.0).unwrap();
+                let result = impls::homom_mul(&self.evaluator, &lhs.0, &rhs.0);
                 Box::new(Ciphertext(result))
             }
         }
@@ -167,12 +168,12 @@ impl CryptoSystem for SealBfvCS {
         match operation {
             BfvHOperation::Add => {
                 let rhs = rhs.expect("Addition requires two operands.");
-                let result = self.evaluator.add(&lhs.0, &rhs.0).unwrap();
+                let result = impls::homom_add(&self.evaluator, &lhs.0, &rhs.0);
                 Box::new(Ciphertext(result))
             }
             BfvHOperation::Mul => {
                 let rhs = rhs.expect("Multiplication requires two operands.");
-                let result = self.evaluator.multiply(&lhs.0, &rhs.0).unwrap();
+                let result = impls::homom_mul(&self.evaluator, &lhs.0, &rhs.0);
                 Box::new(Ciphertext(result))
             }
         }
