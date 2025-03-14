@@ -3,10 +3,10 @@
 #![forbid(unsafe_code)]
 
 pub mod ops;
-
 use bincode::{Decode, Encode};
+use seal_lib::Evaluator as _;
 
-#[derive(Encode)]
+#[derive(Encode, Clone)]
 #[non_exhaustive]
 /// A wrapper around the different homomorphic encryption ciphertexts.
 pub enum Ciphertext {
@@ -33,6 +33,35 @@ impl Context {
         match creation_parameters {
             ContextCreationParameters::SealCkks { pmod, cmod, sl } => {
                 Self::Seal(seal_lib::context::CkksContext::new(pmod, cmod, sl))
+            }
+        }
+    }
+
+    pub fn evaluator(&self) -> Evaluator {
+        match self {
+            Self::Seal(seal_ctx) => {
+                let evaluator = seal_ctx.evaluator();
+                Evaluator::SealCkks(evaluator)
+            }
+        }
+    }
+
+    pub fn encryptor(&self, pkey: &seal_lib::PublicKey) -> Encryptor {
+        match self {
+            Self::Seal(seal_ctx) => {
+                let encoder = seal_ctx.encoder(1e6);
+                let encryptor = seal_ctx.encryptor(pkey);
+                Encryptor::SealCkks { encoder, encryptor }
+            }
+        }
+    }
+
+    pub fn decryptor(&self, skey: &seal_lib::SecretKey) -> Decryptor {
+        match self {
+            Self::Seal(seal_ctx) => {
+                let encoder = seal_ctx.encoder(1e6);
+                let decryptor = seal_ctx.decryptor(skey);
+                Decryptor::SealCkks { encoder, decryptor }
             }
         }
     }
@@ -104,6 +133,59 @@ impl Decryptor {
 pub enum Evaluator {
     SealCkks(seal_lib::CKKSEvaluator),
     SealBfv(seal_lib::BFVEvaluator),
+}
+
+impl Evaluator {
+    pub fn add(&self, lhs: &Ciphertext, rhs: &Ciphertext) -> Ciphertext {
+        match self {
+            Self::SealCkks(evaluator) => {
+                let Ciphertext::Seal(lhs_inner) = lhs;
+                let seal_lib::Ciphertext(lhs_seal) = lhs_inner;
+                let Ciphertext::Seal(rhs_inner) = rhs;
+                let seal_lib::Ciphertext(rhs_seal) = rhs_inner;
+                Ciphertext::Seal(seal_lib::Ciphertext(
+                    evaluator.add(lhs_seal, rhs_seal).unwrap(),
+                ))
+            }
+            Self::SealBfv(_) => {
+                panic!("BFV cannot be used to add ciphertexts yet.")
+            }
+        }
+    }
+
+    pub fn sub(&self, lhs: &Ciphertext, rhs: &Ciphertext) -> Ciphertext {
+        match self {
+            Self::SealCkks(evaluator) => {
+                let Ciphertext::Seal(lhs_inner) = lhs;
+                let seal_lib::Ciphertext(lhs_seal) = lhs_inner;
+                let Ciphertext::Seal(rhs_inner) = rhs;
+                let seal_lib::Ciphertext(rhs_seal) = rhs_inner;
+                Ciphertext::Seal(seal_lib::Ciphertext(
+                    evaluator.sub(lhs_seal, rhs_seal).unwrap(),
+                ))
+            }
+            Self::SealBfv(_) => {
+                panic!("BFV cannot be used to subtract ciphertexts yet.")
+            }
+        }
+    }
+
+    pub fn mul(&self, lhs: &Ciphertext, rhs: &Ciphertext) -> Ciphertext {
+        match self {
+            Self::SealCkks(evaluator) => {
+                let Ciphertext::Seal(lhs_inner) = lhs;
+                let seal_lib::Ciphertext(lhs_seal) = lhs_inner;
+                let Ciphertext::Seal(rhs_inner) = rhs;
+                let seal_lib::Ciphertext(rhs_seal) = rhs_inner;
+                Ciphertext::Seal(seal_lib::Ciphertext(
+                    evaluator.multiply(lhs_seal, rhs_seal).unwrap(),
+                ))
+            }
+            Self::SealBfv(_) => {
+                panic!("BFV cannot be used to multiply ciphertexts.")
+            }
+        }
+    }
 }
 
 impl Decode<Context> for Ciphertext {
