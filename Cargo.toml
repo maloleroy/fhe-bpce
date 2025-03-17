@@ -20,5 +20,5 @@ members = ["fhe-core", "seal-lib", "fhe-select"]
 
 [workspace.dependencies]
 bincode = "2.0.1"
-fhe-core = { path = "fhe-core", features = ["zeroize"] }
+fhe-core = { path = "fhe-core" }
 zeroize = { version = "1.8.1", features = ["alloc", "derive"] }
