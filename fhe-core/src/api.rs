@@ -1,22 +1,5 @@
 //! This module defines the core API of FHE cryptosystems.
 
-/// A handle to a value.
-///
-/// A very good example of this is `Box`, which is a handle to a value on the heap.
-/// You can also use other types of smart pointers, or even raw pointers if you're feeling adventurous.
-pub trait Handle: core::ops::Deref<Target = Self::Inner> {
-    type Inner;
-    fn from_raw_inner(inner: Self::Inner) -> Self;
-}
-
-#[cfg(feature = "alloc")]
-impl<T> Handle for alloc::boxed::Box<T> {
-    type Inner = T;
-    fn from_raw_inner(inner: T) -> Self {
-        Self::new(inner)
-    }
-}
-
 /// A trait that defines the core API of a FHE cryptosystem.
 pub trait CryptoSystem {
     /// The plaintext type for the FHE scheme.
