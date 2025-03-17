@@ -30,6 +30,18 @@ where
         }
     }
 
+    /// Returns the number of exchanged data.
+    pub fn len(&self) -> usize {
+        assert_eq!(self.lhs.len(), self.rhs.len());
+        assert_eq!(self.lhs.len(), self.operation.len());
+        self.lhs.len()
+    }
+
+    /// Returns `true` if the exchanged data is empty.
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     /// Iterate over the exchanged data.
     pub fn iter_over_data(
         &self,
