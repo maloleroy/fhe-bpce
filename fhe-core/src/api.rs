@@ -87,11 +87,7 @@ mod private {
 
     // Assert that CryptoSystem is `dyn` compatible.
     fn any_operation<C, P>(
-        _system: &dyn CryptoSystem<
-            Ciphertext = C,
-            Plaintext = P,
-            Operation = (),
-        >,
+        _system: &dyn CryptoSystem<Ciphertext = C, Plaintext = P, Operation = ()>,
         other_param: u8,
     ) -> u8 {
         other_param
