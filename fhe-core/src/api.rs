@@ -4,7 +4,7 @@
 ///
 /// A very good example of this is `Box`, which is a handle to a value on the heap.
 /// You can also use other types of smart pointers, or even raw pointers if you're feeling adventurous.
-pub trait Handle {
+pub trait Handle: core::ops::Deref<Target = Self::Inner> {
     type Inner;
 }
 
