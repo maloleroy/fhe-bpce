@@ -1,13 +1,13 @@
 use fhe_core::api::CryptoSystem;
 use seal_lib::CkksHOperation;
 
-pub struct SelectableItem<const P: i64, const N: u32, const F: usize, C: CryptoSystem> {
+pub struct SelectableItem<const F: usize, C: CryptoSystem> {
     ciphertext: C::Ciphertext,
     flags: [C::Ciphertext; F],
 }
 
-impl<const P: i64, const N: u32, const F: usize, C: CryptoSystem<Plaintext = f64>>
-    SelectableItem<P, N, F, C>
+impl<const F: usize, C: CryptoSystem<Plaintext = f64>>
+    SelectableItem<F, C>
 {
     pub fn new(value: &C::Plaintext, cs: &C) -> Self {
         SelectableItem {
@@ -17,20 +17,18 @@ impl<const P: i64, const N: u32, const F: usize, C: CryptoSystem<Plaintext = f64
     }
 }
 
-pub struct SelectableCollection<const P: i64, const N: u32, const F: usize, C: CryptoSystem> {
-    items: Vec<SelectableItem<P, N, F, C>>,
+pub struct SelectableCollection<const F: usize, C: CryptoSystem> {
+    items: Vec<SelectableItem<F, C>>,
     cs: C,
 }
 
 impl<
-    const P: i64,
-    const N: u32,
     const F: usize,
     C: CryptoSystem<Plaintext = f64, Operation = CkksHOperation, Ciphertext: Clone>,
-> SelectableCollection<P, N, F, C>
+> SelectableCollection<F, C>
 {
     pub fn new(cs: C) -> Self {
-        SelectableCollection::<P, N, F, C> {
+        SelectableCollection::<F, C> {
             items: Vec::new(),
             cs,
         }
@@ -40,7 +38,7 @@ impl<
         self.items.len()
     }
 
-    pub fn push(&mut self, item: SelectableItem<P, N, F, C>) {
+    pub fn push(&mut self, item: SelectableItem<F, C>) {
         self.items.push(item);
     }
 
@@ -64,8 +62,6 @@ impl<
 mod tests {
     use super::*;
     use seal_lib::{DegreeType, SealCkksCS, SecurityLevel, context::SealCkksContext};
-    const P: i64 = 307;
-    const N: u32 = 12;
     const F: usize = 2;
 
     #[test]
@@ -73,7 +69,7 @@ mod tests {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
-        let collection = SelectableCollection::<P, N, F, SealCkksCS>::new(cs);
+        let collection = SelectableCollection::<F, SealCkksCS>::new(cs);
         assert_eq!(collection.len(), 0);
     }
 
@@ -81,7 +77,7 @@ mod tests {
     fn test_push() {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
-        let mut collection = SelectableCollection::<P, N, F, SealCkksCS>::new(cs);
+        let mut collection = SelectableCollection::<F, SealCkksCS>::new(cs);
         let item = SelectableItem::new(&1.0, &collection.cs);
         collection.push(item);
         assert_eq!(collection.len(), 1);
@@ -91,7 +87,7 @@ mod tests {
     fn test_push_plain() {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
-        let mut collection = SelectableCollection::<P, N, F, SealCkksCS>::new(cs);
+        let mut collection = SelectableCollection::<F, SealCkksCS>::new(cs);
         collection.push_plain(1.0);
         assert_eq!(collection.len(), 1);
     }
@@ -100,7 +96,7 @@ mod tests {
     fn test_sum() {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
-        let mut collection = SelectableCollection::<P, N, F, SealCkksCS>::new(cs);
+        let mut collection = SelectableCollection::<F, SealCkksCS>::new(cs);
         collection.push_plain(1.0);
         collection.push_plain(2.0);
         let sum = collection.sum();
