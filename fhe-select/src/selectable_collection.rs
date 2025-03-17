@@ -1,15 +1,18 @@
 use fhe_core::api::CryptoSystem;
+use seal_lib::CkksHOperation;
 
 pub struct SelectableItem<const P: i64, const N: u32, const F: usize, C: CryptoSystem> {
-    ciphertext: C::CiphertextHandle,
-    // flags: [C::CiphertextHandle; F],
+    ciphertext: C::Ciphertext,
+    flags: [C::Ciphertext; F],
 }
 
-impl<const P: i64, const N: u32, const F: usize, C: CryptoSystem> SelectableItem<P, N, F, C> {
+impl<const P: i64, const N: u32, const F: usize, C: CryptoSystem<Plaintext = f64>>
+    SelectableItem<P, N, F, C>
+{
     pub fn new(value: &C::Plaintext, cs: &C) -> Self {
         SelectableItem {
             ciphertext: cs.cipher(value),
-            // flags: core::array::from_fn(|_| cs.cipher(0.0)),
+            flags: core::array::from_fn(|_| cs.cipher(&0.0)),
         }
     }
 }
@@ -19,35 +22,17 @@ pub struct SelectableCollection<const P: i64, const N: u32, const F: usize, C: C
     cs: C,
 }
 
-impl<const P: i64, const N: u32, const F: usize, C: CryptoSystem> SelectableCollection<P, N, F, C> {
-    pub fn new(context: Context) -> Self {
-        let seal_ctx = match &context {
-            Context::Seal(seal_ctx) => seal_ctx,
-            _ => panic!("Unexpected context type"),
-        };
-        let evaluator = context.evaluator();
-        let encoder_e = seal_ctx.encoder(1e6);
-        let encoder_d = seal_ctx.encoder(1e6);
-
-        let (skey, pkey) = seal_ctx.generate_keys();
-        let decryptor = seal_ctx.decryptor(&skey);
-        let encryptor = seal_ctx.encryptor(&pkey);
-
-        let dec = Decryptor::SealCkks {
-            encoder: encoder_d,
-            decryptor,
-        };
-        let enc = Encryptor::SealCkks {
-            encoder: encoder_e,
-            encryptor,
-        };
-
-        SelectableCollection::<P, N, F> {
+impl<
+    const P: i64,
+    const N: u32,
+    const F: usize,
+    C: CryptoSystem<Plaintext = f64, Operation = CkksHOperation, Ciphertext: Clone>,
+> SelectableCollection<P, N, F, C>
+{
+    pub fn new(cs: C) -> Self {
+        SelectableCollection::<P, N, F, C> {
             items: Vec::new(),
-            context,
-            encryptor: enc,
-            evaluator,
-            decryptor: dec,
+            cs,
         }
     }
 
@@ -55,18 +40,21 @@ impl<const P: i64, const N: u32, const F: usize, C: CryptoSystem> SelectableColl
         self.items.len()
     }
 
-    pub fn push(&mut self, item: SelectableItem<P, N, F>) {
+    pub fn push(&mut self, item: SelectableItem<P, N, F, C>) {
         self.items.push(item);
     }
 
     pub fn push_plain(&mut self, item: f64) {
-        self.items.push(SelectableItem::new(item, &self.encryptor));
+        self.items.push(SelectableItem::new(&item, &self.cs));
     }
 
-    pub fn sum(&self) -> Ciphertext {
-        let mut sum = self.items[0].ciphertext.clone();
+    pub fn sum(&self) -> C::Ciphertext {
+        let mut sum: C::Ciphertext = self.items[0].ciphertext.clone();
         for i in 1..self.items.len() {
-            sum = self.evaluator.add(&sum, &self.items[i].ciphertext);
+            sum = self
+                .cs
+                .operate(CkksHOperation::Add, &sum, Some(&self.items[i].ciphertext))
+                .clone();
         }
         sum
     }
@@ -75,66 +63,52 @@ impl<const P: i64, const N: u32, const F: usize, C: CryptoSystem> SelectableColl
 #[cfg(test)]
 mod tests {
     use super::*;
+    use seal_lib::{DegreeType, SealCkksCS, SecurityLevel, context::SealCkksContext};
     const P: i64 = 307;
     const N: u32 = 12;
     const F: usize = 2;
 
     #[test]
     fn test_new() {
-        use bpce_fhe::ContextCreationParameters;
-        use seal_lib::{DegreeType, SecurityLevel};
-        let context = Context::new(ContextCreationParameters::SealCkks {
-            pmod: DegreeType::D2048,
-            cmod: DegreeType::D2048,
-            sl: SecurityLevel::TC128,
-        });
-        let collection = SelectableCollection::<P, N, F>::new(context);
+        let context =
+            SealCkksContext::new(DegreeType::D2048, DegreeType::D2048, SecurityLevel::TC128);
+        let cs = SealCkksCS::new(context, 1e6);
+
+        let collection = SelectableCollection::<P, N, F, SealCkksCS>::new(cs);
         assert_eq!(collection.len(), 0);
     }
 
     #[test]
     fn test_push() {
-        use bpce_fhe::ContextCreationParameters;
-        use seal_lib::{DegreeType, SecurityLevel};
-        let context = Context::new(ContextCreationParameters::SealCkks {
-            pmod: DegreeType::D2048,
-            cmod: DegreeType::D2048,
-            sl: SecurityLevel::TC128,
-        });
-        let mut collection = SelectableCollection::<P, N, F>::new(context);
-        let item = SelectableItem::new(1.0, &collection.encryptor);
+        let context =
+            SealCkksContext::new(DegreeType::D2048, DegreeType::D2048, SecurityLevel::TC128);
+        let cs = SealCkksCS::new(context, 1e6);
+        let mut collection = SelectableCollection::<P, N, F, SealCkksCS>::new(cs);
+        let item = SelectableItem::new(&1.0, &collection.cs);
         collection.push(item);
         assert_eq!(collection.len(), 1);
     }
 
     #[test]
     fn test_push_plain() {
-        use bpce_fhe::ContextCreationParameters;
-        use seal_lib::{DegreeType, SecurityLevel};
-        let context = Context::new(ContextCreationParameters::SealCkks {
-            pmod: DegreeType::D2048,
-            cmod: DegreeType::D2048,
-            sl: SecurityLevel::TC128,
-        });
-        let mut collection = SelectableCollection::<P, N, F>::new(context);
+        let context =
+            SealCkksContext::new(DegreeType::D2048, DegreeType::D2048, SecurityLevel::TC128);
+        let cs = SealCkksCS::new(context, 1e6);
+        let mut collection = SelectableCollection::<P, N, F, SealCkksCS>::new(cs);
         collection.push_plain(1.0);
         assert_eq!(collection.len(), 1);
     }
 
     #[test]
     fn test_sum() {
-        use bpce_fhe::ContextCreationParameters;
-        use seal_lib::{DegreeType, SecurityLevel};
-        let context = Context::new(ContextCreationParameters::SealCkks {
-            pmod: DegreeType::D2048,
-            cmod: DegreeType::D2048,
-            sl: SecurityLevel::TC128,
-        });
-        let mut collection = SelectableCollection::<P, N, F>::new(context);
+        let context =
+            SealCkksContext::new(DegreeType::D2048, DegreeType::D2048, SecurityLevel::TC128);
+        let cs = SealCkksCS::new(context, 1e6);
+        let mut collection = SelectableCollection::<P, N, F, SealCkksCS>::new(cs);
         collection.push_plain(1.0);
         collection.push_plain(2.0);
         let sum = collection.sum();
-        let decrypted = collection.decryptor.decrypt_f64(&sum);
+        let decrypted = collection.cs.decipher(&sum);
         assert!((decrypted - 3.0).abs() < 1e-2);
     }
 }
