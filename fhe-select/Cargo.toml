@@ -5,5 +5,7 @@ edition = "2024"
 
 [dependencies]
 fhe-core = { workspace = true }
-seal-lib = { path = "../seal-lib" }
 zeroize = { workspace = true }
+
+[dev-dependencies]
+seal-lib = { path = "../seal-lib" }

@@ -1,5 +1,4 @@
 use fhe_core::api::CryptoSystem;
-use seal_lib::CkksHOperation;
 
 pub struct SelectableItem<const F: usize, C: CryptoSystem> {
     ciphertext: C::Ciphertext,
@@ -30,7 +29,7 @@ pub struct SelectableCollection<const F: usize, C: CryptoSystem> {
 
 impl<
     const F: usize,
-    C: CryptoSystem<Plaintext = f64, Operation = CkksHOperation, Ciphertext: Clone>,
+    C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>,
 > SelectableCollection<F, C>
 {
     pub const fn new(cs: C) -> Self {
@@ -56,12 +55,14 @@ impl<
         self.items.push(SelectableItem::new(&item, &self.cs));
     }
 
-    pub fn sum(&self) -> C::Ciphertext {
+    pub fn operate_many(&self, op: C::Operation) -> C::Ciphertext
+    where C::Operation: Copy
+    {
         let mut sum: C::Ciphertext = self.items[0].ciphertext.clone();
         for i in 1..self.items.len() {
             sum = self
                 .cs
-                .operate(CkksHOperation::Add, &sum, Some(&self.items[i].ciphertext))
+                .operate(op, &sum, Some(&self.items[i].ciphertext))
                 .clone();
         }
         sum
@@ -71,7 +72,7 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use seal_lib::{DegreeType, SealCkksCS, SecurityLevel, context::SealCkksContext};
+    use seal_lib::{context::SealCkksContext, CkksHOperation, DegreeType, SealCkksCS, SecurityLevel};
     const F: usize = 2;
 
     #[test]
@@ -109,7 +110,7 @@ mod tests {
         let mut collection = SelectableCollection::<F, SealCkksCS>::new(cs);
         collection.push_plain(1.0);
         collection.push_plain(2.0);
-        let sum = collection.sum();
+        let sum = collection.operate_many(CkksHOperation::Add);
         let decrypted = collection.cs.decipher(&sum);
         assert!((decrypted - 3.0).abs() < 1e-2);
     }
