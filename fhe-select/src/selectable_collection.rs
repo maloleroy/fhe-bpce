@@ -71,6 +71,7 @@ impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>>
 #[cfg(test)]
 mod tests {
     use super::*;
+    use fhe_core::f64::approx_eq;
     use seal_lib::{
         CkksHOperation, DegreeType, SealCkksCS, SecurityLevel, context::SealCkksContext,
     };
@@ -113,7 +114,7 @@ mod tests {
         collection.push_plain(2.0);
         let sum = collection.operate_many(CkksHOperation::Add);
         let decrypted = collection.cs.decipher(&sum);
-        assert!((decrypted - 3.0).abs() < 1e-2);
+        assert!(approx_eq(decrypted, 3.0, 1e-2));
     }
 
     #[test]
@@ -121,7 +122,7 @@ mod tests {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
         let item = SelectableItem::<F, _>::new(&1.0, &cs);
-        assert!((item.get_flag(0, &cs) - 0.0).abs() < 1e-2);
+        assert!(approx_eq(item.get_flag(0, &cs), 0.0, 1e-2));
     }
 
     #[test]
@@ -130,6 +131,6 @@ mod tests {
         let cs = SealCkksCS::new(context, 1e6);
         let mut item = SelectableItem::<F, _>::new(&1.0, &cs);
         item.set_flag(0, 1.0, &cs);
-        assert!((item.get_flag(0, &cs) - 1.0).abs() < 1e-2);
+        assert!(approx_eq(item.get_flag(0, &cs), 1.0, 1e-2));
     }
 }
