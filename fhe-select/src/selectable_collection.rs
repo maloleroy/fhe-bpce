@@ -1,11 +1,16 @@
 use fhe_core::api::CryptoSystem;
+use seal_lib::CkksHOperation;
+
+pub const FLAG_ON: f64 = 1.0;
+
+pub const FLAG_OFF: f64 = 0.0;
 
 pub struct SelectableItem<const F: usize, C: CryptoSystem> {
     ciphertext: C::Ciphertext,
     flags: [C::Ciphertext; F],
 }
 
-impl<const F: usize, C: CryptoSystem<Plaintext = f64>> SelectableItem<F, C> {
+impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>> SelectableItem<F, C> {
     pub fn new(value: &C::Plaintext, cs: &C) -> Self {
         Self {
             ciphertext: cs.cipher(value),
@@ -13,11 +18,15 @@ impl<const F: usize, C: CryptoSystem<Plaintext = f64>> SelectableItem<F, C> {
         }
     }
 
-    pub fn get_flag(&self, index: usize, cs: &C) -> f64 {
+    pub fn get_flag(&self, index: usize) -> C::Ciphertext {
+        self.flags[index].clone()
+    }
+
+    pub fn get_flag_plain(&self, index: usize, cs: &C) -> f64 {
         cs.decipher(&self.flags[index])
     }
 
-    pub fn set_flag(&mut self, index: usize, value: f64, cs: &C) {
+    pub fn set_flag_plain(&mut self, index: usize, value: f64, cs: &C) {
         self.flags[index] = cs.cipher(&value);
     }
 }
@@ -66,6 +75,21 @@ impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>>
         }
         sum
     }
+
+    pub fn sum_where_flag(&self, flag_index: usize) -> C::Ciphertext {
+        let mut sum: C::Ciphertext = self.items[0].ciphertext.clone();
+        for i in 1..self.items.len() {
+            let flag = self.items[i].get_flag(flag_index);
+            let product =
+                self.cs
+                    .operate(CkksHOperation::Mul, &self.items[i].ciphertext, Some(&flag));
+            sum = self
+                .cs
+                .operate(CkksHOperation::Add, &sum, Some(&product))
+                .clone();
+        }
+        sum
+    }
 }
 
 #[cfg(test)]
@@ -82,7 +106,7 @@ mod tests {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
-        let collection = SelectableCollection::<F, SealCkksCS>::new(cs);
+        let collection = SelectableCollection::<F, _>::new(cs);
         assert_eq!(collection.len(), 0);
     }
 
