@@ -73,19 +73,16 @@ impl SealCkksCS {
 impl CryptoSystem for SealCkksCS {
     type Ciphertext = Ciphertext;
     type Plaintext = f64;
-    // FIXME: `Box` is suboptimal here.`
-    type CiphertextHandle = Box<Ciphertext>;
-    type PlaintextHandle = Box<f64>;
     type Operation = CkksHOperation;
 
-    fn cipher(&self, plaintext: &Self::Plaintext) -> Self::CiphertextHandle {
+    fn cipher(&self, plaintext: &Self::Plaintext) -> Self::Ciphertext {
         let encoded = self.encoder.encode_f64(&[*plaintext]).unwrap();
-        Box::new(Ciphertext(self.encryptor.encrypt(&encoded).unwrap()))
+        Ciphertext(self.encryptor.encrypt(&encoded).unwrap())
     }
 
-    fn decipher(&self, ciphertext: &Self::Ciphertext) -> Self::PlaintextHandle {
+    fn decipher(&self, ciphertext: &Self::Ciphertext) -> Self::Plaintext {
         let decrypted = self.decryptor.decrypt(&ciphertext.0).unwrap();
-        Box::new(self.encoder.decode_f64(&decrypted).unwrap()[0])
+        self.encoder.decode_f64(&decrypted).unwrap()[0]
     }
 
     fn operate(
@@ -93,17 +90,17 @@ impl CryptoSystem for SealCkksCS {
         operation: Self::Operation,
         lhs: &Self::Ciphertext,
         rhs: Option<&Self::Ciphertext>,
-    ) -> Self::CiphertextHandle {
+    ) -> Self::Ciphertext {
         match operation {
             CkksHOperation::Add => {
                 let rhs = rhs.expect("Addition requires two operands.");
                 let result = impls::homom_add(&self.evaluator, &lhs.0, &rhs.0);
-                Box::new(Ciphertext(result))
+                Ciphertext(result)
             }
             CkksHOperation::Mul => {
                 let rhs = rhs.expect("Multiplication requires two operands.");
                 let result = impls::homom_mul(&self.evaluator, &lhs.0, &rhs.0);
-                Box::new(Ciphertext(result))
+                Ciphertext(result)
             }
         }
     }
@@ -144,19 +141,16 @@ impl SealBfvCS {
 impl CryptoSystem for SealBfvCS {
     type Ciphertext = Ciphertext;
     type Plaintext = u64;
-    // FIXME: `Box` is suboptimal here.`
-    type CiphertextHandle = Box<Ciphertext>;
-    type PlaintextHandle = Box<u64>;
     type Operation = BfvHOperation;
 
-    fn cipher(&self, plaintext: &Self::Plaintext) -> Self::CiphertextHandle {
+    fn cipher(&self, plaintext: &Self::Plaintext) -> Self::Ciphertext {
         let encoded = self.encoder.encode_u64(&[*plaintext]).unwrap();
-        Box::new(Ciphertext(self.encryptor.encrypt(&encoded).unwrap()))
+        Ciphertext(self.encryptor.encrypt(&encoded).unwrap())
     }
 
-    fn decipher(&self, ciphertext: &Self::Ciphertext) -> Self::PlaintextHandle {
+    fn decipher(&self, ciphertext: &Self::Ciphertext) -> Self::Plaintext {
         let decrypted = self.decryptor.decrypt(&ciphertext.0).unwrap();
-        Box::new(self.encoder.decode_u64(&decrypted).unwrap()[0])
+        self.encoder.decode_u64(&decrypted).unwrap()[0]
     }
 
     fn operate(
@@ -164,17 +158,17 @@ impl CryptoSystem for SealBfvCS {
         operation: Self::Operation,
         lhs: &Self::Ciphertext,
         rhs: Option<&Self::Ciphertext>,
-    ) -> Self::CiphertextHandle {
+    ) -> Self::Ciphertext {
         match operation {
             BfvHOperation::Add => {
                 let rhs = rhs.expect("Addition requires two operands.");
                 let result = impls::homom_add(&self.evaluator, &lhs.0, &rhs.0);
-                Box::new(Ciphertext(result))
+                Ciphertext(result)
             }
             BfvHOperation::Mul => {
                 let rhs = rhs.expect("Multiplication requires two operands.");
                 let result = impls::homom_mul(&self.evaluator, &lhs.0, &rhs.0);
-                Box::new(Ciphertext(result))
+                Ciphertext(result)
             }
         }
     }
@@ -211,10 +205,10 @@ mod tests {
         let c = cs.decipher(&c);
         let d = cs.decipher(&d);
 
-        assert!(approx_eq(*a, 1.0, PRECISION));
-        assert!(approx_eq(*b, 2.0, PRECISION));
-        assert!(approx_eq(*c, 3.0, PRECISION));
-        assert!(approx_eq(*d, 2.0, PRECISION));
+        assert!(approx_eq(a, 1.0, PRECISION));
+        assert!(approx_eq(b, 2.0, PRECISION));
+        assert!(approx_eq(c, 3.0, PRECISION));
+        assert!(approx_eq(d, 2.0, PRECISION));
     }
 
     #[test]
@@ -238,9 +232,9 @@ mod tests {
         let c = cs.decipher(&c);
         let d = cs.decipher(&d);
 
-        assert_eq!(*a, 1);
-        assert_eq!(*b, 2);
-        assert_eq!(*c, 3);
-        assert_eq!(*d, 2);
+        assert_eq!(a, 1);
+        assert_eq!(b, 2);
+        assert_eq!(c, 3);
+        assert_eq!(d, 2);
     }
 }

@@ -19,18 +19,6 @@ impl<T> Handle for alloc::boxed::Box<T> {
 
 /// A trait that defines the core API of a FHE cryptosystem.
 pub trait CryptoSystem {
-    /// A wrapper around a ciphertext that acts as a handle.
-    /// This is very similair to a smart pointer.
-    ///
-    /// This is usually a `Box`.
-    type CiphertextHandle: Handle<Inner = Self::Ciphertext>;
-
-    /// A wrapper around a plaintext that acts as a handle.
-    /// This is very similair to a smart pointer.
-    ///
-    /// This is usually a `Box`.
-    type PlaintextHandle: Handle<Inner = Self::Plaintext>;
-
     /// The plaintext type for the FHE scheme.
     type Plaintext;
     /// The ciphertext type for the FHE scheme.
@@ -42,9 +30,9 @@ pub trait CryptoSystem {
     type Operation;
 
     /// Encrypts a plaintext into a ciphertext.
-    fn cipher(&self, plaintext: &Self::Plaintext) -> Self::CiphertextHandle;
+    fn cipher(&self, plaintext: &Self::Plaintext) -> Self::Ciphertext;
     /// Decrypts a ciphertext back into a plaintext.
-    fn decipher(&self, ciphertext: &Self::Ciphertext) -> Self::PlaintextHandle;
+    fn decipher(&self, ciphertext: &Self::Ciphertext) -> Self::Plaintext;
 
     /// Performs an operation on the ciphertexts.
     ///
@@ -56,15 +44,13 @@ pub trait CryptoSystem {
         operation: Self::Operation,
         lhs: &Self::Ciphertext,
         rhs: Option<&Self::Ciphertext>,
-    ) -> Self::CiphertextHandle;
+    ) -> Self::Ciphertext;
 }
 
-#[cfg(any(feature = "alloc", test))]
 #[allow(dead_code)]
 /// Module to assert that usual usage of the API compiles.
 mod private {
     use super::*;
-    use alloc::boxed::Box;
 
     #[derive(Clone)]
     struct TestPlaintext {}
@@ -76,26 +62,23 @@ mod private {
     struct TestCryptoSystem {}
 
     #[derive(Clone, Copy, Debug)]
-    #[allow(dead_code)]
     enum Op {
         Add,
         Mul,
     }
 
     impl CryptoSystem for TestCryptoSystem {
-        type CiphertextHandle = Box<Self::Ciphertext>;
-        type PlaintextHandle = Box<Self::Plaintext>;
         type Plaintext = TestPlaintext;
         type Ciphertext = TestCiphertext;
         type Operation = Op;
 
-        fn cipher(&self, plaintext: &Self::Plaintext) -> Self::CiphertextHandle {
-            Box::new(TestCiphertext {
+        fn cipher(&self, plaintext: &Self::Plaintext) -> Self::Ciphertext {
+            TestCiphertext {
                 data: plaintext.clone(),
-            })
+            }
         }
-        fn decipher(&self, ciphertext: &Self::Ciphertext) -> Self::PlaintextHandle {
-            Box::new(ciphertext.data.clone())
+        fn decipher(&self, ciphertext: &Self::Ciphertext) -> Self::Plaintext {
+            ciphertext.data.clone()
         }
 
         fn operate(
@@ -103,17 +86,17 @@ mod private {
             operation: Self::Operation,
             lhs: &Self::Ciphertext,
             rhs: Option<&Self::Ciphertext>,
-        ) -> Self::CiphertextHandle {
+        ) -> Self::Ciphertext {
             match operation {
                 Op::Add => {
                     assert!(rhs.is_some(), "Addition requires two operands.");
                     let data = rhs.unwrap().data.clone();
-                    Box::new(TestCiphertext { data })
+                    TestCiphertext { data }
                 }
                 Op::Mul => {
                     assert!(rhs.is_some(), "Multiplication requires two operands.");
                     let data = lhs.data.clone();
-                    Box::new(TestCiphertext { data })
+                    TestCiphertext { data }
                 }
             }
         }
@@ -124,8 +107,6 @@ mod private {
         _system: &dyn CryptoSystem<
             Ciphertext = C,
             Plaintext = P,
-            CiphertextHandle = Box<C>,
-            PlaintextHandle = Box<P>,
             Operation = (),
         >,
         other_param: u8,

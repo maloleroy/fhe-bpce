@@ -29,12 +29,12 @@ rouille::rouille! {
 
         journal::info!("[SERVEUR] Opérations sur les données chiffrées...");
 
-        soit mutable résultats: Vec<Box<Ciphertext>> = Vec::with_capacity(données_à_échanger.len());
+        soit mutable résultats: Vec<Ciphertext> = Vec::with_capacity(données_à_échanger.len());
 
         soit début = Instant::now();
 
         pour (mdg, mdd, &op) de données_à_échanger.iter_over_data() {
-            let résultat = systeme.operate(op, mdg, mdd.map(|m| m.as_ref()));
+            let résultat = systeme.operate(op, mdg, mdd);
             résultats.pousser(résultat);
         }
 
