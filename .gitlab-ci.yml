@@ -9,11 +9,14 @@ rust_stable:
   before_script:
     - rustc --version
     - rustup component add clippy rustfmt
+    - apt update -y
+    - apt upgrade -y
+    - apt install -y clang cmake # required for sealy
   script:
     - cargo build
     - cargo fmt -- --check
     - cargo clippy -- -D warnings
-    # - cargo test --workspace
+    - cargo test --workspace
 
 rust_nightly_miri:
   stage: check
