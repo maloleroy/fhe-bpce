@@ -29,21 +29,12 @@ rouille::rouille! {
 
         journal::info!("[SERVEUR] Opérations sur les données chiffrées...");
 
+        soit mutable résultats: Vec<Box<Ciphertext>> = Vec::with_capacity(données_à_échanger.len());
+
         soit début = Instant::now();
 
-        soit mutable résultats: Vec<Box<Ciphertext>> = Vec::new();
-        pour (mdg, mdd, op) de données_à_échanger.iter_over_data() {
-            soit résultat = selon op {
-                CkksHOperation::Add => {
-                    systeme.operate(CkksHOperation::Add, mdg, mdd.map(|m| m.as_ref()))
-                }
-                CkksHOperation::Mul => {
-                    systeme.operate(CkksHOperation::Mul, mdg, mdd.map(|m| m.as_ref()))
-                }
-                _ => {
-                    oups!("[SERVEUR] Opération non supportée.");
-                }
-            };
+        pour (mdg, mdd, &op) de données_à_échanger.iter_over_data() {
+            let résultat = systeme.operate(op, mdg, mdd.map(|m| m.as_ref()));
             résultats.pousser(résultat);
         }
 
