@@ -4,23 +4,23 @@ use fhe_core::api::CryptoSystem;
 /// The data that will be exchanged by the client and the server.
 pub struct ExchangeData<C: CryptoSystem>
 where
-    C::CiphertextHandle: Encode,
+    C::Ciphertext: Encode,
     C::Operation: Encode,
 {
-    lhs: Vec<C::CiphertextHandle>,
-    rhs: Vec<Option<C::CiphertextHandle>>,
+    lhs: Vec<C::Ciphertext>,
+    rhs: Vec<Option<C::Ciphertext>>,
     operation: Vec<C::Operation>,
 }
 
 impl<C: CryptoSystem> ExchangeData<C>
 where
-    C::CiphertextHandle: Encode,
+    C::Ciphertext: Encode,
     C::Operation: Encode,
 {
     /// Creates a new instance of `ExchangeData`.
     pub fn new(
-        lhs: Vec<C::CiphertextHandle>,
-        rhs: Vec<Option<C::CiphertextHandle>>,
+        lhs: Vec<C::Ciphertext>,
+        rhs: Vec<Option<C::Ciphertext>>,
         operation: Vec<C::Operation>,
     ) -> Self {
         Self {
@@ -47,8 +47,8 @@ where
         &self,
     ) -> impl Iterator<
         Item = (
-            &C::CiphertextHandle,
-            Option<&C::CiphertextHandle>,
+            &C::Ciphertext,
+            Option<&C::Ciphertext>,
             &C::Operation,
         ),
     > {
@@ -62,7 +62,7 @@ where
 
 impl<C: CryptoSystem> Encode for ExchangeData<C>
 where
-    C::CiphertextHandle: Encode,
+    C::Ciphertext: Encode,
     C::Operation: Encode,
 {
     fn encode<E: bincode::enc::Encoder>(
@@ -77,7 +77,7 @@ where
 
 impl<C: CryptoSystem, Context> Decode<Context> for ExchangeData<C>
 where
-    C::CiphertextHandle: Decode<Context> + Encode,
+    C::Ciphertext: Decode<Context> + Encode,
     C::Operation: Decode<Context> + Encode,
 {
     fn decode<D: bincode::de::Decoder<Context = Context>>(
@@ -119,6 +119,6 @@ mod tests {
             bincode::decode_from_slice_with_context(a_encoded.as_slice(), CONFIG, context).unwrap();
         let a_final = cs.decipher(&a_decoded);
 
-        assert_eq!(*a_final, 1);
+        assert_eq!(a_final, 1);
     }
 }
