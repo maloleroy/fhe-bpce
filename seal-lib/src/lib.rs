@@ -217,11 +217,14 @@ mod tests {
 
     #[test]
     fn test_seal_bfv_cs() {
-        let context = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 32);
+        let context = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 16);
         let cs = SealBfvCS::new(context);
 
-        let a = cs.cipher(&1);
-        let b = cs.cipher(&2);
+        let a_plaintext = 1;
+        let b_plaintext = 2;
+
+        let a = cs.cipher(&a_plaintext);
+        let b = cs.cipher(&b_plaintext);
         let c = cs.operate(BfvHOperation::Add, &a, Some(&b));
         let d = cs.operate(BfvHOperation::Mul, &a, Some(&b));
 
@@ -230,9 +233,9 @@ mod tests {
         let c = cs.decipher(&c);
         let d = cs.decipher(&d);
 
-        assert_eq!(a, 1);
-        assert_eq!(b, 2);
-        assert_eq!(c, 3);
-        assert_eq!(d, 2);
+        assert_eq!(a, a_plaintext);
+        assert_eq!(b, b_plaintext);
+        assert_eq!(c, a_plaintext + b_plaintext);
+        assert_eq!(d, a_plaintext * b_plaintext);
     }
 }
