@@ -34,10 +34,9 @@ struct FullContext
     ParameterSet parameter_set;
 };
 
-FullContext get_default_light_context()
+FullContext get_default_full_context(size_t poly_modulus_degree)
 {
     EncryptionParameters parms(scheme_type::ckks);
-    size_t poly_modulus_degree = 4096;
     auto coeff_modulus = CoeffModulus::BFVDefault(poly_modulus_degree);
     parms.set_poly_modulus_degree(poly_modulus_degree);
     parms.set_coeff_modulus(coeff_modulus);
@@ -172,7 +171,6 @@ pair<double, double> sum_random_doubles_asynchronous(size_t count, Tors &tors)
 {
     const size_t num_threads = std::thread::hardware_concurrency(); // Get number of CPU threads
     size_t chunk_size = count / num_threads;
-    cout << "Number of threads: " << num_threads << endl;
 
     std::vector<std::thread> threads;
     std::vector<double> real_sums(num_threads, 0.0);
@@ -188,7 +186,8 @@ pair<double, double> sum_random_doubles_asynchronous(size_t count, Tors &tors)
         double local_real_sum = 0.0;
         Ciphertext local_enc_sum = to_ciphertext(0.0, tors);
 
-        for (size_t i = start; i < end; i++) {
+        for (size_t i = start; i < end; i++)
+        {
             double random_double = unif(re);
             local_real_sum += random_double;
             tors.evaluator.add_inplace(local_enc_sum, to_ciphertext(random_double, tors));
@@ -201,14 +200,16 @@ pair<double, double> sum_random_doubles_asynchronous(size_t count, Tors &tors)
     };
 
     // Launch threads
-    for (size_t i = 0; i < num_threads; i++) {
+    for (size_t i = 0; i < num_threads; i++)
+    {
         size_t start = i * chunk_size;
         size_t end = (i == num_threads - 1) ? count : (i + 1) * chunk_size;
         threads.emplace_back(worker, i, start, end);
     }
 
     // Join threads
-    for (auto &t : threads) {
+    for (auto &t : threads)
+    {
         t.join();
     }
 
@@ -216,7 +217,8 @@ pair<double, double> sum_random_doubles_asynchronous(size_t count, Tors &tors)
     double total_real_sum = 0.0;
     Ciphertext total_enc_sum = to_ciphertext(0.0, tors);
 
-    for (size_t i = 0; i < num_threads; i++) {
+    for (size_t i = 0; i < num_threads; i++)
+    {
         total_real_sum += real_sums[i];
         tors.evaluator.add_inplace(total_enc_sum, encrypted_sums[i]);
     }
@@ -224,37 +226,78 @@ pair<double, double> sum_random_doubles_asynchronous(size_t count, Tors &tors)
     return { to_double(total_enc_sum, tors), total_real_sum };
 }
 
-void my_main()
+struct Benchmark
 {
-    // auto pset = PSET_LIGHT;
-    auto [context, parameter_set] = get_default_light_context();
-    print_parameters(context);
+    const size_t poly_modulus_degree;
+    const size_t count;
+    const bool asynchronous;
+    const double upper_bound;
+    double error_ratio;
+    double elapsed_time;
+};
+
+void perform_benchmark(Benchmark &benchmark)
+{
+    auto [context, parameter_set] = get_default_full_context(benchmark.poly_modulus_degree);
     Tors tors = get_tors(context, parameter_set);
 
-    cout << "Scale: " << parameter_set.scale << endl;
-
-    cout << "Same: " << same(1.4, tors) << endl;
-    cout << "2sum: " << add_doubles(1.0, 2.22, tors) << endl;
-
-    vector<double> values = { 1.0, 2.0, 3.0, -4.0, -5.0 };
-    cout << "Sum: " << sum(values, tors) << endl;
-
     // testing execution time of sum_random_doubles
-    const size_t N = 100000;
+    const size_t N = 10000;
     auto start = std::chrono::high_resolution_clock::now();
-    auto [sum, real_sum] = sum_random_doubles_asynchronous(N, tors);
-    cout << "Avg random: " << sum / N << endl;
-    cout << "Avg real: " << real_sum / N << endl;
-    cout << "Error percentage: " << 100 * abs(sum - real_sum) / real_sum << " %" << endl;
+    if (benchmark.asynchronous)
+    {
+        auto [sum, real_sum] = sum_random_doubles_asynchronous(benchmark.count, tors);
+        benchmark.error_ratio = abs(sum - real_sum) / real_sum;
+    }
+    else
+    {
+        auto [sum, real_sum] = sum_random_doubles(benchmark.count, tors);
+        benchmark.error_ratio = abs(sum - real_sum) / real_sum;
+    }
     auto finish = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> elapsed = finish - start;
-    cout << "Elapsed time: " << elapsed.count() << " s\n";
-    cout << "Elapsed time per sum: " << elapsed.count() / N << " s\n";
+    benchmark.elapsed_time = elapsed.count();
+}
+
+void print_benchmark_row(const Benchmark &benchmark)
+{
+    const string splitter = " | ";
+    cout << benchmark.poly_modulus_degree << splitter << benchmark.count << splitter << benchmark.asynchronous
+         << splitter << benchmark.upper_bound << splitter << benchmark.error_ratio << splitter << benchmark.elapsed_time
+         << endl;
+}
+
+void my_main()
+{
+    cout << "poly_modulus_degree | count | asynchronous | upper_bound | error_ratio | elapsed_time" << endl;
+    for (size_t poly_modulus_degree : { 4096, 8192 })
+    {
+        for (size_t count : { 50000, 100000 })
+        {
+            for (bool asynchronous : { false, true })
+            {
+                for (double upper_bound : { 10. })
+                {
+                    Benchmark benchmark{ poly_modulus_degree, count, asynchronous, upper_bound, 0., 0. };
+                    try
+                    {
+                        perform_benchmark(benchmark);
+                        print_benchmark_row(benchmark);
+                    }
+                    catch (const std::exception &e)
+                    {
+                        cout << "Error: " << e.what() << endl;
+                        continue;
+                    }
+                }
+            }
+        }
+    }
 }
 
 void example_ckks_basics()
 {
-    print_example_banner("Example: CKKS Basics");
+    // print_example_banner("Example: CKKS Basics");
 
     my_main();
     return;
