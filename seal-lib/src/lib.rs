@@ -34,7 +34,7 @@ impl Decode<context::SealCkksContext> for Ciphertext {
     ) -> Result<Self, bincode::error::DecodeError> {
         let raw: Vec<_> = Decode::decode(decoder)?;
         Ok(Self(
-            sealy::Ciphertext::from_bytes(&decoder.context().context(), &raw).unwrap(),
+            sealy::Ciphertext::from_bytes(decoder.context().context(), &raw).unwrap(),
         ))
     }
 }
@@ -44,7 +44,7 @@ impl Decode<context::SealBFVContext> for Ciphertext {
     ) -> Result<Self, bincode::error::DecodeError> {
         let raw: Vec<_> = Decode::decode(decoder)?;
         Ok(Self(
-            sealy::Ciphertext::from_bytes(&decoder.context().context(), &raw).unwrap(),
+            sealy::Ciphertext::from_bytes(decoder.context().context(), &raw).unwrap(),
         ))
     }
 }
