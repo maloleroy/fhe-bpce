@@ -27,10 +27,8 @@ pub struct SelectableCollection<const F: usize, C: CryptoSystem> {
     cs: C,
 }
 
-impl<
-    const F: usize,
-    C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>,
-> SelectableCollection<F, C>
+impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>>
+    SelectableCollection<F, C>
 {
     pub const fn new(cs: C) -> Self {
         Self {
@@ -56,7 +54,8 @@ impl<
     }
 
     pub fn operate_many(&self, op: C::Operation) -> C::Ciphertext
-    where C::Operation: Copy
+    where
+        C::Operation: Copy,
     {
         let mut sum: C::Ciphertext = self.items[0].ciphertext.clone();
         for i in 1..self.items.len() {
@@ -72,7 +71,9 @@ impl<
 #[cfg(test)]
 mod tests {
     use super::*;
-    use seal_lib::{context::SealCkksContext, CkksHOperation, DegreeType, SealCkksCS, SecurityLevel};
+    use seal_lib::{
+        CkksHOperation, DegreeType, SealCkksCS, SecurityLevel, context::SealCkksContext,
+    };
     const F: usize = 2;
 
     #[test]
