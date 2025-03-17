@@ -6,9 +6,7 @@ pub struct SelectableItem<const F: usize, C: CryptoSystem> {
     flags: [C::Ciphertext; F],
 }
 
-impl<const F: usize, C: CryptoSystem<Plaintext = f64>>
-    SelectableItem<F, C>
-{
+impl<const F: usize, C: CryptoSystem<Plaintext = f64>> SelectableItem<F, C> {
     pub fn new(value: &C::Plaintext, cs: &C) -> Self {
         SelectableItem {
             ciphertext: cs.cipher(value),
