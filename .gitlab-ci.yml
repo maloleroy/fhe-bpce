@@ -5,13 +5,7 @@ rust_stable:
   stage: check
   tags:
     - docker
-  image: rust:latest
-  before_script:
-    - rustc --version
-    - rustup component add clippy rustfmt
-    - apt update -y
-    - apt upgrade -y
-    - apt install -y clang cmake # required for sealy
+  image: fluteur/rust-cli:latest
   script:
     - cargo build
     - cargo fmt -- --check
