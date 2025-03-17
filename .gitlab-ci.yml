@@ -14,9 +14,9 @@ rust_stable:
       - /usr/local/cargo/bin
       - target
   script:
-    - cargo build
+    - cargo check --all-features --locked
     - cargo fmt -- --check
-    - cargo clippy --workspace -- -D warnings
+    - cargo clippy --workspace -- -D warnings --no-deps
     - cargo test --workspace
 
 rust_nightly_miri:
