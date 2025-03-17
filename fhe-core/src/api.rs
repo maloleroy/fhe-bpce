@@ -33,7 +33,7 @@ pub trait CryptoSystem {
 #[allow(dead_code)]
 /// Module to assert that usual usage of the API compiles.
 mod private {
-    use super::*;
+    use super::CryptoSystem;
 
     #[derive(Clone)]
     struct TestPlaintext {}
