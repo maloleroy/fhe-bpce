@@ -7,7 +7,3 @@ edition = "2024"
 bincode = { workspace = true }
 getrandom = "0.3.1"
 libm = "0.2.11"
-zeroize = { workspace = true, optional = true }
-
-[features]
-zeroize = ["dep:zeroize"]

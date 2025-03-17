@@ -185,7 +185,6 @@ dependencies = [
  "bincode",
  "getrandom",
  "libm",
- "zeroize",
 ]
 
 [[package]]
