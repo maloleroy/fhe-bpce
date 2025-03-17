@@ -70,8 +70,7 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let context =
-            SealCkksContext::new(DegreeType::D2048, DegreeType::D2048, SecurityLevel::TC128);
+        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
         let collection = SelectableCollection::<P, N, F, SealCkksCS>::new(cs);
@@ -80,8 +79,7 @@ mod tests {
 
     #[test]
     fn test_push() {
-        let context =
-            SealCkksContext::new(DegreeType::D2048, DegreeType::D2048, SecurityLevel::TC128);
+        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
         let mut collection = SelectableCollection::<P, N, F, SealCkksCS>::new(cs);
         let item = SelectableItem::new(&1.0, &collection.cs);
@@ -91,8 +89,7 @@ mod tests {
 
     #[test]
     fn test_push_plain() {
-        let context =
-            SealCkksContext::new(DegreeType::D2048, DegreeType::D2048, SecurityLevel::TC128);
+        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
         let mut collection = SelectableCollection::<P, N, F, SealCkksCS>::new(cs);
         collection.push_plain(1.0);
@@ -101,8 +98,7 @@ mod tests {
 
     #[test]
     fn test_sum() {
-        let context =
-            SealCkksContext::new(DegreeType::D2048, DegreeType::D2048, SecurityLevel::TC128);
+        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
         let mut collection = SelectableCollection::<P, N, F, SealCkksCS>::new(cs);
         collection.push_plain(1.0);

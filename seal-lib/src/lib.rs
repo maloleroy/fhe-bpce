@@ -1,4 +1,9 @@
 //! Convenient wrapper around Microsoft SEAL library.
+#![no_std]
+
+extern crate alloc;
+use alloc::vec::Vec;
+
 pub use bincode::{Decode, Encode};
 use fhe_core::api::CryptoSystem;
 pub use sealy::{
@@ -191,8 +196,7 @@ mod tests {
 
     #[test]
     fn test_seal_ckks_cs() {
-        let context =
-            SealCkksContext::new(DegreeType::D2048, DegreeType::D2048, SecurityLevel::TC128);
+        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
         let a = cs.cipher(&1.0);
@@ -213,13 +217,7 @@ mod tests {
 
     #[test]
     fn test_seal_bfv_cs() {
-        let context = SealBFVContext::new(
-            DegreeType::D2048,
-            DegreeType::D2048,
-            SecurityLevel::TC128,
-            DegreeType::D2048,
-            25,
-        );
+        let context = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 32);
         let cs = SealBfvCS::new(context);
 
         let a = cs.cipher(&1);

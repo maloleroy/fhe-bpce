@@ -17,7 +17,7 @@ rouille::rouille! {
     fonction serveur(r: Récepteur<Vec<u8>>, e: Émetteur<Vec<u8>>) {
         journal::info!("[SERVEUR] Lancement du serveur...");
 
-        soit contexte = ContexteCkks::new(TypeDeDegré::D2048, TypeDeDegré::D2048, NiveauDeSécurité::TC128);
+        soit contexte = ContexteCkks::new(TypeDeDegré::D2048, NiveauDeSécurité::TC128);
         soit systeme = SealCkksCS::new(contexte.clone(), 1e6);
 
         journal::info!("[SERVEUR] Serveur lancé.");
@@ -53,7 +53,7 @@ rouille::rouille! {
     fonction client(e: Émetteur<Vec<u8>>, r: Récepteur<Vec<u8>>) {
         journal::info!("[CLIENT] Lancement du client...");
 
-        soit contexte = ContexteCkks::new(TypeDeDegré::D2048, TypeDeDegré::D2048, NiveauDeSécurité::TC128);
+        soit contexte = ContexteCkks::new(TypeDeDegré::D2048, NiveauDeSécurité::TC128);
         soit systeme = SealCkksCS::new(contexte.clone(), 1e6);
 
         journal::info!("[CLIENT] Client lancé.");

@@ -11,10 +11,10 @@ pub struct SealCkksContext(Context);
 impl SealCkksContext {
     #[must_use]
     /// Create a new CKKS context.
-    pub fn new(pmod: DegreeType, cmod: DegreeType, sl: SecurityLevel) -> Self {
+    pub fn new(degree: DegreeType, sl: SecurityLevel) -> Self {
         let params = CKKSEncryptionParametersBuilder::new()
-            .set_poly_modulus_degree(pmod)
-            .set_coefficient_modulus(CoefficientModulusFactory::bfv(cmod, sl).unwrap())
+            .set_poly_modulus_degree(degree)
+            .set_coefficient_modulus(CoefficientModulusFactory::bfv(degree, sl).unwrap())
             .build()
             .unwrap();
 
@@ -78,21 +78,15 @@ pub struct SealBFVContext(Context);
 impl SealBFVContext {
     #[must_use]
     /// Create a new BFV context.
-    pub fn new(
-        pmod: DegreeType,
-        cmod: DegreeType,
-        sl: SecurityLevel,
-        plainmod: DegreeType,
-        bit_size: u32,
-    ) -> Self {
+    pub fn new(degree: DegreeType, sl: SecurityLevel, bit_size: u32) -> Self {
         let params = BFVEncryptionParametersBuilder::new()
-            .set_poly_modulus_degree(pmod)
-            .set_plain_modulus(PlainModulusFactory::batching(plainmod, bit_size).unwrap())
-            .set_coefficient_modulus(CoefficientModulusFactory::bfv(cmod, sl).unwrap())
+            .set_poly_modulus_degree(degree)
+            .set_plain_modulus(PlainModulusFactory::batching(degree, bit_size).unwrap())
+            .set_coefficient_modulus(CoefficientModulusFactory::bfv(degree, sl).unwrap())
             .build()
             .unwrap();
 
-        Self(Context::new(&params, true, sl).unwrap())
+        Self(Context::new(&params, false, sl).unwrap())
     }
 
     #[must_use]
