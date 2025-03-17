@@ -1,5 +1,4 @@
 use fhe_core::api::CryptoSystem;
-use seal_lib::CkksHOperation;
 
 pub const FLAG_ON: f64 = 1.0;
 
@@ -14,7 +13,7 @@ impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>> Select
     pub fn new(value: &C::Plaintext, cs: &C) -> Self {
         Self {
             ciphertext: cs.cipher(value),
-            flags: core::array::from_fn(|_| cs.cipher(&0.0)),
+            flags: core::array::from_fn(|_| cs.cipher(&FLAG_OFF)),
         }
     }
 
@@ -76,17 +75,22 @@ impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>>
         sum
     }
 
-    pub fn sum_where_flag(&self, flag_index: usize) -> C::Ciphertext {
+    pub fn operate_many_where_flag(
+        &self,
+        op: C::Operation,
+        flag_index: usize,
+        select_op: C::Operation,
+    ) -> C::Ciphertext
+    where
+        C::Operation: Copy,
+    {
         let mut sum: C::Ciphertext = self.items[0].ciphertext.clone();
         for i in 1..self.items.len() {
             let flag = self.items[i].get_flag(flag_index);
             let product =
                 self.cs
-                    .operate(CkksHOperation::Mul, &self.items[i].ciphertext, Some(&flag));
-            sum = self
-                .cs
-                .operate(CkksHOperation::Add, &sum, Some(&product))
-                .clone();
+                    .operate(select_op.clone(), &self.items[i].ciphertext, Some(&flag));
+            sum = self.cs.operate(op, &sum, Some(&product)).clone();
         }
         sum
     }
@@ -130,7 +134,7 @@ mod tests {
     }
 
     #[test]
-    fn test_sum() {
+    fn test_operate_many() {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
         let mut collection = SelectableCollection::<F, SealCkksCS>::new(cs);
@@ -142,19 +146,34 @@ mod tests {
     }
 
     #[test]
-    fn test_get_flag() {
+    fn test_get_flag_plain() {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
         let item = SelectableItem::<F, _>::new(&1.0, &cs);
-        assert!(approx_eq(item.get_flag(0, &cs), 0.0, 1e-2));
+        assert!(approx_eq(item.get_flag_plain(0, &cs), 0.0, 1e-2));
     }
 
     #[test]
-    fn test_set_flag() {
+    fn test_set_flag_plain() {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
         let mut item = SelectableItem::<F, _>::new(&1.0, &cs);
-        item.set_flag(0, 1.0, &cs);
-        assert!(approx_eq(item.get_flag(0, &cs), 1.0, 1e-2));
+        item.set_flag_plain(0, 1.0, &cs);
+        assert!(approx_eq(item.get_flag_plain(0, &cs), 1.0, 1e-2));
+    }
+
+    #[test]
+    fn test_operate_many_where_flag() {
+        let mut collection = SelectableCollection::<F, SealCkksCS>::new(SealCkksCS::new(
+            SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128),
+            1e6,
+        ));
+
+        collection.push_plain(1.0);
+        collection.push_plain(2.0);
+        collection.items[1].set_flag_plain(0, FLAG_ON, &collection.cs);
+        let sum = collection.operate_many_where_flag(CkksHOperation::Add, 0, CkksHOperation::Mul);
+        let decrypted = collection.cs.decipher(&sum);
+        assert!(approx_eq(decrypted, 2.0, 1e-2));
     }
 }
