@@ -45,13 +45,7 @@ where
     /// Iterate over the exchanged data.
     pub fn iter_over_data(
         &self,
-    ) -> impl Iterator<
-        Item = (
-            &C::Ciphertext,
-            Option<&C::Ciphertext>,
-            &C::Operation,
-        ),
-    > {
+    ) -> impl Iterator<Item = (&C::Ciphertext, Option<&C::Ciphertext>, &C::Operation)> {
         self.lhs
             .iter()
             .zip(self.rhs.iter())
@@ -101,13 +95,7 @@ mod tests {
 
     #[test]
     fn test_seal_bfv_cs() {
-        let context = SealBFVContext::new(
-            DegreeType::D2048,
-            DegreeType::D2048,
-            SecurityLevel::TC128,
-            DegreeType::D2048,
-            25,
-        );
+        let context = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 25);
         let cs = SealBfvCS::new(context.clone());
 
         let a = cs.cipher(&1);
