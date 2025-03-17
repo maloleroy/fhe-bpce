@@ -16,7 +16,7 @@ rust_stable:
   script:
     - cargo build
     - cargo fmt -- --check
-    - cargo clippy -- -D warnings
+    - cargo clippy --workspace -- -D warnings
     - cargo test --workspace
 
 rust_nightly_miri:
