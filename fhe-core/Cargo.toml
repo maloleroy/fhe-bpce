@@ -10,5 +10,4 @@ libm = "0.2.11"
 zeroize = { workspace = true, optional = true }
 
 [features]
-alloc = []
 zeroize = ["dep:zeroize"]
