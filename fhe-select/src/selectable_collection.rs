@@ -165,13 +165,13 @@ mod tests {
     #[test]
     fn test_operate_many_where_flag() {
         let mut collection = SelectableCollection::<F, SealCkksCS>::new(SealCkksCS::new(
-            SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128),
-            1e6,
+            SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128),
+            370727.,
         ));
 
         collection.push_plain(1.0);
         collection.push_plain(2.0);
-        collection.items[1].set_flag_plain(0, FLAG_ON, &collection.cs);
+        collection.items[0].set_flag_plain(0, FLAG_ON, &collection.cs);
         let sum = collection.operate_many_where_flag(CkksHOperation::Add, 0, CkksHOperation::Mul);
         let decrypted = collection.cs.decipher(&sum);
         assert!(approx_eq(decrypted, 2.0, 1e-2));
