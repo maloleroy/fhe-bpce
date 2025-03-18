@@ -112,7 +112,7 @@ mod tests {
     const F: usize = 2;
 
     #[test]
-    fn test_new() {
+    fn test_collection_new() {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
@@ -121,13 +121,32 @@ mod tests {
     }
 
     #[test]
-    fn test_push() {
+    fn test_collection_push() {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
         let mut collection = SelectableCollection::<F, SealCkksCS>::new(cs);
         let item = SelectableItem::new(&1.0, &collection.cs);
         collection.push(item);
         assert_eq!(collection.len(), 1);
+    }
+
+    #[test]
+    fn test_collection_push_plain() {
+        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+        let cs = SealCkksCS::new(context, 1e6);
+        let mut collection = SelectableCollection::<F, SealCkksCS>::new(cs);
+        collection.push_plain(1.0);
+        assert_eq!(collection.len(), 1);
+    }
+
+    #[test]
+    fn test_is_empty() {
+        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+        let cs = SealCkksCS::new(context, 1e6);
+        let mut collection = SelectableCollection::<F, _>::new(cs);
+        assert!(collection.is_empty());
+        collection.push_plain(1.0);
+        assert!(!collection.is_empty());
     }
 
     #[test]
