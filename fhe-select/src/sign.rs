@@ -18,7 +18,7 @@ where
         let mut term = cs.cipher(&(COEFFS[i] as f64));
         term = cs.operate(mul_op, &term, Some(&x_pow_i)); // TODO: use an in-place operation
         result = cs.operate(add_op, &result, Some(&term)); // TODO: use an in-place operation
-        if i != N-1 {
+        if i != N - 1 {
             x_pow_i = cs.operate(mul_op, &x_pow_i, Some(&x)); // TODO: use an in-place operation
         }
     }
@@ -45,7 +45,7 @@ const fn chebyshev_coefficients<const N: usize>() -> [i64; N] {
         i += 1;
     }
 
-    coeffs[N-1]
+    coeffs[N - 1]
 }
 
 #[cfg(test)]
