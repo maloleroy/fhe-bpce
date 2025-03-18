@@ -90,13 +90,13 @@ impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>>
 
         let first_item = &self.items[0];
         let first_flag = first_item.get_flag(flag_index);
-        let mut sum: C::Ciphertext = self.cs.operate(select_op, &first_item.ciphertext, first_flag);
+        let mut sum: C::Ciphertext = self
+            .cs
+            .operate(select_op, &first_item.ciphertext, first_flag);
 
         for item in self.items.iter().skip(1) {
             let flag = item.get_flag(flag_index);
-            let product =
-                self.cs
-                    .operate(select_op, &item.ciphertext, flag);
+            let product = self.cs.operate(select_op, &item.ciphertext, flag);
             sum = self.cs.operate(op, &sum, Some(&product)).clone();
         }
         sum
