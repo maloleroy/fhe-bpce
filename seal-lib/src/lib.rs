@@ -60,13 +60,12 @@ pub struct SealCkksCS {
 
 impl SealCkksCS {
     pub fn new(context: context::SealCkksContext, scale: f64) -> Self {
-        let (skey, pkey) = context.generate_keys();
+        let (skey, pkey, relin_key) = context.generate_keys();
 
         let encoder = context.encoder(scale);
         let evaluator = context.evaluator();
         let encryptor = context.encryptor(&pkey);
         let decryptor = context.decryptor(&skey);
-        let relin_key = context.relinearization_key();
 
         Self {
             encoder,
@@ -114,7 +113,7 @@ impl CryptoSystem for SealCkksCS {
                 debug_assert!(rhs.is_none());
                 let result = impls::homom_exp(&self.evaluator, &lhs.0, pow, &self.relin_key);
                 Ciphertext(result)
-            },
+            }
         }
     }
 }
