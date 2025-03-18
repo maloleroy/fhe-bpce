@@ -29,7 +29,7 @@ impl SealCkksContext {
 
     #[must_use]
     #[inline]
-    /// Generate a pair of secret and public keys.
+    /// Generate a set of secret, public and relinearization keys.
     pub fn generate_keys(&self) -> (SecretKey, PublicKey, RelinearizationKey) {
         let key_gen = KeyGenerator::new(self.context()).unwrap();
 
