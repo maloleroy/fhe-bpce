@@ -1,8 +1,24 @@
 use fhe_core::api::CryptoSystem;
 
-pub const FLAG_ON: f64 = 1.0;
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Flag {
+    On,
+    Off,
+}
 
-pub const FLAG_OFF: f64 = 0.0;
+impl Flag {
+    const FLAG_ON: f64 = 1.0;
+    const FLAG_OFF: f64 = 0.0;
+
+    #[must_use]
+    #[inline]
+    const fn as_f64(&self) -> f64 {
+        match self {
+            Self::On => Self::FLAG_ON,
+            Self::Off => Self::FLAG_OFF,
+        }
+    }
+}
 
 pub struct SelectableItem<const F: usize, C: CryptoSystem> {
     ciphertext: C::Ciphertext,
@@ -10,24 +26,31 @@ pub struct SelectableItem<const F: usize, C: CryptoSystem> {
 }
 
 impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>> SelectableItem<F, C> {
+    #[must_use]
     pub fn new(value: &C::Plaintext, cs: &C) -> Self {
-        const DEFAULT_FLAG: f64 = FLAG_OFF;
+        const DEFAULT_FLAG: Flag = Flag::Off;
         Self {
             ciphertext: cs.cipher(value),
-            flags: core::array::from_fn(|_| cs.cipher(&DEFAULT_FLAG)),
+            flags: core::array::from_fn(|_| cs.cipher(&DEFAULT_FLAG.as_f64())),
         }
     }
 
+    #[must_use]
+    #[inline]
     pub fn get_flag(&self, index: usize) -> Option<&C::Ciphertext> {
         self.flags.get(index)
     }
 
-    pub fn get_flag_plain(&self, index: usize, cs: &C) -> f64 {
+    #[must_use]
+    #[inline]
+    #[cfg(test)]
+    fn get_flag_plain(&self, index: usize, cs: &C) -> f64 {
         cs.decipher(&self.flags[index])
     }
 
-    pub fn set_flag_plain(&mut self, index: usize, value: f64, cs: &C) {
-        self.flags[index] = cs.cipher(&value);
+    #[inline]
+    pub fn set_flag_plain(&mut self, index: usize, value: Flag, cs: &C) {
+        self.flags[index] = cs.cipher(&value.as_f64());
     }
 }
 
@@ -39,6 +62,8 @@ pub struct SelectableCollection<const F: usize, C: CryptoSystem> {
 impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>>
     SelectableCollection<F, C>
 {
+    #[must_use]
+    #[inline]
     pub const fn new(cs: C) -> Self {
         Self {
             items: Vec::new(),
@@ -46,22 +71,29 @@ impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>>
         }
     }
 
+    #[must_use]
+    #[inline]
     pub fn len(&self) -> usize {
         self.items.len()
     }
 
+    #[must_use]
+    #[inline]
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
 
+    #[inline]
     pub fn push(&mut self, item: SelectableItem<F, C>) {
         self.items.push(item);
     }
 
+    #[inline]
     pub fn push_plain(&mut self, item: f64) {
         self.items.push(SelectableItem::new(&item, &self.cs));
     }
 
+    #[must_use]
     pub fn operate_many(&self, op: C::Operation) -> C::Ciphertext
     where
         C::Operation: Copy,
@@ -76,6 +108,7 @@ impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>>
         sum
     }
 
+    #[must_use]
     pub fn operate_many_where_flag(
         &self,
         op: C::Operation,
@@ -183,7 +216,7 @@ mod tests {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
         let mut item = SelectableItem::<F, _>::new(&1.0, &cs);
-        item.set_flag_plain(0, 1.0, &cs);
+        item.set_flag_plain(0, Flag::On, &cs);
         assert!(approx_eq(item.get_flag_plain(0, &cs), 1.0, 1e-2));
     }
 
@@ -196,7 +229,7 @@ mod tests {
 
         collection.push_plain(1.0);
         collection.push_plain(2.0);
-        collection.items[0].set_flag_plain(0, FLAG_ON, &collection.cs);
+        collection.items[0].set_flag_plain(0, Flag::On, &collection.cs);
         let sum = collection.operate_many_where_flag(CkksHOperation::Add, 0, CkksHOperation::Mul);
         let decrypted = collection.cs.decipher(&sum);
 
