@@ -12,10 +12,9 @@ pub struct SelectableItem<const F: usize, C: CryptoSystem> {
 impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>> SelectableItem<F, C> {
     pub fn new(value: &C::Plaintext, cs: &C) -> Self {
         const DEFAULT_FLAG: f64 = FLAG_OFF;
-        let ciphered_default_flag = cs.cipher(&DEFAULT_FLAG);
         Self {
             ciphertext: cs.cipher(value),
-            flags: core::array::from_fn(|_| ciphered_default_flag.clone()),
+            flags: core::array::from_fn(|_| cs.cipher(&DEFAULT_FLAG)),
         }
     }
 
