@@ -17,8 +17,8 @@ impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>> Select
         }
     }
 
-    pub fn get_flag(&self, index: usize) -> C::Ciphertext {
-        self.flags[index].clone()
+    pub fn get_flag(&self, index: usize) -> Option<&C::Ciphertext> {
+        self.flags.get(index)
     }
 
     pub fn get_flag_plain(&self, index: usize, cs: &C) -> f64 {
@@ -89,7 +89,7 @@ impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>>
             let flag = self.items[i].get_flag(flag_index);
             let product =
                 self.cs
-                    .operate(select_op.clone(), &self.items[i].ciphertext, Some(&flag));
+                    .operate(select_op.clone(), &self.items[i].ciphertext, flag);
             sum = self.cs.operate(op, &sum, Some(&product)).clone();
         }
         sum
