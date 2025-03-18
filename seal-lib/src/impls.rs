@@ -30,3 +30,13 @@ pub fn homom_exp(
 ) -> Ciphertext {
     evaluator.exponentiate(base, exponent, relin_key).unwrap()
 }
+
+#[must_use]
+#[inline]
+pub fn relinearize(
+    evaluator: &dyn sealy::Evaluator<Plaintext = Plaintext, Ciphertext = Ciphertext>,
+    ciphertext: &mut Ciphertext,
+    relin_key: &RelinearizationKey,
+) -> Ciphertext {
+    evaluator.relinearize(ciphertext, relin_key).unwrap()
+}

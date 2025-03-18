@@ -116,6 +116,14 @@ impl CryptoSystem for SealCkksCS {
             }
         }
     }
+
+    fn relinearize(&self, ciphertext: &mut Self::Ciphertext) {
+        *ciphertext = Ciphertext(impls::relinearize(
+            &self.evaluator,
+            &mut ciphertext.0,
+            &self.relin_key,
+        ));
+    }
 }
 
 #[derive(Clone, Copy, Debug, Encode, Decode)]
@@ -184,6 +192,10 @@ impl CryptoSystem for SealBfvCS {
                 Ciphertext(result)
             }
         }
+    }
+
+    fn relinearize(&self, _ciphertext: &mut Self::Ciphertext) {
+        // No relinearization in BFV
     }
 }
 

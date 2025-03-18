@@ -17,9 +17,11 @@ where
     for i in 0..N {
         let mut term = cs.cipher(&(COEFFS[i] as f64));
         term = cs.operate(mul_op, &term, Some(&x_pow_i)); // TODO: use an in-place operation
+        cs.relinearize(&mut term);
         result = cs.operate(add_op, &result, Some(&term)); // TODO: use an in-place operation
         if i != N - 1 {
             x_pow_i = cs.operate(mul_op, &x_pow_i, Some(&x)); // TODO: use an in-place operation
+            cs.relinearize(&mut x_pow_i);
         }
     }
     result
