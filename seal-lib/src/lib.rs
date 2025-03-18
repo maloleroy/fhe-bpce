@@ -10,7 +10,7 @@ pub use sealy::{
     BFVEncoder, BFVEvaluator, CKKSEncoder, CKKSEvaluator, Decryptor, DegreeType, Evaluator,
     Plaintext, PublicKey, SecretKey, SecurityLevel,
 };
-use sealy::{FromBytes, ToBytes};
+use sealy::{FromBytes as _, ToBytes as _};
 
 pub mod context;
 mod impls;
