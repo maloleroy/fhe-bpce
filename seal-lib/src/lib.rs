@@ -216,6 +216,30 @@ mod tests {
     }
 
     #[test]
+    fn test_seal_ckks_cs_linear_sum() {
+        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+        let cs = SealCkksCS::new(context, 1e6);
+
+        let a_plaintext = 1.0;
+        let a_coeff_plaintext = 2.0;
+        let b_plaintext = 3.0;
+        let b_coeff_plaintext = 4.0;
+
+        let a = cs.cipher(&a_plaintext);
+        let a_coeff = cs.cipher(&a_coeff_plaintext);
+        let b = cs.cipher(&b_plaintext);
+        let b_coeff = cs.cipher(&b_coeff_plaintext);
+        let ac = cs.operate(CkksHOperation::Mul, &a, Some(&a_coeff));
+        let bc = cs.operate(CkksHOperation::Mul, &b, Some(&b_coeff));
+        let sum = cs.operate(CkksHOperation::Add, &ac, Some(&bc));
+
+        let decrypted_sum = cs.decipher(&sum);
+        let expected_sum = a_plaintext * a_coeff_plaintext + b_plaintext * b_coeff_plaintext;
+
+        assert!(approx_eq(decrypted_sum, expected_sum, 5e-2))
+    }
+
+    #[test]
     fn test_seal_bfv_cs() {
         let context = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 16);
         let cs = SealBfvCS::new(context);
