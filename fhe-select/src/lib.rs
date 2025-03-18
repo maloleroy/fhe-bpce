@@ -4,4 +4,4 @@
 
 mod selectable_collection;
 
-pub use selectable_collection::{FLAG_OFF, FLAG_ON, SelectableCollection, SelectableItem};
+pub use selectable_collection::{Flag, SelectableCollection, SelectableItem};
