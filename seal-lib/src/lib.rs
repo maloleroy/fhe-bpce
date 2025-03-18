@@ -55,6 +55,7 @@ pub struct SealCkksCS {
     evaluator: sealy::CKKSEvaluator,
     encryptor: sealy::Encryptor<sealy::Asym>,
     decryptor: sealy::Decryptor,
+    relin_key: sealy::RelinearizationKey,
 }
 
 impl SealCkksCS {
@@ -65,12 +66,14 @@ impl SealCkksCS {
         let evaluator = context.evaluator();
         let encryptor = context.encryptor(&pkey);
         let decryptor = context.decryptor(&skey);
+        let relin_key = context.relinearization_key();
 
         Self {
             encoder,
             evaluator,
             encryptor,
             decryptor,
+            relin_key,
         }
     }
 }
@@ -107,6 +110,11 @@ impl CryptoSystem for SealCkksCS {
                 let result = impls::homom_mul(&self.evaluator, &lhs.0, &rhs.0);
                 Ciphertext(result)
             }
+            CkksHOperation::Exp(pow) => {
+                debug_assert!(rhs.is_none());
+                let result = impls::homom_exp(&self.evaluator, &lhs.0, pow, &self.relin_key);
+                Ciphertext(result)
+            },
         }
     }
 }
@@ -116,6 +124,7 @@ impl CryptoSystem for SealCkksCS {
 pub enum CkksHOperation {
     Add,
     Mul,
+    Exp(u64),
 }
 
 pub struct SealBfvCS {
@@ -213,6 +222,19 @@ mod tests {
         assert!(approx_eq(b, 2.0, PRECISION));
         assert!(approx_eq(c, 3.0, PRECISION));
         assert!(approx_eq(d, 2.0, PRECISION));
+    }
+
+    #[test]
+    fn test_seal_ckks_cs_exp() {
+        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+        let cs = SealCkksCS::new(context, 1e6);
+
+        let a = cs.cipher(&2.0);
+        let e = cs.operate(CkksHOperation::Exp(3), &a, None);
+
+        let d = cs.decipher(&e);
+
+        assert!(approx_eq(d, 8.0, PRECISION));
     }
 
     #[test]

@@ -1,7 +1,6 @@
 //! CKKS Backend
 #![warn(clippy::nursery, clippy::pedantic)]
 #![forbid(unsafe_code)]
-#![feature(generic_const_exprs)]
 
 mod selectable_collection;
 mod sign;

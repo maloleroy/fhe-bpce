@@ -1,7 +1,5 @@
 use sealy::{
-    Asym, BFVEncoder, BFVEncryptionParametersBuilder, BFVEvaluator, CKKSEncoder,
-    CKKSEncryptionParametersBuilder, CKKSEvaluator, CoefficientModulusFactory, Context, Decryptor,
-    Encryptor, KeyGenerator, PlainModulusFactory, PublicKey, SecretKey,
+    Asym, BFVEncoder, BFVEncryptionParametersBuilder, BFVEvaluator, CKKSEncoder, CKKSEncryptionParametersBuilder, CKKSEvaluator, CoefficientModulusFactory, Context, Decryptor, Encryptor, KeyGenerator, PlainModulusFactory, PublicKey, RelinearizationKey, SecretKey
 };
 pub use sealy::{DegreeType, Evaluator, SecurityLevel};
 
@@ -61,6 +59,13 @@ impl SealCkksContext {
     /// Create a new decryptor.
     pub fn decryptor(&self, secret_key: &SecretKey) -> Decryptor {
         Decryptor::new(self.context(), secret_key).unwrap()
+    }
+
+    #[must_use]
+    #[inline]
+    /// Create a new relinearization key.
+    pub fn relinearization_key(&self) -> sealy::RelinearizationKey {
+        RelinearizationKey::new().unwrap()
     }
 }
 
