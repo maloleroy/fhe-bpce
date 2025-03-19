@@ -1,4 +1,7 @@
-use fhe_core::api::{CryptoSystem, select::{SelectableCS, Flag}};
+use fhe_core::api::{
+    CryptoSystem,
+    select::{Flag, SelectableCS},
+};
 
 pub struct SelectableItem<const F: usize, C: CryptoSystem> {
     ciphertext: C::Ciphertext,
@@ -40,9 +43,7 @@ pub struct SelectableCollection<const F: usize, C: CryptoSystem> {
     cs: C,
 }
 
-impl<const F: usize, C: SelectableCS<Ciphertext: Clone>>
-    SelectableCollection<F, C>
-{
+impl<const F: usize, C: SelectableCS<Ciphertext: Clone>> SelectableCollection<F, C> {
     #[must_use]
     #[inline]
     pub const fn new(cs: C) -> Self {
