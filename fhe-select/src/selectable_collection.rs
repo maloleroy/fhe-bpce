@@ -12,7 +12,7 @@ impl Flag {
 
     #[must_use]
     #[inline]
-    const fn as_f64(&self) -> f64 {
+    const fn as_f64(self) -> f64 {
         match self {
             Self::On => Self::FLAG_ON,
             Self::Off => Self::FLAG_OFF,
@@ -109,6 +109,11 @@ impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>>
     }
 
     #[must_use]
+    /// Operates on all items in the collection where the flag at the given index is set to `Flag::On`.
+    /// 
+    /// ## Panics
+    /// 
+    /// Panics if the collection is empty.
     pub fn operate_many_where_flag(
         &self,
         op: C::Operation,
