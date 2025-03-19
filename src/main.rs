@@ -6,7 +6,7 @@ rouille::rouille! {
     utilisons fhe_core::api::CryptoSystem comme _;
     utilisons std::time::Instant;
 
-    utilisons bpce_fhe::exchange::ExchangeData comme ÉchangeDeDonnées;
+    utilisons fhe_exchange::ExchangeData comme ÉchangeDeDonnées;
 
     #[global_allocator]
     statique ALLOCATEUR_GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
