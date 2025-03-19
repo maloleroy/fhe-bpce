@@ -60,13 +60,12 @@ pub struct SealCkksCS {
 
 impl SealCkksCS {
     pub fn new(context: context::SealCkksContext, scale: f64) -> Self {
-        let (skey, pkey) = context.generate_keys();
+        let (skey, pkey, relin_key) = context.generate_keys();
 
         let encoder = context.encoder(scale);
         let evaluator = context.evaluator();
         let encryptor = context.encryptor(&pkey);
         let decryptor = context.decryptor(&skey);
-        let relin_key = context.relinearization_key();
 
         Self {
             encoder,
@@ -114,8 +113,16 @@ impl CryptoSystem for SealCkksCS {
                 debug_assert!(rhs.is_none());
                 let result = impls::homom_exp(&self.evaluator, &lhs.0, pow, &self.relin_key);
                 Ciphertext(result)
-            },
+            }
         }
+    }
+
+    fn relinearize(&self, ciphertext: &mut Self::Ciphertext) {
+        *ciphertext = Ciphertext(impls::relinearize(
+            &self.evaluator,
+            &mut ciphertext.0,
+            &self.relin_key,
+        ));
     }
 }
 
@@ -186,6 +193,10 @@ impl CryptoSystem for SealBfvCS {
             }
         }
     }
+
+    fn relinearize(&self, _ciphertext: &mut Self::Ciphertext) {
+        // No relinearization in BFV
+    }
 }
 
 #[derive(Clone, Copy, Debug, Encode, Decode)]
@@ -205,7 +216,7 @@ mod tests {
 
     #[test]
     fn test_seal_ckks_cs() {
-        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
         let a = cs.cipher(&1.0);
@@ -226,7 +237,7 @@ mod tests {
 
     #[test]
     fn test_seal_ckks_cs_exp() {
-        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
         let a = cs.cipher(&2.0);
@@ -239,7 +250,7 @@ mod tests {
 
     #[test]
     fn test_seal_ckks_cs_linear_sum() {
-        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
         let a_plaintext = 1.0;
@@ -263,7 +274,7 @@ mod tests {
 
     #[test]
     fn test_seal_bfv_cs() {
-        let context = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 16);
+        let context = SealBFVContext::new(DegreeType::D4096, SecurityLevel::TC128, 16);
         let cs = SealBfvCS::new(context);
 
         let a_plaintext = 1;

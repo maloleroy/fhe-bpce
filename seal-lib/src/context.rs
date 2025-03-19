@@ -1,5 +1,7 @@
 use sealy::{
-    Asym, BFVEncoder, BFVEncryptionParametersBuilder, BFVEvaluator, CKKSEncoder, CKKSEncryptionParametersBuilder, CKKSEvaluator, CoefficientModulusFactory, Context, Decryptor, Encryptor, KeyGenerator, PlainModulusFactory, PublicKey, RelinearizationKey, SecretKey
+    Asym, BFVEncoder, BFVEncryptionParametersBuilder, BFVEvaluator, CKKSEncoder,
+    CKKSEncryptionParametersBuilder, CKKSEvaluator, CoefficientModulusFactory, Context, Decryptor,
+    Encryptor, KeyGenerator, PlainModulusFactory, PublicKey, RelinearizationKey, SecretKey,
 };
 pub use sealy::{DegreeType, Evaluator, SecurityLevel};
 
@@ -27,10 +29,17 @@ impl SealCkksContext {
 
     #[must_use]
     #[inline]
-    /// Generate a pair of secret and public keys.
-    pub fn generate_keys(&self) -> (SecretKey, PublicKey) {
+    /// Generate a set of secret, public and relinearization keys.
+    pub fn generate_keys(&self) -> (SecretKey, PublicKey, RelinearizationKey) {
         let key_gen = KeyGenerator::new(self.context()).unwrap();
-        (key_gen.secret_key(), key_gen.create_public_key())
+
+        let sk = key_gen.secret_key();
+        let pk = key_gen.create_public_key();
+        let rk = key_gen
+            .create_relinearization_keys()
+            .expect("Failed to create relinearization key");
+
+        (sk, pk, rk)
     }
 
     #[must_use]
@@ -59,13 +68,6 @@ impl SealCkksContext {
     /// Create a new decryptor.
     pub fn decryptor(&self, secret_key: &SecretKey) -> Decryptor {
         Decryptor::new(self.context(), secret_key).unwrap()
-    }
-
-    #[must_use]
-    #[inline]
-    /// Create a new relinearization key.
-    pub fn relinearization_key(&self) -> sealy::RelinearizationKey {
-        RelinearizationKey::new().unwrap()
     }
 }
 

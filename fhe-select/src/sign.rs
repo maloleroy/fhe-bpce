@@ -17,9 +17,11 @@ where
     for i in 0..N {
         let mut term = cs.cipher(&(COEFFS[i] as f64));
         term = cs.operate(mul_op, &term, Some(&x_pow_i)); // TODO: use an in-place operation
+        cs.relinearize(&mut term);
         result = cs.operate(add_op, &result, Some(&term)); // TODO: use an in-place operation
-        if i != N-1 {
+        if i != N - 1 {
             x_pow_i = cs.operate(mul_op, &x_pow_i, Some(&x)); // TODO: use an in-place operation
+            cs.relinearize(&mut x_pow_i);
         }
     }
     result
@@ -45,7 +47,7 @@ const fn chebyshev_coefficients<const N: usize>() -> [i64; N] {
         i += 1;
     }
 
-    coeffs[N-1]
+    coeffs[N - 1]
 }
 
 #[cfg(test)]
@@ -59,7 +61,7 @@ mod tests {
     #[test]
     fn test_sign() {
         let context: SealCkksContext =
-            SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+            SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
         let two = cs.cipher(&2.);
