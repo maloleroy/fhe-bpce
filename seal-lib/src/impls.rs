@@ -49,12 +49,12 @@ pub fn homom_exp(
     evaluator.exponentiate(base, exponent, relin_key).unwrap()
 }
 
-#[must_use]
 #[inline]
 pub fn resize(
     _evaluator: &dyn sealy::Evaluator<Plaintext = Plaintext, Ciphertext = Ciphertext>,
     _ciphertext: &mut Ciphertext,
 ) {
+    todo!("resize")
     // TODO: implement resize
 }
 
