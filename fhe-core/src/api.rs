@@ -19,6 +19,7 @@ pub trait CryptoSystem {
     /// Decrypts a ciphertext back into a plaintext.
     fn decipher(&self, ciphertext: &Self::Ciphertext) -> Self::Plaintext;
 
+    #[must_use = "This method does not modify the input ciphertext."]
     /// Performs an operation on the ciphertexts.
     ///
     /// Every operation requires at least one operand.
