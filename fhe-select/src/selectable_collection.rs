@@ -1,37 +1,18 @@
-use fhe_core::api::CryptoSystem;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Flag {
-    On,
-    Off,
-}
-
-impl Flag {
-    const FLAG_ON: f64 = 1.0;
-    const FLAG_OFF: f64 = 0.0;
-
-    #[must_use]
-    #[inline]
-    const fn as_f64(self) -> f64 {
-        match self {
-            Self::On => Self::FLAG_ON,
-            Self::Off => Self::FLAG_OFF,
-        }
-    }
-}
+use fhe_core::api::{CryptoSystem, select::{SelectableCS, Flag}};
 
 pub struct SelectableItem<const F: usize, C: CryptoSystem> {
     ciphertext: C::Ciphertext,
     flags: [C::Ciphertext; F],
 }
 
-impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>> SelectableItem<F, C> {
+impl<const F: usize, C: SelectableCS> SelectableItem<F, C> {
     #[must_use]
     pub fn new(value: &C::Plaintext, cs: &C) -> Self {
         const DEFAULT_FLAG: Flag = Flag::Off;
+        let default_flag = cs.flag_to_plaintext(DEFAULT_FLAG);
         Self {
             ciphertext: cs.cipher(value),
-            flags: core::array::from_fn(|_| cs.cipher(&DEFAULT_FLAG.as_f64())),
+            flags: core::array::from_fn(|_| cs.cipher(&default_flag)),
         }
     }
 
@@ -44,13 +25,13 @@ impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>> Select
     #[must_use]
     #[inline]
     #[cfg(test)]
-    fn get_flag_plain(&self, index: usize, cs: &C) -> f64 {
+    fn get_flag_plain(&self, index: usize, cs: &C) -> C::Plaintext {
         cs.decipher(&self.flags[index])
     }
 
     #[inline]
-    pub fn set_flag_plain(&mut self, index: usize, value: Flag, cs: &C) {
-        self.flags[index] = cs.cipher(&value.as_f64());
+    pub fn set_flag_plain(&mut self, index: usize, flag: Flag, cs: &C) {
+        self.flags[index] = cs.cipher(&cs.flag_to_plaintext(flag));
     }
 }
 
@@ -59,7 +40,7 @@ pub struct SelectableCollection<const F: usize, C: CryptoSystem> {
     cs: C,
 }
 
-impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>>
+impl<const F: usize, C: SelectableCS<Ciphertext: Clone>>
     SelectableCollection<F, C>
 {
     #[must_use]
@@ -89,8 +70,8 @@ impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>>
     }
 
     #[inline]
-    pub fn push_plain(&mut self, item: f64) {
-        self.items.push(SelectableItem::new(&item, &self.cs));
+    pub fn push_plain(&mut self, item: &C::Plaintext) {
+        self.items.push(SelectableItem::new(item, &self.cs));
     }
 
     #[must_use]
@@ -173,7 +154,7 @@ mod tests {
         let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
         let mut collection = SelectableCollection::<F, SealCkksCS>::new(cs);
-        collection.push_plain(1.0);
+        collection.push_plain(&1.0);
         assert_eq!(collection.len(), 1);
     }
 
@@ -183,7 +164,7 @@ mod tests {
         let cs = SealCkksCS::new(context, 1e6);
         let mut collection = SelectableCollection::<F, _>::new(cs);
         assert!(collection.is_empty());
-        collection.push_plain(1.0);
+        collection.push_plain(&1.0);
         assert!(!collection.is_empty());
     }
 
@@ -192,7 +173,7 @@ mod tests {
         let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
         let mut collection = SelectableCollection::<F, SealCkksCS>::new(cs);
-        collection.push_plain(1.0);
+        collection.push_plain(&1.0);
         assert_eq!(collection.len(), 1);
     }
 
@@ -201,8 +182,8 @@ mod tests {
         let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
         let mut collection = SelectableCollection::<F, SealCkksCS>::new(cs);
-        collection.push_plain(1.0);
-        collection.push_plain(2.0);
+        collection.push_plain(&1.0);
+        collection.push_plain(&2.0);
         let sum = collection.operate_many(CkksHOperation::Add);
         let decrypted = collection.cs.decipher(&sum);
         assert!(approx_eq(decrypted, 3.0, 5e-2));
@@ -232,8 +213,8 @@ mod tests {
             370727.,
         ));
 
-        collection.push_plain(1.0);
-        collection.push_plain(2.0);
+        collection.push_plain(&1.0);
+        collection.push_plain(&2.0);
         collection.items[0].set_flag_plain(0, Flag::On, &collection.cs);
         let sum = collection.operate_many_where_flag(CkksHOperation::Add, 0, CkksHOperation::Mul);
         let decrypted = collection.cs.decipher(&sum);
