@@ -115,7 +115,7 @@ impl CryptoSystem for SealCkksCS {
                     &self.evaluator,
                     &lhs.0,
                     pow,
-                    &self.relin_key.as_ref().unwrap(),
+                    self.relin_key.as_ref().unwrap(),
                 );
                 Ciphertext(result)
             }
@@ -126,7 +126,7 @@ impl CryptoSystem for SealCkksCS {
         *ciphertext = Ciphertext(impls::relinearize(
             &self.evaluator,
             &mut ciphertext.0,
-            &self.relin_key.as_ref().unwrap(),
+            self.relin_key.as_ref().unwrap(),
         ));
     }
 }
