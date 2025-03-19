@@ -38,6 +38,8 @@ You will find useful examples in `examples/`. You can run them with `cargo run -
 
 You can start benchmarks found in `benches/` by running `cargo bench`.
 
+There are other benchmarks in the workspace's crates. You can use `cargo bench --workspace` to start them all.
+
 ## Architecture
 
 The main binary uses crates to organize its dependencies:
