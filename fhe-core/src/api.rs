@@ -28,6 +28,8 @@ pub trait CryptoSystem {
         lhs: &Self::Ciphertext,
         rhs: Option<&Self::Ciphertext>,
     ) -> Self::Ciphertext;
+
+    fn relinearize(&self, ciphertext: &mut Self::Ciphertext);
 }
 
 #[allow(dead_code)]
@@ -83,6 +85,8 @@ mod private {
                 }
             }
         }
+
+        fn relinearize(&self, _ciphertext: &mut Self::Ciphertext) {}
     }
 
     // Assert that CryptoSystem is `dyn` compatible.
