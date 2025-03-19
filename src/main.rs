@@ -2,6 +2,9 @@ use bpce_fhe::{start_client, start_server};
 use clap::{Parser, Subcommand};
 use std::str::FromStr;
 
+#[global_allocator]
+static GLOBAL_ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 #[derive(Parser)]
 #[command(name = "BPCE FHE", version = "0.1.0", about = "FHE utility for BPCE")]
 struct Cli {
