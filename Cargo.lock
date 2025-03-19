@@ -63,6 +63,7 @@ version = "0.1.0"
 dependencies = [
  "bincode",
  "fhe-core",
+ "fhe-exchange",
  "log",
  "mimalloc",
  "pretty_env_logger",
@@ -139,6 +140,15 @@ version = "0.1.0"
 dependencies = [
  "getrandom",
  "libm",
+]
+
+[[package]]
+name = "fhe-exchange"
+version = "0.1.0"
+dependencies = [
+ "bincode",
+ "fhe-core",
+ "seal-lib",
 ]
 
 [[package]]
