@@ -1,3 +1,4 @@
+use bpce_fhe::{start_client, start_server};
 use clap::{Parser, Subcommand};
 use std::str::FromStr;
 
@@ -21,7 +22,8 @@ enum Mode {
     },
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     pretty_env_logger::formatted_builder()
         .filter_level(
             #[cfg(debug_assertions)]
@@ -37,9 +39,11 @@ fn main() {
         Mode::Client { address } => {
             let socket_addr = core::net::SocketAddr::from_str(&address).expect("Invalid address");
             log::info!("Starting client.. Connecting to {}.", socket_addr);
+            start_client(socket_addr).await;
         }
         Mode::Server { port } => {
             log::info!("Starting serveur on port {}.", port);
+            start_server(port).await;
         }
     }
 }
