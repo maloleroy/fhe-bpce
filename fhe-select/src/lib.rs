@@ -5,5 +5,6 @@
 mod selectable_collection;
 mod sign;
 
-pub use selectable_collection::{Flag, SelectableCollection, SelectableItem};
+pub use fhe_core::api::select::Flag;
+pub use selectable_collection::{SelectableCollection, SelectableItem};
 pub use sign::sign;

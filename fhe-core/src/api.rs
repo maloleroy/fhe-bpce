@@ -1,5 +1,7 @@
 //! This module defines the core API of FHE cryptosystems.
 
+pub mod select;
+
 /// A trait that defines the core API of a FHE cryptosystem.
 pub trait CryptoSystem {
     /// The plaintext type for the FHE scheme.

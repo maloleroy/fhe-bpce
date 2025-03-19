@@ -5,7 +5,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 pub use bincode::{Decode, Encode};
-use fhe_core::api::CryptoSystem;
+use fhe_core::api::{select::SelectableCS, CryptoSystem};
 pub use sealy::{
     BFVEncoder, BFVEvaluator, CKKSEncoder, CKKSEvaluator, Decryptor, DegreeType, Evaluator,
     Plaintext, PublicKey, SecretKey, SecurityLevel,
@@ -131,6 +131,18 @@ impl CryptoSystem for SealCkksCS {
     }
 }
 
+impl SelectableCS for SealCkksCS {
+    fn flag_to_plaintext(&self, flag: fhe_core::api::select::Flag) -> Self::Plaintext {
+        const FLAG_ON: f64 = 1.0;
+        const FLAG_OFF: f64 = 0.0;
+
+        match flag {
+            fhe_core::api::select::Flag::On => FLAG_ON,
+            fhe_core::api::select::Flag::Off => FLAG_OFF,
+        }   
+    }
+}
+
 #[derive(Clone, Copy, Debug, Encode, Decode)]
 #[non_exhaustive]
 pub enum CkksHOperation {
@@ -201,6 +213,19 @@ impl CryptoSystem for SealBfvCS {
 
     fn relinearize(&self, _ciphertext: &mut Self::Ciphertext) {
         // No relinearization in BFV
+    }
+}
+
+
+impl SelectableCS for SealBfvCS {
+    fn flag_to_plaintext(&self, flag: fhe_core::api::select::Flag) -> Self::Plaintext {
+        const FLAG_ON: u64 = 1;
+        const FLAG_OFF: u64 = 0;
+
+        match flag {
+            fhe_core::api::select::Flag::On => FLAG_ON,
+            fhe_core::api::select::Flag::Off => FLAG_OFF,
+        }   
     }
 }
 
