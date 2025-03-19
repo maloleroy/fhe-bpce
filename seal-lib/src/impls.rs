@@ -10,6 +10,15 @@ pub fn homom_add(
     evaluator.add(lhs, rhs).unwrap()
 }
 
+#[inline]
+pub fn homom_add_inplace(
+    evaluator: &dyn sealy::Evaluator<Plaintext = Plaintext, Ciphertext = Ciphertext>,
+    lhs: &mut Ciphertext,
+    rhs: &Ciphertext,
+) {
+    evaluator.add_inplace(lhs, rhs).unwrap()
+}
+
 #[must_use]
 #[inline]
 pub fn homom_mul(
@@ -18,6 +27,15 @@ pub fn homom_mul(
     rhs: &Ciphertext,
 ) -> Ciphertext {
     evaluator.multiply(lhs, rhs).unwrap()
+}
+
+#[inline]
+pub fn homom_mul_inplace(
+    evaluator: &dyn sealy::Evaluator<Plaintext = Plaintext, Ciphertext = Ciphertext>,
+    lhs: &mut Ciphertext,
+    rhs: &Ciphertext,
+) {
+    evaluator.multiply_inplace(lhs, rhs).unwrap()
 }
 
 #[must_use]
@@ -29,6 +47,15 @@ pub fn homom_exp(
     relin_key: &RelinearizationKey,
 ) -> Ciphertext {
     evaluator.exponentiate(base, exponent, relin_key).unwrap()
+}
+
+#[must_use]
+#[inline]
+pub fn resize(
+    _evaluator: &dyn sealy::Evaluator<Plaintext = Plaintext, Ciphertext = Ciphertext>,
+    _ciphertext: &mut Ciphertext,
+) {
+    // TODO: implement resize
 }
 
 #[must_use]
