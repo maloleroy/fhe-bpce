@@ -61,7 +61,7 @@ mod tests {
     #[test]
     fn test_sign() {
         let context: SealCkksContext =
-            SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+            SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
         let two = cs.cipher(&2.);

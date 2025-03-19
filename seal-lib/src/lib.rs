@@ -216,7 +216,7 @@ mod tests {
 
     #[test]
     fn test_seal_ckks_cs() {
-        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
         let a = cs.cipher(&1.0);
@@ -237,7 +237,7 @@ mod tests {
 
     #[test]
     fn test_seal_ckks_cs_exp() {
-        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
         let a = cs.cipher(&2.0);
@@ -250,7 +250,7 @@ mod tests {
 
     #[test]
     fn test_seal_ckks_cs_linear_sum() {
-        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
         let a_plaintext = 1.0;
@@ -274,7 +274,7 @@ mod tests {
 
     #[test]
     fn test_seal_bfv_cs() {
-        let context = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 16);
+        let context = SealBFVContext::new(DegreeType::D4096, SecurityLevel::TC128, 16);
         let cs = SealBfvCS::new(context);
 
         let a_plaintext = 1;
