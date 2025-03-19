@@ -77,10 +77,13 @@ where
     fn decode<D: bincode::de::Decoder<Context = Context>>(
         decoder: &mut D,
     ) -> Result<Self, bincode::error::DecodeError> {
+        let lhs = Vec::<C::Ciphertext>::decode(decoder)?;
+        let rhs = Vec::<Option<C::Ciphertext>>::decode(decoder)?;
+        let operation = Vec::<C::Operation>::decode(decoder)?;
         Ok(Self {
-            lhs: Vec::<_>::decode(decoder)?,
-            rhs: Vec::<Option<_>>::decode(decoder)?,
-            operation: Vec::<_>::decode(decoder)?,
+            lhs,
+            rhs,
+            operation,
         })
     }
 }

@@ -110,9 +110,9 @@ impl<const F: usize, C: CryptoSystem<Plaintext = f64, Ciphertext: Clone>>
 
     #[must_use]
     /// Operates on all items in the collection where the flag at the given index is set to `Flag::On`.
-    /// 
+    ///
     /// ## Panics
-    /// 
+    ///
     /// Panics if the collection is empty.
     pub fn operate_many_where_flag(
         &self,
