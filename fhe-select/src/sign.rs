@@ -16,7 +16,7 @@ where
     let mut result = cs.cipher(&0.);
     let mut x_pow_i = cs.cipher(&1.);
     for (i, coeff) in COEFFS.iter().enumerate().take(N) {
-        assert!(*coeff < (1 << f64::MANTISSA_DIGITS));
+        assert!(coeff.abs() < (1 << (f64::MANTISSA_DIGITS + coeff.trailing_zeros())));
         #[allow(clippy::cast_precision_loss)]
         let mut term = cs.cipher(&(*coeff as f64));
         term = cs.operate(mul_op, &term, Some(&x_pow_i)); // TODO: use an in-place operation
