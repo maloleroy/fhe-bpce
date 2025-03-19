@@ -129,6 +129,13 @@ Ciphertext add_ciphers(const Ciphertext &cipher_a, const Ciphertext &cipher_b, c
     return cipher_result;
 }
 
+Ciphertext multiply_ciphers(const Ciphertext &cipher_a, const Ciphertext &cipher_b, const Tors &tors)
+{
+    Ciphertext cipher_result;
+    tors.evaluator.multiply(cipher_a, cipher_b, cipher_result);
+    return cipher_result;
+}
+
 double add_doubles(const double &a, const double &b, Tors &tors)
 {
     return to_double(add_ciphers(to_ciphertext(a, tors), to_ciphertext(b, tors), tors), tors);
@@ -295,11 +302,204 @@ void my_main()
     }
 }
 
+void debug_product()
+{
+    auto [context, parameter_set] = get_default_full_context(4096);
+    Tors tors = get_tors(context, parameter_set);
+
+    double a = 1.0;
+    double b = 1.0;
+    double c = 2.0;
+    double d = 0.0;
+
+    cout << "Scale: " << tors.parameter_set.scale << endl;
+
+    Ciphertext cipher_a = to_ciphertext(a, tors);
+    Ciphertext cipher_b = to_ciphertext(b, tors);
+    Ciphertext cipher_c = to_ciphertext(c, tors);
+    Ciphertext cipher_d = to_ciphertext(d, tors);
+
+    Ciphertext cipher_ab = multiply_ciphers(cipher_a, cipher_b, tors);
+    Ciphertext cipher_cd = multiply_ciphers(cipher_c, cipher_d, tors);
+
+    Ciphertext cipher_ab_plus_cd = add_ciphers(cipher_ab, cipher_cd, tors);
+
+    double decrypted_ab_plus_cd = to_double(cipher_ab_plus_cd, tors);
+
+    double ab_plus_cd = a * b + c * d;
+
+    cout << "Decrypted: " << decrypted_ab_plus_cd << endl;
+    cout << "Real: " << ab_plus_cd << endl;
+}
+
+template <size_t N>
+constexpr std::array<uint64_t, N> chebyshev_coefficients()
+{
+    std::array<std::array<uint64_t, N>, N> coeffs{};
+    coeffs[0][0] = 1;
+    if (N > 1)
+    {
+        coeffs[1][1] = 1;
+    }
+
+    for (size_t i = 2; i < N; ++i)
+    {
+        for (size_t j = 0; j < i; ++j)
+        {
+            coeffs[i][j + 1] += 2 * coeffs[i - 1][j];
+            if (j < N - 1)
+            {
+                coeffs[i][j] -= coeffs[i - 2][j];
+            }
+        }
+    }
+
+    return coeffs[N - 1];
+}
+
+void debug_skibidi()
+{
+    auto [context, parameter_set] = get_default_full_context(4096);
+    Tors tors = get_tors(context, parameter_set);
+    static const double A1 = 1.211324865405185;
+    static const double A3 = -0.84529946162075;
+
+    auto a1 = to_ciphertext(A1, tors);
+    auto a3 = to_ciphertext(A3, tors);
+
+    double x_plain = 3.;
+    auto x = to_ciphertext(x_plain, tors);
+
+    auto x2 = multiply_ciphers(x, x, tors);
+
+    // Pre-product of a3 and x2
+    tors.evaluator.rescale_to_next_inplace(x2);
+    tors.evaluator.rescale_to_next_inplace(a3);
+
+    auto a3x2 = multiply_ciphers(a3, x2, tors);
+
+    auto a1_plus_a3x2 = add_ciphers(a3x2, a1, tors);
+
+    // Rescaling before the product of a1_plus_a3x2 and x
+    tors.evaluator.rescale_to_next_inplace(a1_plus_a3x2);
+    tors.evaluator.rescale_to_next_inplace(x);
+
+    auto result = multiply_ciphers(a1_plus_a3x2, x, tors);
+
+    cout << "Decrypted: " << to_double(result, tors) << endl;
+}
+
+constexpr double PI = 3.141592653589793;
+
+/// Approximate sin(x) using a Taylor series expansion (valid for small x)
+constexpr double sin_taylor(double x)
+{
+    double x2 = x * x;
+    return x * (1.0 - x2 / 6.0 + (x2 * x2) / 120.0 - (x2 * x2 * x2) / 5040.0);
+}
+
+/// Computes the denominator for the Lagrange basis polynomial
+constexpr double denominator(size_t i, size_t n)
+{
+    double i_theta = (i * PI) / (n + 3.0);
+    return sin_taylor(i_theta);
+}
+
+template <size_t N>
+constexpr std::array<double, N> pbas_coefficients()
+{
+    std::array<double, N> coeffs{};
+    for (size_t i = 1; i <= N; ++i)
+    {
+        double den = denominator(i, N);
+        double prod = 1.0;
+        for (size_t j = 1; j <= (N + 1) / 2; ++j)
+        {
+            if (j != i)
+            {
+                double num = std::pow(denominator(j, N), 2);
+                double den_sq = std::pow(den, 2) - num;
+                prod *= den_sq;
+            }
+        }
+        coeffs[i - 1] = 1.0 / den / prod;
+    }
+    return coeffs;
+}
+
+void debug_sign_small()
+{
+    constexpr size_t N = 3;
+    constexpr auto COEFFS = pbas_coefficients<N>();
+
+    auto [context, parameter_set] = get_default_full_context(4096);
+    Tors tors = get_tors(context, parameter_set);
+
+    auto result = to_ciphertext(0., tors);
+    auto x_pow_i = to_ciphertext(1., tors);
+
+    for (auto i = 0; i < N; i++)
+    {
+        auto term = to_ciphertext(COEFFS[i], tors);
+        term = multiply_ciphers(term, x_pow_i, tors);
+        result = add_ciphers(result, term, tors);
+        if (i != N - 1)
+        {
+            x_pow_i = multiply_ciphers(x_pow_i, to_ciphertext(1., tors), tors);
+            tors.evaluator.rescale_to_next_inplace(x_pow_i);
+        }
+        tors.evaluator.rescale_to_next_inplace(result);
+    }
+    cout << "Decrypted: " << to_double(result, tors) << endl;
+}
+
+void debug_sign()
+{
+    constexpr size_t N = 3;
+    constexpr auto COEFFS = chebyshev_coefficients<N>();
+
+    auto [context, parameter_set] = get_default_full_context(4096);
+    Tors tors = get_tors(context, parameter_set);
+
+    auto result = to_ciphertext(0., tors);
+    auto x_pow_i = to_ciphertext(1., tors);
+
+    for (auto i = 0; i < N; i++)
+    {
+        auto term = to_ciphertext(COEFFS[i], tors);
+        cout << "term [after init]: " << term.scale() << endl;
+        cout << "[before term * x_pow]: " << term.scale() << " * " << x_pow_i.scale() << " = "
+             << term.scale() * x_pow_i.scale() << endl;
+        term = multiply_ciphers(term, x_pow_i, tors);
+        cout << "term [after *]: " << term.scale() << endl;
+        // print the scale of term and result
+        cout << "Scale of termuwu: " << term.scale() << endl;
+        cout << "Scale of resultuwu: " << result.scale() << endl;
+        result = multiply_ciphers(result, to_ciphertext(1., tors), tors);
+        cout << "term [before +result]: " << term.scale() << endl;
+        cout << "result [before +term]: " << result.scale() << endl;
+        result = add_ciphers(result, term, tors);
+        cout << "result [after +]: " << result.scale() << endl;
+        if (i != N - 1)
+        {
+            x_pow_i = multiply_ciphers(x_pow_i, to_ciphertext(1., tors), tors);
+            cout << "x_pow_i [after *]: " << x_pow_i.scale() << endl;
+            tors.evaluator.rescale_to_next_inplace(x_pow_i);
+            cout << "x_pow_i [after =]: " << x_pow_i.scale() << endl;
+        }
+        cout << "result [before =]: " << result.scale() << endl;
+        tors.evaluator.rescale_to_next_inplace(result);
+        cout << "result [after =]: " << result.scale() << endl;
+    }
+    cout << "Decrypted: " << to_double(result, tors) << endl;
+}
+
 void example_ckks_basics()
 {
     // print_example_banner("Example: CKKS Basics");
 
-    my_main();
+    debug_sign();
+    // my_main();
     return;
 
     /*
