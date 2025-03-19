@@ -20,11 +20,17 @@ where
         #[allow(clippy::cast_precision_loss)]
         let mut term = cs.cipher(&(*coeff as f64));
         term = cs.operate(mul_op, &term, Some(&x_pow_i)); // TODO: use an in-place operation
+        println!("after term (*): {:?}", i);
         cs.relinearize(&mut term);
+        println!("after term (=): {:?}", i);
+        // cs.relinearize(&mut result);
+        // println!("after result (=): {:?}", i);
         result = cs.operate(add_op, &result, Some(&term)); // TODO: use an in-place operation
+        println!("after result (+): {:?}", i);
         if i != N - 1 {
             x_pow_i = cs.operate(mul_op, &x_pow_i, Some(x)); // TODO: use an in-place operation
             cs.relinearize(&mut x_pow_i);
+            println!("after x_pow (=): {:?}", i);
         }
     }
     result
