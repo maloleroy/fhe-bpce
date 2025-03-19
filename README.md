@@ -14,26 +14,46 @@
 
 # Homomorphic Encryption Library
 
-This repository is a pure Rust crate that provides a simple interface to homomorphic encryption schemes.
+This repository is a Rust crate that provides a simple interface to homomorphic encryption schemes.
 It is designed to be easy to use and to provide a high-level interface to the underlying encryption schemes.
 
 ## Schemes
 
 The library currently supports the following schemes:
-- CKKS
+- BFV (Seal)
+- CKKS (Seal)
 
 ## Usage
 
-You can read the documentation using `cargo doc --open`.
+Main crate can be built using `cargo build --release`, or run in debug mode for tests using `cargo run`.
+You can get more information about it using `--help`.
 
-## Bare metal
+You can read the documentation of each crate of the workspace using `cargo doc --open`.
 
-The crates supports `no_std` environments, but not `no_alloc` environments.
+### Examples
 
-On exotic targets, you will need to provide the crate with a source of randomness.
-In such a case, it is up to you to make sure the source is cryptographically secure.
-For more information, check the documentation of `getrandom`.
+You will find useful examples in `examples/`. You can run them with `cargo run --example <name>`.
+
+### Benchmarks
+
+You can start benchmarks found in `benches/` by running `cargo bench`.
 
 ## Architecture
 
-The crate's API is is `src/`, while other crates of the workspace (such as `fhe-core`) serve as the backend for the encryption schemes.
+The main binary uses crates to organize its dependencies:
+
+### fhe-core
+
+It is the core crate of the workspace that defines the core `CryptoSystem` trait.
+
+### fhe-exchange
+
+Uses `bincode` to serialize and deserialize ciphertexts and operations into bytes so that they can be sent accross any channel.
+
+### fhe-select
+
+Implements various operations, such as SQL-like operation like `SELECT ... WHERE ...`.
+
+### seal-lib
+
+Implements `CryptoSystem` for systems backed by Microsoft SEAL (BFV and CKKS).

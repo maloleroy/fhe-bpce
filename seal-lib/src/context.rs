@@ -30,14 +30,12 @@ impl SealCkksContext {
     #[must_use]
     #[inline]
     /// Generate a set of secret, public and relinearization keys.
-    pub fn generate_keys(&self) -> (SecretKey, PublicKey, RelinearizationKey) {
+    pub fn generate_keys(&self) -> (SecretKey, PublicKey, Option<RelinearizationKey>) {
         let key_gen = KeyGenerator::new(self.context()).unwrap();
 
         let sk = key_gen.secret_key();
         let pk = key_gen.create_public_key();
-        let rk = key_gen
-            .create_relinearization_keys()
-            .expect("Failed to create relinearization key");
+        let rk = key_gen.create_relinearization_keys().ok();
 
         (sk, pk, rk)
     }

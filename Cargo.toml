@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 bincode = { workspace = true }
+clap = { version = "4.5.28", features = ["derive"] }
 fhe-core = { workspace = true }
 fhe-exchange = { path = "fhe-exchange" }
 log = "0.4.26"
@@ -12,7 +13,10 @@ mimalloc = { version = "0.1.43", features = ["secure"] }
 pretty_env_logger = "0.5.0"
 rouille = { git = "https://github.com/bnjbvr/rouille.git" }
 seal-lib = { path = "seal-lib" }
-# tokio = { version = "1.43.0", features = ["full"] }
+tokio = { version = "1.43.0", features = ["full"] }
+
+[dev-dependencies]
+criterion = "0.5.1"
 
 [workspace]
 members = ["fhe-core", "seal-lib", "fhe-select", "fhe-exchange"]

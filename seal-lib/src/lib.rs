@@ -55,7 +55,7 @@ pub struct SealCkksCS {
     evaluator: sealy::CKKSEvaluator,
     encryptor: sealy::Encryptor<sealy::Asym>,
     decryptor: sealy::Decryptor,
-    relin_key: sealy::RelinearizationKey,
+    relin_key: Option<sealy::RelinearizationKey>,
 }
 
 impl SealCkksCS {
@@ -111,7 +111,12 @@ impl CryptoSystem for SealCkksCS {
             }
             CkksHOperation::Exp(pow) => {
                 debug_assert!(rhs.is_none());
-                let result = impls::homom_exp(&self.evaluator, &lhs.0, pow, &self.relin_key);
+                let result = impls::homom_exp(
+                    &self.evaluator,
+                    &lhs.0,
+                    pow,
+                    &self.relin_key.as_ref().unwrap(),
+                );
                 Ciphertext(result)
             }
         }
@@ -121,7 +126,7 @@ impl CryptoSystem for SealCkksCS {
         *ciphertext = Ciphertext(impls::relinearize(
             &self.evaluator,
             &mut ciphertext.0,
-            &self.relin_key,
+            &self.relin_key.as_ref().unwrap(),
         ));
     }
 }
