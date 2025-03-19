@@ -119,6 +119,30 @@ impl CryptoSystem for SealCkksCS {
                 );
                 Ciphertext(result)
             }
+            CkksHOperation::Resize => panic!("Resize operation needs operate_mut, not operate."),
+        }
+    }
+
+    fn operate_inplace(
+        &self,
+        operation: Self::Operation,
+        lhs: &mut Self::Ciphertext,
+        rhs: Option<&Self::Ciphertext>,
+    ) {
+        match operation {
+            CkksHOperation::Resize => {
+                debug_assert!(rhs.is_none());
+                impls::resize(&self.evaluator, &mut lhs.0)
+            }
+            CkksHOperation::Add => {
+                let rhs = rhs.expect("Addition requires two operands.");
+                impls::homom_add_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
+            }
+            CkksHOperation::Mul => {
+                let rhs = rhs.expect("Addition requires two operands.");
+                impls::homom_mul_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
+            }
+            _ => *lhs = self.operate(operation, lhs, rhs),
         }
     }
 
@@ -149,6 +173,7 @@ pub enum CkksHOperation {
     Add,
     Mul,
     Exp(u64),
+    Resize,
 }
 
 pub struct SealBfvCS {

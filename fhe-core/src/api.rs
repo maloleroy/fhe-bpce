@@ -31,6 +31,20 @@ pub trait CryptoSystem {
         rhs: Option<&Self::Ciphertext>,
     ) -> Self::Ciphertext;
 
+    /// Performs an operation on the ciphertexts in place.
+    ///
+    /// This is a default implementation that calls `operate` and assigns the result to `lhs`.
+    /// You can override this method to provide a more detailed implementation.
+    fn operate_inplace(
+        &self,
+        operation: Self::Operation,
+        lhs: &mut Self::Ciphertext,
+        rhs: Option<&Self::Ciphertext>,
+    ) {
+        let result: <Self as CryptoSystem>::Ciphertext = self.operate(operation, lhs, rhs);
+        *lhs = result;
+    }
+
     fn relinearize(&self, ciphertext: &mut Self::Ciphertext);
 }
 
