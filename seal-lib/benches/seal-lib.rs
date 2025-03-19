@@ -1,6 +1,9 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use fhe_core::api::CryptoSystem;
-use seal_lib::{context::{SealBFVContext, SealCkksContext}, BfvHOperation, CkksHOperation, DegreeType, SealBfvCS, SealCkksCS, SecurityLevel};
+use seal_lib::{
+    BfvHOperation, CkksHOperation, DegreeType, SealBfvCS, SealCkksCS, SecurityLevel,
+    context::{SealBFVContext, SealCkksContext},
+};
 
 fn benchmark_bfv(c: &mut Criterion) {
     let ctx = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 16);
