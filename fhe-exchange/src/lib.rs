@@ -18,7 +18,7 @@ where
     C::Operation: Encode,
 {
     /// Creates a new instance of `ExchangeData`.
-    pub fn new(
+    pub const fn new(
         lhs: Vec<C::Ciphertext>,
         rhs: Vec<Option<C::Ciphertext>>,
         operation: Vec<C::Operation>,

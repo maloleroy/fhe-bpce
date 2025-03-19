@@ -1,5 +1,6 @@
 use fhe_core::api::CryptoSystem;
 
+#[allow(clippy::missing_panics_doc)] // Panic is related to internal const `N`
 pub fn sign<C: CryptoSystem<Plaintext = f64>>(
     x: &C::Ciphertext,
     cs: &C,
@@ -14,13 +15,15 @@ where
     const COEFFS: [i64; N] = chebyshev_coefficients::<N>();
     let mut result = cs.cipher(&0.);
     let mut x_pow_i = cs.cipher(&1.);
-    for i in 0..N {
-        let mut term = cs.cipher(&(COEFFS[i] as f64));
+    for (i, coeff) in COEFFS.iter().enumerate().take(N) {
+        assert!(*coeff < (1 << f64::MANTISSA_DIGITS));
+        #[allow(clippy::cast_precision_loss)]
+        let mut term = cs.cipher(&(*coeff as f64));
         term = cs.operate(mul_op, &term, Some(&x_pow_i)); // TODO: use an in-place operation
         cs.relinearize(&mut term);
         result = cs.operate(add_op, &result, Some(&term)); // TODO: use an in-place operation
         if i != N - 1 {
-            x_pow_i = cs.operate(mul_op, &x_pow_i, Some(&x)); // TODO: use an in-place operation
+            x_pow_i = cs.operate(mul_op, &x_pow_i, Some(x)); // TODO: use an in-place operation
             cs.relinearize(&mut x_pow_i);
         }
     }
