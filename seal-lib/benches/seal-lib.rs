@@ -23,13 +23,13 @@ fn benchmark_bfv(c: &mut Criterion) {
 
     c.bench_function("bfv add", |b| {
         b.iter(|| {
-            cipher.operate(BfvHOperation::Add, &ciphered_input, Some(&ciphered_input2));
+            let _ = cipher.operate(BfvHOperation::Add, &ciphered_input, Some(&ciphered_input2));
         })
     });
 
     c.bench_function("bfv mul", |b| {
         b.iter(|| {
-            cipher.operate(BfvHOperation::Mul, &ciphered_input, Some(&ciphered_input2));
+            let _ = cipher.operate(BfvHOperation::Mul, &ciphered_input, Some(&ciphered_input2));
         })
     });
 
@@ -58,13 +58,13 @@ fn benchmark_ckks(c: &mut Criterion) {
 
     c.bench_function("ckks add", |b| {
         b.iter(|| {
-            cipher.operate(CkksHOperation::Add, &ciphered_input, Some(&ciphered_input2));
+            let _ = cipher.operate(CkksHOperation::Add, &ciphered_input, Some(&ciphered_input2));
         })
     });
 
     c.bench_function("ckks mul", |b| {
         b.iter(|| {
-            cipher.operate(CkksHOperation::Mul, &ciphered_input, Some(&ciphered_input2));
+            let _ = cipher.operate(CkksHOperation::Mul, &ciphered_input, Some(&ciphered_input2));
         })
     });
 
