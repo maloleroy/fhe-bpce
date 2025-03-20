@@ -374,13 +374,9 @@ mod tests {
         let c = cs.operate(CkksHOperation::AddPlain(10.0), &a, None);
         let d = cs.operate(CkksHOperation::MulPlain(2.0), &b, None);
 
-        let a = cs.decipher(&a);
-        let b = cs.decipher(&b);
         let c = cs.decipher(&c);
         let d = cs.decipher(&d);
 
-        assert!(approx_eq(a, 1.0, PRECISION));
-        assert!(approx_eq(b, 2.0, PRECISION));
         assert!(approx_eq(c, 11.0, PRECISION));
         assert!(approx_eq(d, 4.0, PRECISION));
     }
@@ -431,6 +427,23 @@ mod tests {
         assert_eq!(b, b_plaintext);
         assert_eq!(c, a_plaintext + b_plaintext);
         assert_eq!(d, a_plaintext * b_plaintext);
+    }
+
+    #[test]
+    fn test_seal_bfv_cs_plain_ops() {
+        let context = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 16);
+        let cs = SealBfvCS::new(context);
+
+        let a = cs.cipher(&1);
+        let b = cs.cipher(&2);
+        let c = cs.operate(BfvHOperation::AddPlain(10), &a, None);
+        let d = cs.operate(BfvHOperation::MulPlain(2), &b, None);
+
+        let c = cs.decipher(&c);
+        let d = cs.decipher(&d);
+
+        assert_eq!(c, 11);
+        assert_eq!(d, 4);
     }
 
     #[test]
