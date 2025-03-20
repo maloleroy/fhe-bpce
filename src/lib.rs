@@ -40,8 +40,7 @@ pub async fn start_client(socket_addr: SocketAddr) {
     ensure!(stream.write_all(b"Hello, world!").await);
 }
 
-pub async fn start_server(port: u16) {
-    let socket_addr = SocketAddr::new([0, 0, 0, 0].into(), port);
+pub async fn start_server(socket_addr: SocketAddr) {
     let listener = ensure!(TcpListener::bind(socket_addr).await);
 
     loop {

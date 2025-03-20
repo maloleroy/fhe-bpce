@@ -1,3 +1,6 @@
+use core::net::{IpAddr, Ipv4Addr};
+use std::net::SocketAddr;
+
 use bpce_fhe::{start_client, start_server};
 use clap::{Parser, Subcommand};
 
@@ -14,11 +17,15 @@ struct Cli {
 #[derive(Subcommand)]
 enum Mode {
     Client {
-        #[arg(short, long, help = "IP address and port of the server")]
-        address: core::net::SocketAddr,
+        #[arg(short, long, help = "IP address of the server")]
+        address: IpAddr,
+        #[arg(short, long, default_value_t = 8080, help = "Server port")]
+        port: u16,
     },
 
     Server {
+        #[arg(short, long, default_value_t = IpAddr::V4(Ipv4Addr::new(0, 0, 0, 0)), help = "Server port")]
+        address: IpAddr,
         #[arg(short, long, default_value_t = 8080, help = "Server port")]
         port: u16,
     },
@@ -38,13 +45,15 @@ async fn main() {
     let cli = Cli::parse();
 
     match cli.mode {
-        Mode::Client { address } => {
-            log::info!("Starting client.. Connecting to {}.", address);
-            start_client(address).await;
+        Mode::Client { address, port } => {
+            let socker_addr = SocketAddr::new(address, port);
+            log::info!("Starting client.. Connecting to {}.", socker_addr);
+            start_client(socker_addr).await;
         }
-        Mode::Server { port } => {
-            log::info!("Starting serveur on port {}.", port);
-            start_server(port).await;
+        Mode::Server { address, port } => {
+            let socker_addr = SocketAddr::new(address, port);
+            log::info!("Starting server on port {}.", port);
+            start_server(socker_addr).await;
         }
     }
 }
