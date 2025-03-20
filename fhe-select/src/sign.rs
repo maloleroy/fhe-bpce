@@ -24,11 +24,14 @@ where
 {
     const A1: f64 = 1.211324865405185;
     const A3: f64 = -0.84529946162075;
-    let a1_cipher = cs.cipher(&11);
-    let a3_cipher = cs.cipher(&a3);
+    let a1 = cs.cipher(&A1);
+    let a3 = cs.cipher(&A3);
 
-    let x_2 = cs.operate(mul_op, &x, Some(&x));
-    result = cs.operate(mul_op, &a1, Some(&cs.cipher(&a0)));
+    let x2 = cs.operate(mul_op, &x, Some(&x));
+    let a3x2 = cs.operate(mul_op, &a3, Some(&x2));
+    let a1_plus_a3x2 = cs.operate(add_op, &a1, Some(&a3x2));
+
+    cs.operate(mul_op, &x, Some(&a1_plus_a3x2))
 }
 
 fn sign_pbas<C: CryptoSystem<Plaintext = f64>>(
