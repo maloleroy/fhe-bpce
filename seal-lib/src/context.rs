@@ -103,9 +103,14 @@ impl SealBFVContext {
     #[must_use]
     #[inline]
     /// Generate a pair of secret and public keys.
-    pub fn generate_keys(&self) -> (SecretKey, PublicKey) {
+    pub fn generate_keys(&self) -> (SecretKey, PublicKey, Option<RelinearizationKey>) {
         let key_gen = KeyGenerator::new(self.context()).unwrap();
-        (key_gen.secret_key(), key_gen.create_public_key())
+
+        let sk = key_gen.secret_key();
+        let pk = key_gen.create_public_key();
+        let rk = key_gen.create_relinearization_keys().ok();
+
+        (sk, pk, rk)
     }
 
     #[must_use]

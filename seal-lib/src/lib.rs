@@ -121,16 +121,6 @@ impl CryptoSystem for SealCkksCS {
                 let result = impls::homom_mul_plain(&self.evaluator, &lhs.0, &plain_encoded);
                 Ciphertext(result)
             }
-            CkksHOperation::Exp(pow) => {
-                debug_assert!(rhs.is_none());
-                let result = impls::homom_exp(
-                    &self.evaluator,
-                    &lhs.0,
-                    pow,
-                    self.relin_key.as_ref().unwrap(),
-                );
-                Ciphertext(result)
-            }
             CkksHOperation::Resize => panic!("Resize operation needs operate_mut, not operate."),
         }
     }
@@ -164,7 +154,6 @@ impl CryptoSystem for SealCkksCS {
                 let plain_encoded = self.encoder.encode_f64(&[plain]).unwrap();
                 impls::homom_mul_plain_inplace(&self.evaluator, &mut lhs.0, &plain_encoded);
             }
-            _ => *lhs = self.operate(operation, lhs, rhs),
         }
     }
 
@@ -196,7 +185,6 @@ pub enum CkksHOperation {
     AddPlain(f64),
     Mul,
     MulPlain(f64),
-    Exp(u64),
     Resize,
 }
 
@@ -205,11 +193,12 @@ pub struct SealBfvCS {
     evaluator: sealy::BFVEvaluator,
     encryptor: sealy::Encryptor<sealy::Asym>,
     decryptor: sealy::Decryptor,
+    relin_key: Option<sealy::RelinearizationKey>,
 }
 
 impl SealBfvCS {
     pub fn new(context: context::SealBFVContext) -> Self {
-        let (skey, pkey) = context.generate_keys();
+        let (skey, pkey, relin_key) = context.generate_keys();
 
         let encoder = context.encoder();
         let evaluator = context.evaluator();
@@ -221,6 +210,7 @@ impl SealBfvCS {
             evaluator,
             encryptor,
             decryptor,
+            relin_key,
         }
     }
 }
@@ -252,10 +242,68 @@ impl CryptoSystem for SealBfvCS {
                 let result = impls::homom_add(&self.evaluator, &lhs.0, &rhs.0);
                 Ciphertext(result)
             }
+            BfvHOperation::AddPlain(plain) => {
+                debug_assert!(rhs.is_none());
+                let plain_encoded = self.encoder.encode_u64(&[plain]).unwrap();
+                let result = impls::homom_add_plain(&self.evaluator, &lhs.0, &plain_encoded);
+                Ciphertext(result)
+            }
             BfvHOperation::Mul => {
                 let rhs = rhs.expect("Multiplication requires two operands.");
                 let result = impls::homom_mul(&self.evaluator, &lhs.0, &rhs.0);
                 Ciphertext(result)
+            }
+            BfvHOperation::MulPlain(plain) => {
+                debug_assert!(rhs.is_none());
+                let plain_encoded = self.encoder.encode_u64(&[plain]).unwrap();
+                let result = impls::homom_mul_plain(&self.evaluator, &lhs.0, &plain_encoded);
+                Ciphertext(result)
+            }
+            BfvHOperation::Exp(exp) => {
+                debug_assert!(rhs.is_none());
+                let result = impls::homom_exp(
+                    &self.evaluator,
+                    &lhs.0,
+                    exp,
+                    self.relin_key.as_ref().unwrap(),
+                );
+                Ciphertext(result)
+            }
+        }
+    }
+
+    fn operate_inplace(
+        &self,
+        operation: Self::Operation,
+        lhs: &mut Self::Ciphertext,
+        rhs: Option<&Self::Ciphertext>,
+    ) {
+        match operation {
+            BfvHOperation::Add => {
+                let rhs = rhs.expect("Addition requires two operands.");
+                impls::homom_add_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
+            }
+            BfvHOperation::AddPlain(plain) => {
+                debug_assert!(rhs.is_none());
+                let plain_encoded = self.encoder.encode_u64(&[plain]).unwrap();
+                impls::homom_add_plain_inplace(&self.evaluator, &mut lhs.0, &plain_encoded);
+            }
+            BfvHOperation::Mul => {
+                let rhs = rhs.expect("Multiplication requires two operands.");
+                impls::homom_mul_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
+            }
+            BfvHOperation::MulPlain(plain) => {
+                debug_assert!(rhs.is_none());
+                let plain_encoded = self.encoder.encode_u64(&[plain]).unwrap();
+                impls::homom_mul_plain_inplace(&self.evaluator, &mut lhs.0, &plain_encoded);
+            }
+            BfvHOperation::Exp(exp) => {
+                *lhs = Ciphertext(impls::homom_exp(
+                    &self.evaluator,
+                    &lhs.0,
+                    exp,
+                    self.relin_key.as_ref().unwrap(),
+                ));
             }
         }
     }
@@ -281,7 +329,10 @@ impl SelectableCS for SealBfvCS {
 #[non_exhaustive]
 pub enum BfvHOperation {
     Add,
+    AddPlain(u64),
     Mul,
+    MulPlain(u64),
+    Exp(u64),
 }
 
 #[cfg(test)]
@@ -335,19 +386,6 @@ mod tests {
     }
 
     #[test]
-    fn test_seal_ckks_cs_exp() {
-        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
-        let cs = SealCkksCS::new(context, 1e6);
-
-        let a = cs.cipher(&2.0);
-        let e = cs.operate(CkksHOperation::Exp(3), &a, None);
-
-        let d = cs.decipher(&e);
-
-        assert!(approx_eq(d, 8.0, PRECISION));
-    }
-
-    #[test]
     fn test_seal_ckks_cs_linear_sum() {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
@@ -393,5 +431,18 @@ mod tests {
         assert_eq!(b, b_plaintext);
         assert_eq!(c, a_plaintext + b_plaintext);
         assert_eq!(d, a_plaintext * b_plaintext);
+    }
+
+    #[test]
+    fn test_seal_bfv_cs_exp() {
+        let context = SealBFVContext::new(DegreeType::D4096, SecurityLevel::TC128, 16);
+        let cs = SealBfvCS::new(context);
+
+        let a = cs.cipher(&10);
+        let e = cs.operate(BfvHOperation::Exp(3), &a, None);
+
+        let d = cs.decipher(&e);
+
+        assert_eq!(d, 1000);
     }
 }
