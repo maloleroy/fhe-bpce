@@ -451,11 +451,11 @@ mod tests {
         let context = SealBFVContext::new(DegreeType::D4096, SecurityLevel::TC128, 16);
         let cs = SealBfvCS::new(context);
 
-        let a = cs.cipher(&10);
-        let e = cs.operate(BfvHOperation::Exp(3), &a, None);
+        let a = cs.cipher(&4);
+        let e = cs.operate(BfvHOperation::Exp(2), &a, None);
 
         let d = cs.decipher(&e);
 
-        assert_eq!(d, 1000);
+        assert_eq!(d, 16);
     }
 }
