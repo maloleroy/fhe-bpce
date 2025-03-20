@@ -10,6 +10,16 @@ pub fn homom_add(
     evaluator.add(lhs, rhs).unwrap()
 }
 
+#[must_use]
+#[inline]
+pub fn homom_add_plain(
+    evaluator: &impl sealy::Evaluator<Plaintext = Plaintext, Ciphertext = Ciphertext>,
+    lhs: &Ciphertext,
+    rhs: &Plaintext,
+) -> Ciphertext {
+    evaluator.add_plain(lhs, rhs).unwrap()
+}
+
 #[inline]
 pub fn homom_add_inplace(
     evaluator: &impl sealy::Evaluator<Plaintext = Plaintext, Ciphertext = Ciphertext>,
@@ -17,6 +27,15 @@ pub fn homom_add_inplace(
     rhs: &Ciphertext,
 ) {
     evaluator.add_inplace(lhs, rhs).unwrap()
+}
+
+#[inline]
+pub fn homom_add_plain_inplace(
+    evaluator: &impl sealy::Evaluator<Plaintext = Plaintext, Ciphertext = Ciphertext>,
+    lhs: &mut Ciphertext,
+    rhs: &Plaintext,
+) {
+    evaluator.add_plain_inplace(lhs, rhs).unwrap()
 }
 
 #[must_use]
@@ -29,6 +48,16 @@ pub fn homom_mul(
     evaluator.multiply(lhs, rhs).unwrap()
 }
 
+#[must_use]
+#[inline]
+pub fn homom_mul_plain(
+    evaluator: &impl sealy::Evaluator<Plaintext = Plaintext, Ciphertext = Ciphertext>,
+    lhs: &Ciphertext,
+    rhs: &Plaintext,
+) -> Ciphertext {
+    evaluator.multiply_plain(lhs, rhs).unwrap()
+}
+
 #[inline]
 pub fn homom_mul_inplace(
     evaluator: &impl sealy::Evaluator<Plaintext = Plaintext, Ciphertext = Ciphertext>,
@@ -36,6 +65,15 @@ pub fn homom_mul_inplace(
     rhs: &Ciphertext,
 ) {
     evaluator.multiply_inplace(lhs, rhs).unwrap()
+}
+
+#[inline]
+pub fn homom_mul_plain_inplace(
+    evaluator: &impl sealy::Evaluator<Plaintext = Plaintext, Ciphertext = Ciphertext>,
+    lhs: &mut Ciphertext,
+    rhs: &Plaintext,
+) {
+    evaluator.multiply_plain_inplace(lhs, rhs).unwrap()
 }
 
 #[must_use]

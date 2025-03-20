@@ -104,9 +104,21 @@ impl CryptoSystem for SealCkksCS {
                 let result = impls::homom_add(&self.evaluator, &lhs.0, &rhs.0);
                 Ciphertext(result)
             }
+            CkksHOperation::AddPlain(plain) => {
+                debug_assert!(rhs.is_none());
+                let plain_encoded = self.encoder.encode_f64(&[plain]).unwrap();
+                let result = impls::homom_add_plain(&self.evaluator, &lhs.0, &plain_encoded);
+                Ciphertext(result)
+            }
             CkksHOperation::Mul => {
                 let rhs = rhs.expect("Multiplication requires two operands.");
                 let result = impls::homom_mul(&self.evaluator, &lhs.0, &rhs.0);
+                Ciphertext(result)
+            }
+            CkksHOperation::MulPlain(plain) => {
+                debug_assert!(rhs.is_none());
+                let plain_encoded = self.encoder.encode_f64(&[plain]).unwrap();
+                let result = impls::homom_mul_plain(&self.evaluator, &lhs.0, &plain_encoded);
                 Ciphertext(result)
             }
             CkksHOperation::Exp(pow) => {
@@ -138,9 +150,19 @@ impl CryptoSystem for SealCkksCS {
                 let rhs = rhs.expect("Addition requires two operands.");
                 impls::homom_add_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
             }
+            CkksHOperation::AddPlain(plain) => {
+                debug_assert!(rhs.is_none());
+                let plain_encoded = self.encoder.encode_f64(&[plain]).unwrap();
+                impls::homom_add_plain_inplace(&self.evaluator, &mut lhs.0, &plain_encoded);
+            }
             CkksHOperation::Mul => {
                 let rhs = rhs.expect("Addition requires two operands.");
                 impls::homom_mul_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
+            }
+            CkksHOperation::MulPlain(plain) => {
+                debug_assert!(rhs.is_none());
+                let plain_encoded = self.encoder.encode_f64(&[plain]).unwrap();
+                impls::homom_mul_plain_inplace(&self.evaluator, &mut lhs.0, &plain_encoded);
             }
             _ => *lhs = self.operate(operation, lhs, rhs),
         }
@@ -171,7 +193,9 @@ impl SelectableCS for SealCkksCS {
 #[non_exhaustive]
 pub enum CkksHOperation {
     Add,
+    AddPlain(f64),
     Mul,
+    MulPlain(f64),
     Exp(u64),
     Resize,
 }
@@ -270,7 +294,7 @@ mod tests {
 
     #[test]
     fn test_seal_ckks_cs() {
-        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
+        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
         let a = cs.cipher(&1.0);
@@ -290,6 +314,27 @@ mod tests {
     }
 
     #[test]
+    fn test_seal_ckks_cs_plain_ops() {
+        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+        let cs = SealCkksCS::new(context, 1e6);
+
+        let a = cs.cipher(&1.0);
+        let b = cs.cipher(&2.0);
+        let c = cs.operate(CkksHOperation::AddPlain(10.0), &a, None);
+        let d = cs.operate(CkksHOperation::MulPlain(2.0), &b, None);
+
+        let a = cs.decipher(&a);
+        let b = cs.decipher(&b);
+        let c = cs.decipher(&c);
+        let d = cs.decipher(&d);
+
+        assert!(approx_eq(a, 1.0, PRECISION));
+        assert!(approx_eq(b, 2.0, PRECISION));
+        assert!(approx_eq(c, 11.0, PRECISION));
+        assert!(approx_eq(d, 4.0, PRECISION));
+    }
+
+    #[test]
     fn test_seal_ckks_cs_exp() {
         let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
@@ -304,7 +349,7 @@ mod tests {
 
     #[test]
     fn test_seal_ckks_cs_linear_sum() {
-        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
+        let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
         let cs = SealCkksCS::new(context, 1e6);
 
         let a_plaintext = 1.0;
@@ -328,7 +373,7 @@ mod tests {
 
     #[test]
     fn test_seal_bfv_cs() {
-        let context = SealBFVContext::new(DegreeType::D4096, SecurityLevel::TC128, 16);
+        let context = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 16);
         let cs = SealBfvCS::new(context);
 
         let a_plaintext = 1;
