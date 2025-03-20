@@ -1,6 +1,5 @@
 use bpce_fhe::{start_client, start_server};
 use clap::{Parser, Subcommand};
-use std::str::FromStr;
 
 #[global_allocator]
 static GLOBAL_ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
@@ -16,7 +15,7 @@ struct Cli {
 enum Mode {
     Client {
         #[arg(short, long, help = "IP address and port of the server")]
-        address: String,
+        address: core::net::SocketAddr,
     },
 
     Server {
@@ -40,9 +39,8 @@ async fn main() {
 
     match cli.mode {
         Mode::Client { address } => {
-            let socket_addr = core::net::SocketAddr::from_str(&address).expect("Invalid address");
-            log::info!("Starting client.. Connecting to {}.", socket_addr);
-            start_client(socket_addr).await;
+            log::info!("Starting client.. Connecting to {}.", address);
+            start_client(address).await;
         }
         Mode::Server { port } => {
             log::info!("Starting serveur on port {}.", port);
