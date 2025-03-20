@@ -6,6 +6,8 @@ use core::net::SocketAddr;
 use tokio::io::AsyncWriteExt;
 use tokio::net::{TcpListener, TcpStream};
 
+mod client;
+mod load;
 mod server;
 
 /// On error, log the error and abort the process.
