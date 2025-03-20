@@ -13,6 +13,24 @@ where
     sign_pbas(x, cs, add_op, mul_op)
 }
 
+fn sign_hardcoded<C: CryptoSystem<Plaintext = f64>>(
+    x: &C::Ciphertext,
+    cs: &C,
+    add_op: C::Operation,
+    mul_op: C::Operation,
+) -> C::Ciphertext
+where
+    C::Operation: Copy,
+{
+    const A1: f64 = 1.211324865405185;
+    const A3: f64 = -0.84529946162075;
+    let a1_cipher = cs.cipher(&11);
+    let a3_cipher = cs.cipher(&a3);
+
+    let x_2 = cs.operate(mul_op, &x, Some(&x));
+    result = cs.operate(mul_op, &a1, Some(&cs.cipher(&a0)));
+}
+
 fn sign_pbas<C: CryptoSystem<Plaintext = f64>>(
     x: &C::Ciphertext,
     cs: &C,
@@ -26,11 +44,7 @@ where
     const COEFFS: [f64; N] = pbas_coefficients();
     let mut result = cs.cipher(&0.);
     let mut x_pow_i = cs.cipher(&1.);
-    println!("Coeffs: ");
-    for coeff in COEFFS.iter() {
-        print!("{:?}, ", coeff);
-    }
-    println!();
+    println!("Coeffs: {:?}", COEFFS);
     for (i, coeff) in COEFFS.iter().enumerate().take(N) {
         // First we multiply the coefficient by the power of x
         let mut term = cs.cipher(&coeff); // scale: basic
