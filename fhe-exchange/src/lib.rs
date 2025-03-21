@@ -99,7 +99,7 @@ mod tests {
     #[test]
     fn test_seal_bfv_cs() {
         let context = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 25);
-        let cs = SealBfvCS::new(context.clone());
+        let cs = SealBfvCS::new(&context);
 
         let a = cs.cipher(&1);
 

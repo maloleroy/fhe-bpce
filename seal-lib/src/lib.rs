@@ -197,7 +197,7 @@ pub struct SealBfvCS {
 }
 
 impl SealBfvCS {
-    pub fn new(context: context::SealBFVContext) -> Self {
+    pub fn new(context: &context::SealBFVContext) -> Self {
         let (skey, pkey, relin_key) = context.generate_keys();
 
         let encoder = context.encoder();
@@ -408,7 +408,7 @@ mod tests {
     #[test]
     fn test_seal_bfv_cs() {
         let context = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 16);
-        let cs = SealBfvCS::new(context);
+        let cs = SealBfvCS::new(&context);
 
         let a_plaintext = 1;
         let b_plaintext = 2;
@@ -432,7 +432,7 @@ mod tests {
     #[test]
     fn test_seal_bfv_cs_plain_ops() {
         let context = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 16);
-        let cs = SealBfvCS::new(context);
+        let cs = SealBfvCS::new(&context);
 
         let a = cs.cipher(&1);
         let b = cs.cipher(&2);
@@ -449,7 +449,7 @@ mod tests {
     #[test]
     fn test_seal_bfv_cs_exp() {
         let context = SealBFVContext::new(DegreeType::D4096, SecurityLevel::TC128, 16);
-        let cs = SealBfvCS::new(context);
+        let cs = SealBfvCS::new(&context);
 
         let a = cs.cipher(&4);
         let e = cs.operate(BfvHOperation::Exp(2), &a, None);
