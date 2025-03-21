@@ -1,4 +1,5 @@
 //! Data loading utilities.
+#![allow(dead_code)]
 
 pub mod bytes;
 pub mod csv;

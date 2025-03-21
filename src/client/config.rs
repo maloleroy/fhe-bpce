@@ -2,7 +2,10 @@ use std::path::Path;
 use thiserror::Error;
 use toml::Table;
 
-pub struct ClientConfig {}
+pub struct ClientConfig {
+    // TODO: Remove
+    _foo: String,
+}
 
 #[derive(Error, Debug)]
 pub enum ConfigError {
@@ -11,7 +14,7 @@ pub enum ConfigError {
     #[error("Failed to parse configuration file: {0}")]
     ParseError(#[from] toml::de::Error),
     #[error("Missing key in configuration file: {0}")]
-    MissingKey(String),
+    MissingKey(&'static str),
 }
 
 impl ClientConfig {
@@ -25,6 +28,14 @@ impl ClientConfig {
 
         let table = str_file.parse::<Table>().map_err(ConfigError::ParseError)?;
 
-        Ok(Self {})
+        #[allow(clippy::disallowed_names)] // Test!
+        let foo = table
+            .get("foo")
+            .ok_or(ConfigError::MissingKey("foo"))?
+            .as_str()
+            .unwrap()
+            .to_string();
+
+        Ok(Self { _foo: foo })
     }
 }

@@ -4,3 +4,6 @@
 *.log
 *.out
 *.synctex.gz
+
+# Test files
+fhe.toml

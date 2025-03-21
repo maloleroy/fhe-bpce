@@ -57,7 +57,7 @@ async fn main() {
         } => {
             let socker_addr = SocketAddr::new(address, port);
             log::info!("Starting client.. Connecting to {}.", socker_addr);
-            start_client(socker_addr).await;
+            start_client(socker_addr, config_file).await;
         }
         Mode::Server { address, port } => {
             let socker_addr = SocketAddr::new(address, port);
