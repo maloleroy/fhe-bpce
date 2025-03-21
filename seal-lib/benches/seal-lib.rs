@@ -7,7 +7,7 @@ use seal_lib::{
 
 fn benchmark_bfv(c: &mut Criterion) {
     let ctx = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 16);
-    let cipher = SealBfvCS::new(ctx);
+    let cipher = SealBfvCS::new(&ctx);
 
     let input = 42_u64;
 
