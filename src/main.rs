@@ -1,5 +1,4 @@
-use core::net::{IpAddr, Ipv4Addr};
-use std::net::SocketAddr;
+use core::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 use bpce_fhe::{start_client, start_server};
 use clap::{Parser, Subcommand};
@@ -21,6 +20,12 @@ enum Mode {
         address: IpAddr,
         #[arg(short, long, default_value_t = 8080, help = "Server port")]
         port: u16,
+        #[arg(
+            long = "conf",
+            default_value = "fhe.toml",
+            help = "Path to the configuration file"
+        )]
+        config_file: String,
     },
 
     Server {
@@ -45,7 +50,11 @@ async fn main() {
     let cli = Cli::parse();
 
     match cli.mode {
-        Mode::Client { address, port } => {
+        Mode::Client {
+            address,
+            port,
+            config_file,
+        } => {
             let socker_addr = SocketAddr::new(address, port);
             log::info!("Starting client.. Connecting to {}.", socker_addr);
             start_client(socker_addr).await;
