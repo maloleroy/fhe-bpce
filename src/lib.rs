@@ -73,9 +73,9 @@ pub async fn start_client(socket_addr: SocketAddr, config_file: String) {
 
     let exch_data_bytes = ensure!(bincode::encode_to_vec(exch_data, BINCODE_CONFIG));
 
-    unsized_data_send(exch_data_bytes, &mut stream).await;
+    ensure!(unsized_data_send(exch_data_bytes, &mut stream).await);
 
-    let results = unsized_data_recv(&mut stream).await;
+    let results = ensure!(unsized_data_recv(&mut stream).await);
 
     let results: (Vec<Ciphertext>, usize) = ensure!(bincode::decode_from_slice_with_context(
         &results,
@@ -105,25 +105,29 @@ pub async fn start_server(socket_addr: SocketAddr) {
     }
 }
 
-async fn unsized_data_send(data: Vec<u8>, stream: &mut TcpStream) {
+async fn unsized_data_send(data: Vec<u8>, stream: &mut TcpStream) -> Result<(), std::io::Error> {
     let total_size = data.len();
     let total_size_fixed_size = u64::try_from(total_size).unwrap();
 
-    ensure!(stream.write_all(&total_size_fixed_size.to_le_bytes()).await);
+    stream
+        .write_all(&total_size_fixed_size.to_le_bytes())
+        .await?;
 
-    ensure!(stream.write_all(&data).await);
+    stream.write_all(&data).await?;
+
+    Ok(())
 }
 
-async fn unsized_data_recv(stream: &mut TcpStream) -> Vec<u8> {
+async fn unsized_data_recv(stream: &mut TcpStream) -> Result<Vec<u8>, std::io::Error> {
     let mut size_buf = [0u8; std::mem::size_of::<u64>()];
 
-    ensure!(stream.read_exact(&mut size_buf).await);
+    stream.read_exact(&mut size_buf).await?;
 
     let total_size = usize::from_le_bytes(size_buf);
 
     let mut buf = vec![0u8; total_size];
 
-    ensure!(stream.read_exact(&mut buf).await);
+    stream.read_exact(&mut buf).await?;
 
-    buf
+    Ok(buf)
 }

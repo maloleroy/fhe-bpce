@@ -12,7 +12,10 @@ pub async fn handle_client(mut stream: TcpStream) {
     );
     let bfv_cs = SealBfvCS::new(&bfv_ctx);
 
-    let data = unsized_data_recv(&mut stream).await;
+    let Ok(data) = unsized_data_recv(&mut stream).await else {
+        log::error!("Failed to receive data from client");
+        return;
+    };
 
     let Ok(exch_data) =
         bincode::decode_from_slice_with_context(&data, super::BINCODE_CONFIG, bfv_ctx)
@@ -34,5 +37,9 @@ pub async fn handle_client(mut stream: TcpStream) {
 
     log::info!("Sending data back to client");
 
-    unsized_data_send(bytes, &mut stream).await;
+    let send_res = unsized_data_send(bytes, &mut stream).await;
+
+    if let Err(e) = send_res {
+        log::error!("Failed to send data back to client: {}", e);
+    }
 }
