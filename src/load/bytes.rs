@@ -6,7 +6,7 @@ const SIZE_LIMIT: u64 = 1024 * 1024;
 pub struct BytesLoader {}
 
 async fn get_file_size_hint(file: &tokio::fs::File) -> Option<usize> {
-    Some(file.metadata().await.ok()?.len().try_into().ok()?)
+    file.metadata().await.ok()?.len().try_into().ok()
 }
 
 impl super::DataLoader<Vec<u8>> for BytesLoader {
