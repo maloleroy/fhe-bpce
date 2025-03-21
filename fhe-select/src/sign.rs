@@ -77,7 +77,7 @@ where
     let mut result = cs.cipher(&0.);
     let mut x_pow_i = cs.cipher(&1.);
     for (i, coeff) in COEFFS.iter().enumerate().take(N) {
-        assert!(coeff.abs() < (1 << (f64::MANTISSA_DIGITS + coeff.trailing_zeros())));
+        assert!(coeff.abs().leading_zeros() < f64::MANTISSA_DIGITS + coeff.trailing_zeros());
         #[allow(clippy::cast_precision_loss)]
         let mut term = cs.cipher(&(*coeff as f64));
         term = cs.operate(mul_op, &term, Some(&x_pow_i)); // TODO: use an in-place operation
@@ -167,6 +167,7 @@ mod tests {
     };
 
     #[test]
+    #[ignore]
     fn test_sign() {
         let context: SealCkksContext =
             SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);

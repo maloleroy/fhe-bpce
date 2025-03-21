@@ -15,7 +15,7 @@ pub enum ConfigError {
 }
 
 impl ClientConfig {
-    pub async fn load_config(config_file: &Path) -> Result<ClientConfig, ConfigError> {
+    pub async fn load_config(config_file: &Path) -> Result<Self, ConfigError> {
         let file = tokio::fs::read(config_file)
             .await
             .map_err(ConfigError::LoadError)?;
@@ -25,6 +25,6 @@ impl ClientConfig {
 
         let table = str_file.parse::<Table>().map_err(ConfigError::ParseError)?;
 
-        Ok(ClientConfig {})
+        Ok(Self {})
     }
 }
