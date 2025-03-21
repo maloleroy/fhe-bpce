@@ -2,7 +2,9 @@
 #![warn(clippy::nursery, clippy::pedantic)]
 #![allow(clippy::missing_panics_doc)]
 
+use client::config::ClientConfig;
 use core::net::SocketAddr;
+use std::path::PathBuf;
 use tokio::io::AsyncWriteExt;
 use tokio::net::{TcpListener, TcpStream};
 
@@ -36,7 +38,10 @@ macro_rules! faillible {
     };
 }
 
-pub async fn start_client(socket_addr: SocketAddr) {
+pub async fn start_client(socket_addr: SocketAddr, config_file: String) {
+    let path = PathBuf::from(config_file);
+    let _config = ensure!(ClientConfig::load_config(&path).await);
+
     let mut stream = ensure!(TcpStream::connect(socket_addr).await);
 
     ensure!(stream.write_all(b"Hello, world!").await);
