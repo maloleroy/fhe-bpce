@@ -5,9 +5,9 @@
 use client::config::ClientConfig;
 use core::net::SocketAddr;
 use fhe_core::api::CryptoSystem;
-use fhe_exchange::ExchangeData;
+use load::DataLoader as _;
 use seal_lib::context::SealBFVContext;
-use seal_lib::{BfvHOperation, Ciphertext, SealBfvCS};
+use seal_lib::{Ciphertext, SealBfvCS};
 use std::path::PathBuf;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
@@ -50,6 +50,8 @@ pub async fn start_client(socket_addr: SocketAddr, config_file: String) {
 
     log::debug!("Client configuration: {:?}", config);
 
+    let file = ensure!(std::fs::File::open(config.data()));
+
     let mut stream = ensure!(TcpStream::connect(socket_addr).await);
 
     let bfv_ctx = SealBFVContext::new(
@@ -59,23 +61,17 @@ pub async fn start_client(socket_addr: SocketAddr, config_file: String) {
     );
     let bfv_cs = SealBfvCS::new(&bfv_ctx);
 
-    let lhs = 1;
-    let rhs = 2;
-
-    let lhs_cipher = bfv_cs.cipher(&lhs);
-    let rhs_cipher = bfv_cs.cipher(&rhs);
-
-    let exch_data = ExchangeData::<SealBfvCS>::new(
-        vec![lhs_cipher],
-        vec![Some(rhs_cipher)],
-        vec![BfvHOperation::Add],
-    );
-
+    let exch_data = ensure!(load::csv::CsvLoader::<SealBfvCS>::load(file, &bfv_cs));
     let exch_data_bytes = ensure!(bincode::encode_to_vec(exch_data, BINCODE_CONFIG));
 
     ensure!(unsized_data_send(exch_data_bytes, &mut stream).await);
 
+    log::debug!("Data sent to server.");
+    let start = std::time::Instant::now();
+
     let results = ensure!(unsized_data_recv(&mut stream).await);
+
+    log::debug!("Data received from server in {:?}", start.elapsed());
 
     let results: (Vec<Ciphertext>, usize) = ensure!(bincode::decode_from_slice_with_context(
         &results,

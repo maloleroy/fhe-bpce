@@ -1,11 +1,10 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use thiserror::Error;
 use toml::Table;
 
 #[derive(Debug)]
 pub struct ClientConfig {
-    // TODO: Remove
-    _foo: String,
+    data: PathBuf,
 }
 
 #[derive(Error, Debug)]
@@ -32,13 +31,20 @@ impl ClientConfig {
         let table = str_file.parse::<Table>().map_err(ConfigError::ParseError)?;
 
         #[allow(clippy::disallowed_names)] // Test!
-        let foo = table
-            .get("foo")
-            .ok_or(ConfigError::MissingKey("foo"))?
+        let data = table
+            .get("data")
+            .ok_or(ConfigError::MissingKey("data"))?
             .as_str()
-            .ok_or(ConfigError::InvalidValue("foo"))?
-            .to_string();
+            .ok_or(ConfigError::InvalidValue("data"))?
+            .to_string()
+            .into();
 
-        Ok(Self { _foo: foo })
+        Ok(Self { data })
+    }
+
+    #[must_use]
+    #[inline]
+    pub fn data(&self) -> &Path {
+        &self.data
     }
 }
