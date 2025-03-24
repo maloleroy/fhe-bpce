@@ -320,6 +320,7 @@ dependencies = [
  "mimalloc",
  "parquet",
  "pretty_env_logger",
+ "rayon",
  "rouille",
  "seal-lib",
  "thiserror 2.0.12",

@@ -1,6 +1,7 @@
 use super::{unsized_data_recv, unsized_data_send};
 use fhe_core::api::CryptoSystem;
 use fhe_exchange::ExchangeData;
+use rayon::prelude::*;
 use seal_lib::{SealBfvCS, context::SealBFVContext};
 use tokio::net::TcpStream;
 
@@ -28,10 +29,11 @@ pub async fn handle_client(mut stream: TcpStream) {
 
     log::info!("Operating on {} data pairs", exch_data.len());
 
-    let mut results = Vec::new();
-    for (lhs, rhs, op) in exch_data.iter_over_data() {
-        results.push(bfv_cs.operate(*op, lhs, rhs));
-    }
+    let results = exch_data
+        .iter_over_data()
+        .par_bridge()
+        .map(|(lhs, rhs, &op)| bfv_cs.operate(op, lhs, rhs))
+        .collect::<Vec<_>>();
 
     let bytes = bincode::encode_to_vec(results, super::BINCODE_CONFIG).unwrap();
 
