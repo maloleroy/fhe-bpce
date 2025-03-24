@@ -71,7 +71,7 @@ pub async fn start_client(socket_addr: SocketAddr, config_file: String) {
 
     let results = ensure!(unsized_data_recv(&mut stream).await);
 
-    log::debug!("Data received from server in {:?}", start.elapsed());
+    log::info!("Data received from server in {:?}", start.elapsed());
 
     let results: (Vec<Ciphertext>, usize) = ensure!(bincode::decode_from_slice_with_context(
         &results,

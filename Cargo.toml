@@ -13,6 +13,7 @@ log = "0.4.26"
 mimalloc = { version = "0.1.43", features = ["secure"] }
 parquet = { version = "54.2.1", optional = true }
 pretty_env_logger = "0.5.0"
+rayon = "1.10.0"
 seal-lib = { path = "seal-lib" }
 thiserror = "2.0.12"
 tokio = { version = "1.43.0", features = ["full"] }
