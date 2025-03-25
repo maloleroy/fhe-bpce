@@ -56,6 +56,12 @@ pub struct ZamaTfheContext {
     server_key: Option<ServerKey>,
 }
 
+impl Default for ZamaTfheContext {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl ZamaTfheContext {
     #[must_use]
     /// Create a new TFHE context.
