@@ -12,7 +12,7 @@ use tfhe::{
     set_server_key,
 };
 
-pub use tfhe::{FheUint, FheUint8, FheUint16, FheUint32, FheUint64, FheUint128};
+pub use tfhe::{FheUint8, FheUint16, FheUint32, FheUint64, FheUint128};
 
 pub mod config;
 
