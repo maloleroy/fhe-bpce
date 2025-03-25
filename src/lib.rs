@@ -48,7 +48,7 @@ pub async fn start_client(socket_addr: SocketAddr, config_file: String) {
     let path = PathBuf::from(config_file);
     let config = ensure!(ClientConfig::load_config(&path).await);
 
-    log::debug!("Client configuration: {:?}", config);
+    log::debug!("Client configuration: {config:?}");
 
     let file = ensure!(std::fs::File::open(config.data()));
 
@@ -95,7 +95,7 @@ pub async fn start_server(socket_addr: SocketAddr) {
         let (stream, client_addr) = faillible!(listener.accept().await, continue);
 
         tokio::spawn(async move {
-            log::info!("Accepted connection from {}", client_addr);
+            log::info!("Accepted connection from {client_addr}");
             server::handle_client(stream).await;
         });
     }

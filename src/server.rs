@@ -50,6 +50,6 @@ pub async fn handle_client(mut stream: TcpStream) {
     let send_res = unsized_data_send(bytes, &mut stream).await;
 
     if let Err(e) = send_res {
-        log::error!("Failed to send data back to client: {}", e);
+        log::error!("Failed to send data back to client: {e}");
     }
 }
