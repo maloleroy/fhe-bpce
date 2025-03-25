@@ -27,13 +27,21 @@ pub async fn handle_client(mut stream: TcpStream) {
 
     let exch_data: ExchangeData<SealBfvCS> = exch_data.0;
 
-    log::info!("Operating on {} data pairs", exch_data.len());
+    log::info!(
+        "Operating on {} data pairs with {} threads",
+        exch_data.len(),
+        rayon::current_num_threads()
+    );
+
+    let start = std::time::Instant::now();
 
     let results = exch_data
         .iter_over_data()
         .par_bridge()
         .map(|(lhs, rhs, &op)| bfv_cs.operate(op, lhs, rhs))
         .collect::<Vec<_>>();
+
+    log::info!("Data processed in {:?}", start.elapsed());
 
     let bytes = bincode::encode_to_vec(results, super::BINCODE_CONFIG).unwrap();
 

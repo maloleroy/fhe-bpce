@@ -103,11 +103,8 @@ pub async fn start_server(socket_addr: SocketAddr) {
 
 async fn unsized_data_send(data: Vec<u8>, stream: &mut TcpStream) -> Result<(), std::io::Error> {
     let total_size = data.len();
-    let total_size_fixed_size = u64::try_from(total_size).unwrap();
 
-    stream
-        .write_all(&total_size_fixed_size.to_le_bytes())
-        .await?;
+    stream.write_all(&total_size.to_le_bytes()).await?;
 
     stream.write_all(&data).await?;
 
