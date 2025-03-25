@@ -5,4 +5,3 @@
 
 pub mod api;
 pub mod f64;
-pub mod rand;
