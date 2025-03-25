@@ -24,10 +24,10 @@ criterion = "0.5.1"
 rouille = { git = "https://github.com/bnjbvr/rouille.git" }
 
 [workspace]
-members = ["fhe-core", "seal-lib", "fhe-select", "fhe-exchange"]
+members = ["fhe-core", "seal-lib", "fhe-select", "fhe-exchange", "zama-lib"]
 
 [workspace.dependencies]
-bincode = "2.0.1"
+bincode = { version = "2.0.1", features = ["serde"] }
 fhe-core = { path = "fhe-core" }
 
 [features]
