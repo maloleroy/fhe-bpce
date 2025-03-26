@@ -1,28 +1,25 @@
 use bincode::{Decode, Encode};
 use fhe_core::api::CryptoSystem;
 
-/// The data that will be exchanged by the client and the server.
-pub struct ExchangeData<C: CryptoSystem>
+pub struct SingleOpItem<C: CryptoSystem>
 where
     C::Ciphertext: Encode,
-    C::Operation: Encode,
+    C::Operation2: Encode,
 {
-    lhs: Vec<C::Ciphertext>,
-    rhs: Vec<Option<C::Ciphertext>>,
-    operation: Vec<C::Operation>,
+    lhs: C::Ciphertext,
+    rhs: C::Ciphertext,
+    operation: C::Operation2,
 }
 
-impl<C: CryptoSystem> ExchangeData<C>
+impl<C: CryptoSystem> SingleOpItem<C>
 where
     C::Ciphertext: Encode,
-    C::Operation: Encode,
+    C::Operation2: Encode,
 {
-    /// Creates a new instance of `ExchangeData`.
-    pub const fn new(
-        lhs: Vec<C::Ciphertext>,
-        rhs: Vec<Option<C::Ciphertext>>,
-        operation: Vec<C::Operation>,
-    ) -> Self {
+    #[must_use]
+    #[inline]
+    /// Creates a new instance of `SingleOpItem`.
+    pub const fn new(lhs: C::Ciphertext, rhs: C::Ciphertext, operation: C::Operation2) -> Self {
         Self {
             lhs,
             rhs,
@@ -30,34 +27,38 @@ where
         }
     }
 
-    /// Returns the number of exchanged data.
-    pub fn len(&self) -> usize {
-        assert_eq!(self.lhs.len(), self.rhs.len());
-        assert_eq!(self.lhs.len(), self.operation.len());
-        self.lhs.len()
+    #[must_use]
+    #[inline]
+    pub const fn op(&self) -> &C::Operation2 {
+        &self.operation
     }
 
-    /// Returns `true` if the exchanged data is empty.
-    pub fn is_empty(&self) -> bool {
-        self.len() == 0
+    #[must_use]
+    #[inline]
+    pub const fn lhs(&self) -> &C::Ciphertext {
+        &self.lhs
     }
 
-    /// Iterate over the exchanged data.
-    pub fn iter_over_data(
-        &self,
-    ) -> impl Iterator<Item = (&C::Ciphertext, Option<&C::Ciphertext>, &C::Operation)> {
-        self.lhs
-            .iter()
-            .zip(self.rhs.iter())
-            .zip(self.operation.iter())
-            .map(|((lhs, rhs), operation)| (lhs, rhs.as_ref(), operation))
+    #[must_use]
+    #[inline]
+    pub const fn rhs(&self) -> &C::Ciphertext {
+        &self.rhs
+    }
+
+    #[must_use]
+    #[inline]
+    pub fn execute(&self, cs: &C) -> C::Ciphertext
+    where
+        C::Operation2: Copy,
+    {
+        cs.operate2(self.operation, &self.lhs, &self.rhs)
     }
 }
 
-impl<C: CryptoSystem> Encode for ExchangeData<C>
+impl<C: CryptoSystem> Encode for SingleOpItem<C>
 where
     C::Ciphertext: Encode,
-    C::Operation: Encode,
+    C::Operation2: Encode,
 {
     fn encode<E: bincode::enc::Encoder>(
         &self,
@@ -69,22 +70,101 @@ where
     }
 }
 
-impl<C: CryptoSystem, Context> Decode<Context> for ExchangeData<C>
+impl<C: CryptoSystem, Context> Decode<Context> for SingleOpItem<C>
 where
     C::Ciphertext: Decode<Context> + Encode,
-    C::Operation: Decode<Context> + Encode,
+    C::Operation2: Decode<Context> + Encode,
 {
     fn decode<D: bincode::de::Decoder<Context = Context>>(
         decoder: &mut D,
     ) -> Result<Self, bincode::error::DecodeError> {
-        let lhs = Vec::<C::Ciphertext>::decode(decoder)?;
-        let rhs = Vec::<Option<C::Ciphertext>>::decode(decoder)?;
-        let operation = Vec::<C::Operation>::decode(decoder)?;
+        let lhs = C::Ciphertext::decode(decoder)?;
+        let rhs = C::Ciphertext::decode(decoder)?;
+        let operation = C::Operation2::decode(decoder)?;
         Ok(Self {
             lhs,
             rhs,
             operation,
         })
+    }
+}
+
+#[derive(Default)]
+/// The data that will be exchanged by the client and the server, for
+/// sequential single operations.
+pub struct SingleOpsData<C: CryptoSystem>(Vec<SingleOpItem<C>>)
+where
+    C::Ciphertext: Encode,
+    C::Operation2: Encode;
+
+impl<C: CryptoSystem> SingleOpsData<C>
+where
+    C::Ciphertext: Encode,
+    C::Operation2: Encode,
+{
+    #[must_use]
+    #[inline]
+    /// Creates a new instance of `SingleOpsData`.
+    pub const fn new() -> Self {
+        Self(Vec::new())
+    }
+
+    #[inline]
+    pub fn push(&mut self, item: SingleOpItem<C>) {
+        self.0.push(item);
+    }
+
+    #[must_use]
+    #[inline]
+    /// Creates a new instance of `ExchangeData`.
+    pub const fn from_vec(data: Vec<SingleOpItem<C>>) -> Self {
+        Self(data)
+    }
+
+    #[must_use]
+    #[inline]
+    /// Returns the number of exchanged data.
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    #[must_use]
+    #[inline]
+    /// Returns `true` if the exchanged data is empty.
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    #[inline]
+    /// Iterate over the exchanged data.
+    pub fn iter_over_data(&self) -> impl Iterator<Item = &SingleOpItem<C>> {
+        self.0.iter()
+    }
+}
+
+impl<C: CryptoSystem> Encode for SingleOpsData<C>
+where
+    C::Ciphertext: Encode,
+    C::Operation2: Encode,
+{
+    fn encode<E: bincode::enc::Encoder>(
+        &self,
+        encoder: &mut E,
+    ) -> Result<(), bincode::error::EncodeError> {
+        self.0.encode(encoder)?;
+        Ok(())
+    }
+}
+
+impl<C: CryptoSystem, Context> Decode<Context> for SingleOpsData<C>
+where
+    C::Ciphertext: Decode<Context> + Encode,
+    C::Operation2: Decode<Context> + Encode,
+{
+    fn decode<D: bincode::de::Decoder<Context = Context>>(
+        decoder: &mut D,
+    ) -> Result<Self, bincode::error::DecodeError> {
+        Ok(Self(Vec::decode(decoder)?))
     }
 }
 

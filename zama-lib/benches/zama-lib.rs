@@ -1,10 +1,10 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use fhe_core::api::CryptoSystem;
-use zama_lib::{FheUint32, TfheHOperation, ZamaTfheUintCS, config::ZamaTfheContext};
+use zama_lib::{FheUint32, TfheHOperation2, ZamaTfheUintCS, config::ZamaTfheContext};
 
 fn benchmark_tfhe(c: &mut Criterion) {
     let ctx = ZamaTfheContext::new();
-    let cipher = ZamaTfheUintCS::<u32, FheUint32>::new(ctx);
+    let cipher = ZamaTfheUintCS::<u32, FheUint32>::new(&ctx);
 
     let input = 42;
 
@@ -20,13 +20,13 @@ fn benchmark_tfhe(c: &mut Criterion) {
 
     c.bench_function("tfhe add", |b| {
         b.iter(|| {
-            let _ = cipher.operate(TfheHOperation::Add, &ciphered_input, Some(&ciphered_input2));
+            let _ = cipher.operate2(TfheHOperation2::Add, &ciphered_input, &ciphered_input2);
         })
     });
 
     c.bench_function("tfhe mul", |b| {
         b.iter(|| {
-            let _ = cipher.operate(TfheHOperation::Mul, &ciphered_input, Some(&ciphered_input2));
+            let _ = cipher.operate2(TfheHOperation2::Mul, &ciphered_input, &ciphered_input2);
         })
     });
 

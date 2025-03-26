@@ -1,7 +1,7 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use fhe_core::api::CryptoSystem;
 use seal_lib::{
-    BfvHOperation, CkksHOperation, DegreeType, SealBfvCS, SealCkksCS, SecurityLevel,
+    BfvHOperation2, CkksHOperation2, DegreeType, SealBfvCS, SealCkksCS, SecurityLevel,
     context::{SealBFVContext, SealCkksContext},
 };
 
@@ -23,13 +23,13 @@ fn benchmark_bfv(c: &mut Criterion) {
 
     c.bench_function("bfv add", |b| {
         b.iter(|| {
-            let _ = cipher.operate(BfvHOperation::Add, &ciphered_input, Some(&ciphered_input2));
+            let _ = cipher.operate2(BfvHOperation2::Add, &ciphered_input, &ciphered_input2);
         })
     });
 
     c.bench_function("bfv mul", |b| {
         b.iter(|| {
-            let _ = cipher.operate(BfvHOperation::Mul, &ciphered_input, Some(&ciphered_input2));
+            let _ = cipher.operate2(BfvHOperation2::Mul, &ciphered_input, &ciphered_input2);
         })
     });
 
@@ -42,7 +42,7 @@ fn benchmark_bfv(c: &mut Criterion) {
 
 fn benchmark_ckks(c: &mut Criterion) {
     let ctx = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
-    let cipher = SealCkksCS::new(ctx, 1e6);
+    let cipher = SealCkksCS::new(&ctx, 1e6);
 
     let input = 42.0_f64;
 
@@ -58,13 +58,13 @@ fn benchmark_ckks(c: &mut Criterion) {
 
     c.bench_function("ckks add", |b| {
         b.iter(|| {
-            let _ = cipher.operate(CkksHOperation::Add, &ciphered_input, Some(&ciphered_input2));
+            let _ = cipher.operate2(CkksHOperation2::Add, &ciphered_input, &ciphered_input2);
         })
     });
 
     c.bench_function("ckks mul", |b| {
         b.iter(|| {
-            let _ = cipher.operate(CkksHOperation::Mul, &ciphered_input, Some(&ciphered_input2));
+            let _ = cipher.operate2(CkksHOperation2::Mul, &ciphered_input, &ciphered_input2);
         })
     });
 

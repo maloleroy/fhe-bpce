@@ -8,7 +8,7 @@ pub mod parquet;
 
 use bincode::Encode;
 use fhe_core::api::CryptoSystem;
-use fhe_exchange::ExchangeData;
+use fhe_exchange::SingleOpsData;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -27,8 +27,8 @@ pub type DataResult<T> = Result<T, DataError>;
 
 pub trait DataLoader<C: CryptoSystem>
 where
-    C::Operation: Encode,
+    C::Operation2: Encode,
     C::Ciphertext: Encode,
 {
-    fn load(file: std::fs::File, cs: &C) -> DataResult<ExchangeData<C>>;
+    fn load(file: std::fs::File, cs: &C) -> DataResult<SingleOpsData<C>>;
 }

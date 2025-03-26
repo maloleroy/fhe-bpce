@@ -2,6 +2,14 @@
 
 pub mod select;
 
+pub trait Operation {}
+impl Operation for () {}
+
+pub trait Arity1Operation: Operation {}
+impl Arity1Operation for () {}
+pub trait Arity2Operation: Operation {}
+impl Arity2Operation for () {}
+
 /// A trait that defines the core API of a FHE cryptosystem.
 pub trait CryptoSystem {
     /// The plaintext type for the FHE scheme.
@@ -9,10 +17,14 @@ pub trait CryptoSystem {
     /// The ciphertext type for the FHE scheme.
     type Ciphertext;
 
-    /// The operations that can be performed on the ciphertexts.
+    /// The arity 1 operations that can be performed on the ciphertexts.
     ///
     /// This should be easily representable by a small enum.
-    type Operation;
+    type Operation1: Arity1Operation;
+    /// The arity 2 operations that can be performed on the ciphertexts.
+    ///
+    /// This should be easily representable by a small enum.
+    type Operation2: Arity2Operation;
 
     /// Encrypts a plaintext into a ciphertext.
     fn cipher(&self, plaintext: &Self::Plaintext) -> Self::Ciphertext;
@@ -20,30 +32,31 @@ pub trait CryptoSystem {
     fn decipher(&self, ciphertext: &Self::Ciphertext) -> Self::Plaintext;
 
     #[must_use = "This method does not modify the input ciphertext."]
-    /// Performs an operation on the ciphertexts.
-    ///
-    /// Every operation requires at least one operand.
-    /// For operations that only require one operand, `rhs` can be `None`.
-    /// Otherwise, it is up to you to `unwrap` it and make sure there is one when needed.
-    fn operate(
+    /// Performs an operation on one ciphertext.
+    fn operate1(&self, operation: Self::Operation1, lhs: &Self::Ciphertext) -> Self::Ciphertext;
+
+    #[must_use = "This method does not modify the input ciphertexts."]
+    /// Performs an operation on two ciphertexts.
+    fn operate2(
         &self,
-        operation: Self::Operation,
+        operation: Self::Operation2,
         lhs: &Self::Ciphertext,
-        rhs: Option<&Self::Ciphertext>,
+        rhs: &Self::Ciphertext,
     ) -> Self::Ciphertext;
 
-    /// Performs an operation on the ciphertexts in place.
-    ///
-    /// This is a default implementation that calls `operate` and assigns the result to `lhs`.
-    /// You can override this method to provide a more detailed implementation.
-    fn operate_inplace(
+    /// Performs an operation on one ciphertext in place.
+    fn operate1_inplace(&self, operation: Self::Operation1, lhs: &mut Self::Ciphertext) {
+        *lhs = self.operate1(operation, lhs);
+    }
+
+    /// Performs an operation on two ciphertexts in place.
+    fn operate2_inplace(
         &self,
-        operation: Self::Operation,
+        operation: Self::Operation2,
         lhs: &mut Self::Ciphertext,
-        rhs: Option<&Self::Ciphertext>,
+        rhs: &Self::Ciphertext,
     ) {
-        let result: <Self as CryptoSystem>::Ciphertext = self.operate(operation, lhs, rhs);
-        *lhs = result;
+        *lhs = self.operate2(operation, lhs, rhs);
     }
 
     fn relinearize(&self, ciphertext: &mut Self::Ciphertext);
@@ -52,7 +65,7 @@ pub trait CryptoSystem {
 #[allow(dead_code)]
 /// Module to assert that usual usage of the API compiles.
 mod private {
-    use super::CryptoSystem;
+    use super::{Arity2Operation, CryptoSystem, Operation};
 
     #[derive(Clone)]
     struct TestPlaintext {}
@@ -68,11 +81,14 @@ mod private {
         Add,
         Mul,
     }
+    impl Operation for Op {}
+    impl Arity2Operation for Op {}
 
     impl CryptoSystem for TestCryptoSystem {
         type Plaintext = TestPlaintext;
         type Ciphertext = TestCiphertext;
-        type Operation = Op;
+        type Operation1 = ();
+        type Operation2 = Op;
 
         fn cipher(&self, plaintext: &Self::Plaintext) -> Self::Ciphertext {
             TestCiphertext {
@@ -83,20 +99,28 @@ mod private {
             ciphertext.data.clone()
         }
 
-        fn operate(
+        fn operate1(
             &self,
-            operation: Self::Operation,
+            _operation: Self::Operation1,
             lhs: &Self::Ciphertext,
-            rhs: Option<&Self::Ciphertext>,
+        ) -> Self::Ciphertext {
+            TestCiphertext {
+                data: lhs.data.clone(),
+            }
+        }
+
+        fn operate2(
+            &self,
+            operation: Self::Operation2,
+            lhs: &Self::Ciphertext,
+            rhs: &Self::Ciphertext,
         ) -> Self::Ciphertext {
             match operation {
                 Op::Add => {
-                    assert!(rhs.is_some(), "Addition requires two operands.");
-                    let data = rhs.unwrap().data.clone();
+                    let data = rhs.data.clone();
                     TestCiphertext { data }
                 }
                 Op::Mul => {
-                    assert!(rhs.is_some(), "Multiplication requires two operands.");
                     let data = lhs.data.clone();
                     TestCiphertext { data }
                 }
@@ -108,7 +132,7 @@ mod private {
 
     // Assert that CryptoSystem is `dyn` compatible.
     fn any_operation<C, P>(
-        _system: &dyn CryptoSystem<Ciphertext = C, Plaintext = P, Operation = ()>,
+        _system: &dyn CryptoSystem<Ciphertext = C, Plaintext = P, Operation1 = (), Operation2 = Op>,
         other_param: u8,
     ) -> u8 {
         other_param
