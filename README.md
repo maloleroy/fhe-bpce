@@ -22,6 +22,7 @@ It is designed to be easy to use and to provide a high-level interface to the un
 The library currently supports the following schemes:
 - BFV (Seal)
 - CKKS (Seal)
+- TFHE (Zama)
 
 ## Usage
 
@@ -47,15 +48,19 @@ The main binary uses crates to organize its dependencies:
 ### fhe-core
 
 It is the core crate of the workspace that defines the core `CryptoSystem` trait.
+All of the crates deeply integrates `bincode` to serialize data and send it over the network.
 
-### fhe-exchange
+### fhe-operations
 
-Uses `bincode` to serialize and deserialize ciphertexts and operations into bytes so that they can be sent accross any channel.
-
-### fhe-select
-
-Implements various operations, such as SQL-like operation like `SELECT ... WHERE ...`.
+Implements complex operations on ciphered data:
+- SQL-like : SELECT ... WHERE ...
+- Sign function
+- Sequential operations
 
 ### seal-lib
 
 Implements `CryptoSystem` for systems backed by Microsoft SEAL (BFV and CKKS).
+
+### zama-lib
+
+Implements `CryptoSystem` for systems backed by Zama (TFHE).
