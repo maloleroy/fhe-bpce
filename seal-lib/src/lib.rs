@@ -8,9 +8,8 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 pub use bincode::{Decode, Encode};
-use fhe_core::api::{
-    Arity1Operation, Arity2Operation, CryptoSystem, Operation, select::SelectableCS,
-};
+use fhe_core::api::{Arity1Operation, Arity2Operation, CryptoSystem, Operation};
+use fhe_operations::selectable_collection::{Flag, SelectableCS};
 pub use sealy::{
     BFVEncoder, BFVEvaluator, CKKSEncoder, CKKSEvaluator, Decryptor, DegreeType, Evaluator,
     Plaintext, PublicKey, SecretKey, SecurityLevel,
@@ -172,13 +171,13 @@ impl CryptoSystem for SealCkksCS {
 }
 
 impl SelectableCS for SealCkksCS {
-    fn flag_to_plaintext(&self, flag: fhe_core::api::select::Flag) -> Self::Plaintext {
+    fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext {
         const FLAG_ON: f64 = 1.0;
         const FLAG_OFF: f64 = 0.0;
 
         match flag {
-            fhe_core::api::select::Flag::On => FLAG_ON,
-            fhe_core::api::select::Flag::Off => FLAG_OFF,
+            Flag::On => FLAG_ON,
+            Flag::Off => FLAG_OFF,
         }
     }
 }
@@ -330,13 +329,13 @@ impl CryptoSystem for SealBfvCS {
 }
 
 impl SelectableCS for SealBfvCS {
-    fn flag_to_plaintext(&self, flag: fhe_core::api::select::Flag) -> Self::Plaintext {
+    fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext {
         const FLAG_ON: u64 = 1;
         const FLAG_OFF: u64 = 0;
 
         match flag {
-            fhe_core::api::select::Flag::On => FLAG_ON,
-            fhe_core::api::select::Flag::Off => FLAG_OFF,
+            Flag::On => FLAG_ON,
+            Flag::Off => FLAG_OFF,
         }
     }
 }

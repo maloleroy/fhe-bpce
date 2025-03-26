@@ -172,24 +172,86 @@ where
 mod tests {
     use super::*;
     use bincode::config::Configuration;
-    use seal_lib::{Ciphertext, DegreeType, SealBfvCS, SecurityLevel, context::SealBFVContext};
+    use fhe_core::api::{Arity2Operation, Operation};
 
     const CONFIG: Configuration = bincode::config::standard();
 
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Encode, Decode)]
+    struct TestPlaintext(u64);
+    #[derive(Clone, Encode, Decode)]
+    struct TestCiphertext {
+        // Absolutely not secure system, just for testing purposes.
+        data: TestPlaintext,
+    }
+
+    struct TestCryptoSystem {}
+
+    #[derive(Clone, Copy, Debug)]
+    #[allow(dead_code)]
+    enum Op {
+        Add,
+        Mul,
+    }
+    impl Operation for Op {}
+    impl Arity2Operation for Op {}
+
+    impl CryptoSystem for TestCryptoSystem {
+        type Plaintext = TestPlaintext;
+        type Ciphertext = TestCiphertext;
+        type Operation1 = ();
+        type Operation2 = Op;
+
+        fn cipher(&self, plaintext: &Self::Plaintext) -> Self::Ciphertext {
+            TestCiphertext {
+                data: plaintext.clone(),
+            }
+        }
+        fn decipher(&self, ciphertext: &Self::Ciphertext) -> Self::Plaintext {
+            ciphertext.data.clone()
+        }
+
+        fn operate1(
+            &self,
+            _operation: Self::Operation1,
+            lhs: &Self::Ciphertext,
+        ) -> Self::Ciphertext {
+            TestCiphertext {
+                data: lhs.data.clone(),
+            }
+        }
+
+        fn operate2(
+            &self,
+            operation: Self::Operation2,
+            lhs: &Self::Ciphertext,
+            rhs: &Self::Ciphertext,
+        ) -> Self::Ciphertext {
+            match operation {
+                Op::Add => TestCiphertext {
+                    data: TestPlaintext(lhs.data.0 + rhs.data.0),
+                },
+                Op::Mul => TestCiphertext {
+                    data: TestPlaintext(lhs.data.0 * rhs.data.0),
+                },
+            }
+        }
+
+        fn relinearize(&self, _ciphertext: &mut Self::Ciphertext) {}
+    }
+
     #[test]
     fn test_seal_bfv_cs() {
-        let context = SealBFVContext::new(DegreeType::D2048, SecurityLevel::TC128, 25);
-        let cs = SealBfvCS::new(&context);
+        let cs = TestCryptoSystem {};
 
-        let a = cs.cipher(&1);
+        let a = cs.cipher(&TestPlaintext(1));
 
         // Data that would be send to the server
         let a_encoded = bincode::encode_to_vec(a, CONFIG).unwrap();
 
-        let (a_decoded, _): (Ciphertext, _) =
-            bincode::decode_from_slice_with_context(a_encoded.as_slice(), CONFIG, context).unwrap();
+        let (a_decoded, _): (TestCiphertext, _) =
+            bincode::decode_from_slice(a_encoded.as_slice(), CONFIG).unwrap();
         let a_final = cs.decipher(&a_decoded);
 
-        assert_eq!(a_final, 1);
+        assert_eq!(a_final, TestPlaintext(1));
     }
 }

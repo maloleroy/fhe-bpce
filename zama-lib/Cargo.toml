@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 bincode = { workspace = true }
 fhe-core = { workspace = true }
+fhe-operations = { workspace = true }
 serde = { version = "1.0.219", features = ["derive"] }
 tfhe = { version = "1.0.1", features = ["boolean", "shortint", "integer"] }
 

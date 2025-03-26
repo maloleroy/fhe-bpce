@@ -779,7 +779,6 @@ version = "0.1.0"
 dependencies = [
  "bincode 2.0.1",
  "fhe-core",
- "seal-lib",
 ]
 
 [[package]]
@@ -1609,6 +1608,7 @@ dependencies = [
  "bincode 2.0.1",
  "criterion",
  "fhe-core",
+ "fhe-operations",
  "sealy",
 ]
 
@@ -2250,6 +2250,7 @@ dependencies = [
  "bincode 2.0.1",
  "criterion",
  "fhe-core",
+ "fhe-operations",
  "serde",
  "tfhe",
 ]

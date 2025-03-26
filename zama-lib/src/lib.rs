@@ -8,9 +8,8 @@ extern crate alloc;
 
 use bincode::{Decode, Encode};
 use core::ops::{Add, Div, Mul, Neg, Rem, Sub};
-use fhe_core::api::{
-    Arity1Operation, Arity2Operation, CryptoSystem, Operation, select::SelectableCS,
-};
+use fhe_core::api::{Arity1Operation, Arity2Operation, CryptoSystem, Operation};
+use fhe_operations::selectable_collection::{Flag, SelectableCS};
 use tfhe::{
     ClientKey,
     prelude::{FheDecrypt, FheEncrypt},
@@ -169,13 +168,13 @@ where
         + Rem<Output = I>
         + Sub<Output = I>,
 {
-    fn flag_to_plaintext(&self, flag: fhe_core::api::select::Flag) -> Self::Plaintext {
+    fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext {
         const FLAG_ON: u64 = 1;
         const FLAG_OFF: u64 = 0;
 
         match flag {
-            fhe_core::api::select::Flag::On => FLAG_ON,
-            fhe_core::api::select::Flag::Off => FLAG_OFF,
+            Flag::On => FLAG_ON,
+            Flag::Off => FLAG_OFF,
         }
     }
 }

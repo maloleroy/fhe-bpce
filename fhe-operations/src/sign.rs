@@ -163,20 +163,78 @@ const fn chebyshev_coefficients<const N: usize>() -> [i64; N] {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use fhe_core::f64::approx_eq;
-    use seal_lib::{
-        CkksHOperation2, DegreeType, SealCkksCS, SecurityLevel, context::SealCkksContext,
+    use fhe_core::{
+        api::{Arity2Operation, Operation},
+        f64::approx_eq,
     };
+
+    #[derive(Clone)]
+    struct TestCiphertext {
+        // Absolutely not secure system, just for testing purposes.
+        data: f64,
+    }
+
+    struct TestCryptoSystem {}
+
+    #[derive(Clone, Copy, Debug)]
+    enum Op {
+        Add,
+        Mul,
+    }
+    impl Operation for Op {}
+    impl Arity2Operation for Op {}
+
+    impl CryptoSystem for TestCryptoSystem {
+        type Plaintext = f64;
+        type Ciphertext = TestCiphertext;
+        type Operation1 = ();
+        type Operation2 = Op;
+
+        fn cipher(&self, plaintext: &Self::Plaintext) -> Self::Ciphertext {
+            TestCiphertext {
+                data: plaintext.clone(),
+            }
+        }
+        fn decipher(&self, ciphertext: &Self::Ciphertext) -> Self::Plaintext {
+            ciphertext.data.clone()
+        }
+
+        fn operate1(
+            &self,
+            _operation: Self::Operation1,
+            lhs: &Self::Ciphertext,
+        ) -> Self::Ciphertext {
+            TestCiphertext {
+                data: lhs.data.clone(),
+            }
+        }
+
+        fn operate2(
+            &self,
+            operation: Self::Operation2,
+            lhs: &Self::Ciphertext,
+            rhs: &Self::Ciphertext,
+        ) -> Self::Ciphertext {
+            match operation {
+                Op::Add => TestCiphertext {
+                    data: lhs.data + rhs.data,
+                },
+                Op::Mul => TestCiphertext {
+                    data: lhs.data * rhs.data,
+                },
+            }
+        }
+
+        fn relinearize(&self, _ciphertext: &mut Self::Ciphertext) {}
+    }
 
     #[test]
     #[ignore]
     fn test_sign() {
-        let context: SealCkksContext =
-            SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
-        let cs = SealCkksCS::new(&context, 1e6);
+        let cs = TestCryptoSystem {};
 
         let two = cs.cipher(&2.);
-        let result = sign(&two, &cs, CkksHOperation2::Add, CkksHOperation2::Mul);
+        let result = sign(&two, &cs, Op::Add, Op::Mul);
         assert!(approx_eq(cs.decipher(&result), 2., 1e-4));
     }
 }
