@@ -1,7 +1,5 @@
 //! This module defines the core API of FHE cryptosystems.
 
-pub mod select;
-
 pub trait Operation {}
 impl Operation for () {}
 

@@ -1,6 +1,17 @@
 use bincode::{Decode, Encode};
-pub use fhe_core::api::select::Flag;
-use fhe_core::api::{CryptoSystem, select::SelectableCS};
+use fhe_core::api::CryptoSystem;
+
+/// A `CryptoSystem` that can be used to perform selection operations.
+pub trait SelectableCS: CryptoSystem {
+    fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext;
+}
+
+/// A flag that can be used to select items.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Flag {
+    On,
+    Off,
+}
 
 pub struct SelectableItem<const F: usize, C: CryptoSystem> {
     ciphertext: C::Ciphertext,
@@ -167,103 +178,169 @@ impl<const F: usize, C: SelectableCS<Ciphertext: Clone>> SelectableCollection<F,
 #[cfg(test)]
 mod tests {
     use super::*;
-    use fhe_core::f64::approx_eq;
-    use seal_lib::{
-        CkksHOperation2, DegreeType, SealCkksCS, SecurityLevel, context::SealCkksContext,
-    };
+    use fhe_core::api::{Arity2Operation, Operation};
     const F: usize = 2;
+
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+    struct TestPlaintext(u64);
+    #[derive(Clone)]
+    struct TestCiphertext {
+        // Absolutely not secure system, just for testing purposes.
+        data: TestPlaintext,
+    }
+
+    struct TestCryptoSystem {}
+
+    #[derive(Clone, Copy, Debug)]
+    enum Op {
+        Add,
+        Mul,
+    }
+    impl Operation for Op {}
+    impl Arity2Operation for Op {}
+
+    impl CryptoSystem for TestCryptoSystem {
+        type Plaintext = TestPlaintext;
+        type Ciphertext = TestCiphertext;
+        type Operation1 = ();
+        type Operation2 = Op;
+
+        fn cipher(&self, plaintext: &Self::Plaintext) -> Self::Ciphertext {
+            TestCiphertext {
+                data: plaintext.clone(),
+            }
+        }
+        fn decipher(&self, ciphertext: &Self::Ciphertext) -> Self::Plaintext {
+            ciphertext.data.clone()
+        }
+
+        fn operate1(
+            &self,
+            _operation: Self::Operation1,
+            lhs: &Self::Ciphertext,
+        ) -> Self::Ciphertext {
+            TestCiphertext {
+                data: lhs.data.clone(),
+            }
+        }
+
+        fn operate2(
+            &self,
+            operation: Self::Operation2,
+            lhs: &Self::Ciphertext,
+            rhs: &Self::Ciphertext,
+        ) -> Self::Ciphertext {
+            match operation {
+                Op::Add => TestCiphertext {
+                    data: TestPlaintext(lhs.data.0 + rhs.data.0),
+                },
+                Op::Mul => TestCiphertext {
+                    data: TestPlaintext(lhs.data.0 * rhs.data.0),
+                },
+            }
+        }
+
+        fn relinearize(&self, _ciphertext: &mut Self::Ciphertext) {}
+    }
+    impl SelectableCS for TestCryptoSystem {
+        fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext {
+            match flag {
+                Flag::On => TestPlaintext(1),
+                Flag::Off => TestPlaintext(0),
+            }
+        }
+    }
 
     #[test]
     fn test_collection_new() {
         // let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
         // let _cs = SealCkksCS::new(context, 1e6);
 
-        let collection = SelectableCollection::<F, SealCkksCS>::new();
+        let collection = SelectableCollection::<F, TestCryptoSystem>::new();
         assert_eq!(collection.len(), 0);
     }
 
     #[test]
     fn test_collection_push() {
-        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
-        let cs = SealCkksCS::new(&context, 1e6);
-        let mut collection = SelectableCollection::<F, SealCkksCS>::new();
-        let item = SelectableItem::new(&1.0, &cs);
+        let cs = TestCryptoSystem {};
+        let mut collection = SelectableCollection::<F, TestCryptoSystem>::new();
+        let item = SelectableItem::new(&TestPlaintext(1), &cs);
         collection.push(item);
         assert_eq!(collection.len(), 1);
     }
 
     #[test]
     fn test_collection_push_plain() {
-        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
-        let cs = SealCkksCS::new(&context, 1e6);
-        let mut collection = SelectableCollection::<F, SealCkksCS>::new();
-        collection.push_plain(&1.0, &cs);
+        let cs = TestCryptoSystem {};
+        let mut collection = SelectableCollection::<F, TestCryptoSystem>::new();
+        let item = SelectableItem::new(&TestPlaintext(1), &cs);
+        collection.push(item);
         assert_eq!(collection.len(), 1);
     }
 
     #[test]
     fn test_is_empty() {
-        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
-        let cs = SealCkksCS::new(&context, 1e6);
-        let mut collection = SelectableCollection::<F, SealCkksCS>::new();
+        let cs = TestCryptoSystem {};
+        let mut collection = SelectableCollection::<F, TestCryptoSystem>::new();
         assert!(collection.is_empty());
-        collection.push_plain(&1.0, &cs);
+        let item = SelectableItem::new(&TestPlaintext(1), &cs);
+        collection.push(item);
         assert!(!collection.is_empty());
     }
 
     #[test]
     fn test_push_plain() {
-        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
-        let cs = SealCkksCS::new(&context, 1e6);
-        let mut collection = SelectableCollection::<F, SealCkksCS>::new();
-        collection.push_plain(&1.0, &cs);
+        let cs = TestCryptoSystem {};
+        let mut collection = SelectableCollection::<F, TestCryptoSystem>::new();
+        let item = SelectableItem::new(&TestPlaintext(1), &cs);
+        collection.push(item);
         assert_eq!(collection.len(), 1);
     }
 
     #[test]
     fn test_operate_many() {
-        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
-        let cs = SealCkksCS::new(&context, 1e6);
+        let cs = TestCryptoSystem {};
         let mut collection = SelectableCollection::<F, _>::new();
-        collection.push_plain(&1.0, &cs);
-        collection.push_plain(&2.0, &cs);
-        let sum = collection.operate_many(CkksHOperation2::Add, &cs);
+        let item = SelectableItem::new(&TestPlaintext(1), &cs);
+        collection.push(item);
+        let item = SelectableItem::new(&TestPlaintext(2), &cs);
+        collection.push(item);
+        let sum = collection.operate_many(Op::Add, &cs);
         let decrypted = cs.decipher(&sum);
-        assert!(approx_eq(decrypted, 3.0, 5e-2));
+        assert_eq!(decrypted.0, 3);
     }
 
     #[test]
     fn test_get_flag_plain() {
-        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
-        let cs = SealCkksCS::new(&context, 1e6);
-        let item = SelectableItem::<F, _>::new(&1.0, &cs);
-        assert!(approx_eq(item.get_flag_plain(0, &cs), 0.0, 5e-2));
+        let cs = TestCryptoSystem {};
+        let item = SelectableItem::<2, TestCryptoSystem>::new(&TestPlaintext(1), &cs);
+        assert_eq!(item.get_flag_plain(0, &cs), TestPlaintext(0));
     }
 
     #[test]
     fn test_set_flag_plain() {
-        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
-        let cs = SealCkksCS::new(&context, 1e6);
-        let mut item = SelectableItem::<F, _>::new(&1.0, &cs);
+        let cs = TestCryptoSystem {};
+        let mut item = SelectableItem::<2, TestCryptoSystem>::new(&TestPlaintext(1), &cs);
         item.set_flag_plain(0, Flag::On, &cs);
-        assert!(approx_eq(item.get_flag_plain(0, &cs), 1.0, 1e-2));
+        assert_eq!(item.get_flag_plain(0, &cs), TestPlaintext(1));
     }
 
     #[test]
     fn test_operate_many_where_flag() {
-        let context = SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
-        let cs = SealCkksCS::new(&context, 370727.);
+        let cs = TestCryptoSystem {};
         let mut collection = SelectableCollection::<F, _>::new();
 
-        collection.push_plain(&1.0, &cs);
-        collection.push_plain(&2.0, &cs);
+        let item = SelectableItem::new(&TestPlaintext(1), &cs);
+        collection.push(item);
         collection.items[0].set_flag_plain(0, Flag::On, &cs);
-        let sum =
-            collection.operate_many_where_flag(CkksHOperation2::Add, 0, CkksHOperation2::Mul, &cs);
+        let item = SelectableItem::new(&TestPlaintext(2), &cs);
+        collection.push(item);
+
+        let sum = collection.operate_many_where_flag(Op::Add, 0, Op::Mul, &cs);
         let decrypted = cs.decipher(&sum);
 
-        let expected = 1.0 * 1.0 + 2.0 * 0.0;
+        let expected = TestPlaintext(1);
 
-        assert!(approx_eq(decrypted, expected, 5e-2));
+        assert_eq!(decrypted, expected);
     }
 }
