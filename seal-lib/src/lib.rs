@@ -1,11 +1,16 @@
 //! Convenient wrapper around Microsoft SEAL library.
 #![no_std]
+#![forbid(unsafe_code)]
+#![warn(clippy::nursery, clippy::pedantic)]
+#![allow(clippy::missing_panics_doc, clippy::doc_markdown)]
 
 extern crate alloc;
 use alloc::vec::Vec;
 
 pub use bincode::{Decode, Encode};
-use fhe_core::api::{CryptoSystem, select::SelectableCS};
+use fhe_core::api::{
+    Arity1Operation, Arity2Operation, CryptoSystem, Operation, select::SelectableCS,
+};
 pub use sealy::{
     BFVEncoder, BFVEvaluator, CKKSEncoder, CKKSEvaluator, Decryptor, DegreeType, Evaluator,
     Plaintext, PublicKey, SecretKey, SecurityLevel,
@@ -59,7 +64,7 @@ pub struct SealCkksCS {
 }
 
 impl SealCkksCS {
-    pub fn new(context: context::SealCkksContext, scale: f64) -> Self {
+    pub fn new(context: &context::SealCkksContext, scale: f64) -> Self {
         let (skey, pkey, relin_key) = context.generate_keys();
 
         let encoder = context.encoder(scale);
@@ -80,7 +85,8 @@ impl SealCkksCS {
 impl CryptoSystem for SealCkksCS {
     type Ciphertext = Ciphertext;
     type Plaintext = f64;
-    type Operation = CkksHOperation;
+    type Operation1 = CkksHOperation1;
+    type Operation2 = CkksHOperation2;
 
     fn cipher(&self, plaintext: &Self::Plaintext) -> Self::Ciphertext {
         let encoded = self.encoder.encode_f64(&[*plaintext]).unwrap();
@@ -92,67 +98,66 @@ impl CryptoSystem for SealCkksCS {
         self.encoder.decode_f64(&decrypted).unwrap()[0]
     }
 
-    fn operate(
-        &self,
-        operation: Self::Operation,
-        lhs: &Self::Ciphertext,
-        rhs: Option<&Self::Ciphertext>,
-    ) -> Self::Ciphertext {
+    fn operate1(&self, operation: Self::Operation1, lhs: &Self::Ciphertext) -> Self::Ciphertext {
         match operation {
-            CkksHOperation::Add => {
-                let rhs = rhs.expect("Addition requires two operands.");
-                let result = impls::homom_add(&self.evaluator, &lhs.0, &rhs.0);
-                Ciphertext(result)
-            }
-            CkksHOperation::AddPlain(plain) => {
-                debug_assert!(rhs.is_none());
+            CkksHOperation1::AddPlain(plain) => {
                 let plain_encoded = self.encoder.encode_f64(&[plain]).unwrap();
                 let result = impls::homom_add_plain(&self.evaluator, &lhs.0, &plain_encoded);
                 Ciphertext(result)
             }
-            CkksHOperation::Mul => {
-                let rhs = rhs.expect("Multiplication requires two operands.");
-                let result = impls::homom_mul(&self.evaluator, &lhs.0, &rhs.0);
-                Ciphertext(result)
-            }
-            CkksHOperation::MulPlain(plain) => {
-                debug_assert!(rhs.is_none());
+            CkksHOperation1::MulPlain(plain) => {
                 let plain_encoded = self.encoder.encode_f64(&[plain]).unwrap();
                 let result = impls::homom_mul_plain(&self.evaluator, &lhs.0, &plain_encoded);
                 Ciphertext(result)
             }
-            CkksHOperation::Resize => panic!("Resize operation needs operate_mut, not operate."),
+            CkksHOperation1::Resize => panic!("Resize operation needs operate_mut, not operate."),
         }
     }
 
-    fn operate_inplace(
+    fn operate2(
         &self,
-        operation: Self::Operation,
-        lhs: &mut Self::Ciphertext,
-        rhs: Option<&Self::Ciphertext>,
-    ) {
+        operation: Self::Operation2,
+        lhs: &Self::Ciphertext,
+        rhs: &Self::Ciphertext,
+    ) -> Self::Ciphertext {
         match operation {
-            CkksHOperation::Resize => {
-                debug_assert!(rhs.is_none());
-                impls::resize(&self.evaluator, &mut lhs.0)
+            CkksHOperation2::Add => {
+                let result = impls::homom_add(&self.evaluator, &lhs.0, &rhs.0);
+                Ciphertext(result)
             }
-            CkksHOperation::Add => {
-                let rhs = rhs.expect("Addition requires two operands.");
-                impls::homom_add_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
+            CkksHOperation2::Mul => {
+                let result = impls::homom_mul(&self.evaluator, &lhs.0, &rhs.0);
+                Ciphertext(result)
             }
-            CkksHOperation::AddPlain(plain) => {
-                debug_assert!(rhs.is_none());
+        }
+    }
+
+    fn operate1_inplace(&self, operation: Self::Operation1, lhs: &mut Self::Ciphertext) {
+        match operation {
+            CkksHOperation1::Resize => impls::resize(&self.evaluator, &mut lhs.0),
+            CkksHOperation1::AddPlain(plain) => {
                 let plain_encoded = self.encoder.encode_f64(&[plain]).unwrap();
                 impls::homom_add_plain_inplace(&self.evaluator, &mut lhs.0, &plain_encoded);
             }
-            CkksHOperation::Mul => {
-                let rhs = rhs.expect("Addition requires two operands.");
-                impls::homom_mul_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
-            }
-            CkksHOperation::MulPlain(plain) => {
-                debug_assert!(rhs.is_none());
+            CkksHOperation1::MulPlain(plain) => {
                 let plain_encoded = self.encoder.encode_f64(&[plain]).unwrap();
                 impls::homom_mul_plain_inplace(&self.evaluator, &mut lhs.0, &plain_encoded);
+            }
+        }
+    }
+
+    fn operate2_inplace(
+        &self,
+        operation: Self::Operation2,
+        lhs: &mut Self::Ciphertext,
+        rhs: &Self::Ciphertext,
+    ) {
+        match operation {
+            CkksHOperation2::Add => {
+                impls::homom_add_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
+            }
+            CkksHOperation2::Mul => {
+                impls::homom_mul_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
             }
         }
     }
@@ -160,7 +165,7 @@ impl CryptoSystem for SealCkksCS {
     fn relinearize(&self, ciphertext: &mut Self::Ciphertext) {
         *ciphertext = Ciphertext(impls::relinearize(
             &self.evaluator,
-            &mut ciphertext.0,
+            &ciphertext.0,
             self.relin_key.as_ref().unwrap(),
         ));
     }
@@ -180,13 +185,22 @@ impl SelectableCS for SealCkksCS {
 
 #[derive(Clone, Copy, Debug, Encode, Decode)]
 #[non_exhaustive]
-pub enum CkksHOperation {
-    Add,
+pub enum CkksHOperation1 {
     AddPlain(f64),
-    Mul,
     MulPlain(f64),
     Resize,
 }
+impl Operation for CkksHOperation1 {}
+impl Arity1Operation for CkksHOperation1 {}
+
+#[derive(Clone, Copy, Debug, Encode, Decode)]
+#[non_exhaustive]
+pub enum CkksHOperation2 {
+    Add,
+    Mul,
+}
+impl Operation for CkksHOperation2 {}
+impl Arity2Operation for CkksHOperation2 {}
 
 pub struct SealBfvCS {
     encoder: sealy::BFVEncoder,
@@ -218,7 +232,8 @@ impl SealBfvCS {
 impl CryptoSystem for SealBfvCS {
     type Ciphertext = Ciphertext;
     type Plaintext = u64;
-    type Operation = BfvHOperation;
+    type Operation1 = BfvHOperation1;
+    type Operation2 = BfvHOperation2;
 
     fn cipher(&self, plaintext: &Self::Plaintext) -> Self::Ciphertext {
         let encoded = self.encoder.encode_u64(&[*plaintext]).unwrap();
@@ -230,37 +245,19 @@ impl CryptoSystem for SealBfvCS {
         self.encoder.decode_u64(&decrypted).unwrap()[0]
     }
 
-    fn operate(
-        &self,
-        operation: Self::Operation,
-        lhs: &Self::Ciphertext,
-        rhs: Option<&Self::Ciphertext>,
-    ) -> Self::Ciphertext {
+    fn operate1(&self, operation: Self::Operation1, lhs: &Self::Ciphertext) -> Self::Ciphertext {
         match operation {
-            BfvHOperation::Add => {
-                let rhs = rhs.expect("Addition requires two operands.");
-                let result = impls::homom_add(&self.evaluator, &lhs.0, &rhs.0);
-                Ciphertext(result)
-            }
-            BfvHOperation::AddPlain(plain) => {
-                debug_assert!(rhs.is_none());
+            BfvHOperation1::AddPlain(plain) => {
                 let plain_encoded = self.encoder.encode_u64(&[plain]).unwrap();
                 let result = impls::homom_add_plain(&self.evaluator, &lhs.0, &plain_encoded);
                 Ciphertext(result)
             }
-            BfvHOperation::Mul => {
-                let rhs = rhs.expect("Multiplication requires two operands.");
-                let result = impls::homom_mul(&self.evaluator, &lhs.0, &rhs.0);
-                Ciphertext(result)
-            }
-            BfvHOperation::MulPlain(plain) => {
-                debug_assert!(rhs.is_none());
+            BfvHOperation1::MulPlain(plain) => {
                 let plain_encoded = self.encoder.encode_u64(&[plain]).unwrap();
                 let result = impls::homom_mul_plain(&self.evaluator, &lhs.0, &plain_encoded);
                 Ciphertext(result)
             }
-            BfvHOperation::Exp(exp) => {
-                debug_assert!(rhs.is_none());
+            BfvHOperation1::Exp(exp) => {
                 let result = impls::homom_exp(
                     &self.evaluator,
                     &lhs.0,
@@ -272,38 +269,57 @@ impl CryptoSystem for SealBfvCS {
         }
     }
 
-    fn operate_inplace(
+    fn operate2(
         &self,
-        operation: Self::Operation,
-        lhs: &mut Self::Ciphertext,
-        rhs: Option<&Self::Ciphertext>,
-    ) {
+        operation: Self::Operation2,
+        lhs: &Self::Ciphertext,
+        rhs: &Self::Ciphertext,
+    ) -> Self::Ciphertext {
         match operation {
-            BfvHOperation::Add => {
-                let rhs = rhs.expect("Addition requires two operands.");
-                impls::homom_add_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
+            BfvHOperation2::Add => {
+                let result = impls::homom_add(&self.evaluator, &lhs.0, &rhs.0);
+                Ciphertext(result)
             }
-            BfvHOperation::AddPlain(plain) => {
-                debug_assert!(rhs.is_none());
+            BfvHOperation2::Mul => {
+                let result = impls::homom_mul(&self.evaluator, &lhs.0, &rhs.0);
+                Ciphertext(result)
+            }
+        }
+    }
+
+    fn operate1_inplace(&self, operation: Self::Operation1, lhs: &mut Self::Ciphertext) {
+        match operation {
+            BfvHOperation1::AddPlain(plain) => {
                 let plain_encoded = self.encoder.encode_u64(&[plain]).unwrap();
                 impls::homom_add_plain_inplace(&self.evaluator, &mut lhs.0, &plain_encoded);
             }
-            BfvHOperation::Mul => {
-                let rhs = rhs.expect("Multiplication requires two operands.");
-                impls::homom_mul_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
-            }
-            BfvHOperation::MulPlain(plain) => {
-                debug_assert!(rhs.is_none());
+            BfvHOperation1::MulPlain(plain) => {
                 let plain_encoded = self.encoder.encode_u64(&[plain]).unwrap();
                 impls::homom_mul_plain_inplace(&self.evaluator, &mut lhs.0, &plain_encoded);
             }
-            BfvHOperation::Exp(exp) => {
+            BfvHOperation1::Exp(exp) => {
                 *lhs = Ciphertext(impls::homom_exp(
                     &self.evaluator,
                     &lhs.0,
                     exp,
                     self.relin_key.as_ref().unwrap(),
                 ));
+            }
+        }
+    }
+
+    fn operate2_inplace(
+        &self,
+        operation: Self::Operation2,
+        lhs: &mut Self::Ciphertext,
+        rhs: &Self::Ciphertext,
+    ) {
+        match operation {
+            BfvHOperation2::Add => {
+                impls::homom_add_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
+            }
+            BfvHOperation2::Mul => {
+                impls::homom_mul_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
             }
         }
     }
@@ -327,13 +343,22 @@ impl SelectableCS for SealBfvCS {
 
 #[derive(Clone, Copy, Debug, Encode, Decode)]
 #[non_exhaustive]
-pub enum BfvHOperation {
-    Add,
+pub enum BfvHOperation1 {
     AddPlain(u64),
-    Mul,
     MulPlain(u64),
     Exp(u64),
 }
+impl Operation for BfvHOperation1 {}
+impl Arity1Operation for BfvHOperation1 {}
+
+#[derive(Clone, Copy, Debug, Encode, Decode)]
+#[non_exhaustive]
+pub enum BfvHOperation2 {
+    Add,
+    Mul,
+}
+impl Operation for BfvHOperation2 {}
+impl Arity2Operation for BfvHOperation2 {}
 
 #[cfg(test)]
 mod tests {
@@ -346,12 +371,12 @@ mod tests {
     #[test]
     fn test_seal_ckks_cs() {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
-        let cs = SealCkksCS::new(context, 1e6);
+        let cs = SealCkksCS::new(&context, 1e6);
 
         let a = cs.cipher(&1.0);
         let b = cs.cipher(&2.0);
-        let c = cs.operate(CkksHOperation::Add, &a, Some(&b));
-        let d = cs.operate(CkksHOperation::Mul, &a, Some(&b));
+        let c = cs.operate2(CkksHOperation2::Add, &a, &b);
+        let d = cs.operate2(CkksHOperation2::Mul, &a, &b);
 
         let a = cs.decipher(&a);
         let b = cs.decipher(&b);
@@ -367,12 +392,12 @@ mod tests {
     #[test]
     fn test_seal_ckks_cs_plain_ops() {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
-        let cs = SealCkksCS::new(context, 1e6);
+        let cs = SealCkksCS::new(&context, 1e6);
 
         let a = cs.cipher(&1.0);
         let b = cs.cipher(&2.0);
-        let c = cs.operate(CkksHOperation::AddPlain(10.0), &a, None);
-        let d = cs.operate(CkksHOperation::MulPlain(2.0), &b, None);
+        let c = cs.operate1(CkksHOperation1::AddPlain(10.0), &a);
+        let d = cs.operate1(CkksHOperation1::MulPlain(2.0), &b);
 
         let c = cs.decipher(&c);
         let d = cs.decipher(&d);
@@ -384,7 +409,7 @@ mod tests {
     #[test]
     fn test_seal_ckks_cs_linear_sum() {
         let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
-        let cs = SealCkksCS::new(context, 1e6);
+        let cs = SealCkksCS::new(&context, 1e6);
 
         let a_plaintext = 1.0;
         let a_coeff_plaintext = 2.0;
@@ -395,9 +420,9 @@ mod tests {
         let a_coeff = cs.cipher(&a_coeff_plaintext);
         let b = cs.cipher(&b_plaintext);
         let b_coeff = cs.cipher(&b_coeff_plaintext);
-        let ac = cs.operate(CkksHOperation::Mul, &a, Some(&a_coeff));
-        let bc = cs.operate(CkksHOperation::Mul, &b, Some(&b_coeff));
-        let sum = cs.operate(CkksHOperation::Add, &ac, Some(&bc));
+        let ac = cs.operate2(CkksHOperation2::Mul, &a, &a_coeff);
+        let bc = cs.operate2(CkksHOperation2::Mul, &b, &b_coeff);
+        let sum = cs.operate2(CkksHOperation2::Add, &ac, &bc);
 
         let decrypted_sum = cs.decipher(&sum);
         let expected_sum = a_plaintext * a_coeff_plaintext + b_plaintext * b_coeff_plaintext;
@@ -415,8 +440,8 @@ mod tests {
 
         let a = cs.cipher(&a_plaintext);
         let b = cs.cipher(&b_plaintext);
-        let c = cs.operate(BfvHOperation::Add, &a, Some(&b));
-        let d = cs.operate(BfvHOperation::Mul, &a, Some(&b));
+        let c = cs.operate2(BfvHOperation2::Add, &a, &b);
+        let d = cs.operate2(BfvHOperation2::Mul, &a, &b);
 
         let a = cs.decipher(&a);
         let b = cs.decipher(&b);
@@ -436,8 +461,8 @@ mod tests {
 
         let a = cs.cipher(&1);
         let b = cs.cipher(&2);
-        let c = cs.operate(BfvHOperation::AddPlain(10), &a, None);
-        let d = cs.operate(BfvHOperation::MulPlain(2), &b, None);
+        let c = cs.operate1(BfvHOperation1::AddPlain(10), &a);
+        let d = cs.operate1(BfvHOperation1::MulPlain(2), &b);
 
         let c = cs.decipher(&c);
         let d = cs.decipher(&d);
@@ -452,7 +477,7 @@ mod tests {
         let cs = SealBfvCS::new(&context);
 
         let a = cs.cipher(&4);
-        let e = cs.operate(BfvHOperation::Exp(2), &a, None);
+        let e = cs.operate1(BfvHOperation1::Exp(2), &a);
 
         let d = cs.decipher(&e);
 

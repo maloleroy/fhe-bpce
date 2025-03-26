@@ -4,11 +4,11 @@ use fhe_core::api::CryptoSystem;
 pub fn sign<C: CryptoSystem<Plaintext = f64>>(
     x: &C::Ciphertext,
     cs: &C,
-    add_op: C::Operation,
-    mul_op: C::Operation,
+    add_op: C::Operation2,
+    mul_op: C::Operation2,
 ) -> C::Ciphertext
 where
-    C::Operation: Copy,
+    C::Operation2: Copy,
 {
     sign_pbas(x, cs, add_op, mul_op)
 }
@@ -17,32 +17,32 @@ where
 fn sign_hardcoded<C: CryptoSystem<Plaintext = f64>>(
     x: &C::Ciphertext,
     cs: &C,
-    add_op: C::Operation,
-    mul_op: C::Operation,
+    add_op: C::Operation2,
+    mul_op: C::Operation2,
 ) -> C::Ciphertext
 where
-    C::Operation: Copy,
+    C::Operation2: Copy,
 {
     const A1: f64 = 1.211_324_865_405_185;
     const A3: f64 = -0.845_299_461_620_75;
     let a1 = cs.cipher(&A1);
     let a3 = cs.cipher(&A3);
 
-    let x2 = cs.operate(mul_op, x, Some(x));
-    let a3x2 = cs.operate(mul_op, &a3, Some(&x2));
-    let a1_plus_a3x2 = cs.operate(add_op, &a1, Some(&a3x2));
+    let x2 = cs.operate2(mul_op, x, x);
+    let a3x2 = cs.operate2(mul_op, &a3, &x2);
+    let a1_plus_a3x2 = cs.operate2(add_op, &a1, &a3x2);
 
-    cs.operate(mul_op, x, Some(&a1_plus_a3x2))
+    cs.operate2(mul_op, x, &a1_plus_a3x2)
 }
 
 fn sign_pbas<C: CryptoSystem<Plaintext = f64>>(
     x: &C::Ciphertext,
     cs: &C,
-    add_op: C::Operation,
-    mul_op: C::Operation,
+    add_op: C::Operation2,
+    mul_op: C::Operation2,
 ) -> C::Ciphertext
 where
-    C::Operation: Copy,
+    C::Operation2: Copy,
 {
     const N: usize = 3;
     const COEFFS: [f64; N] = pbas_coefficients();
@@ -52,10 +52,10 @@ where
     for (i, coeff) in COEFFS.iter().enumerate().take(N) {
         // First we multiply the coefficient by the power of x
         let mut term = cs.cipher(coeff); // scale: basic
-        term = cs.operate(mul_op, &term, Some(&x_pow_i)); // TODO: use an in-place operation
-        result = cs.operate(add_op, &result, Some(&term)); // TODO: use an in-place operation
+        term = cs.operate2(mul_op, &term, &x_pow_i); // TODO: use an in-place operation
+        result = cs.operate2(add_op, &result, &term); // TODO: use an in-place operation
         if i != N - 1 {
-            x_pow_i = cs.operate(mul_op, &x_pow_i, Some(x)); // TODO: use an in-place operation
+            x_pow_i = cs.operate2(mul_op, &x_pow_i, x); // TODO: use an in-place operation
         }
     }
     result
@@ -65,11 +65,11 @@ where
 fn sign_chebychev<C: CryptoSystem<Plaintext = f64>>(
     x: &C::Ciphertext,
     cs: &C,
-    add_op: C::Operation,
-    mul_op: C::Operation,
+    add_op: C::Operation2,
+    mul_op: C::Operation2,
 ) -> C::Ciphertext
 where
-    C::Operation: Copy,
+    C::Operation2: Copy,
 {
     // use the chebychev polynomial to sign the ciphertext
     const N: usize = 10;
@@ -82,16 +82,16 @@ where
         );
         #[allow(clippy::cast_precision_loss)]
         let mut term = cs.cipher(&(*coeff as f64));
-        term = cs.operate(mul_op, &term, Some(&x_pow_i)); // TODO: use an in-place operation
+        term = cs.operate2(mul_op, &term, &x_pow_i); // TODO: use an in-place operation
         println!("after term (*): {i:?}");
         cs.relinearize(&mut term);
         println!("after term (=): {i:?}");
         // cs.relinearize(&mut result);
         // println!("after result (=): {:?}", i);
-        result = cs.operate(add_op, &result, Some(&term)); // TODO: use an in-place operation
+        result = cs.operate2(add_op, &result, &term); // TODO: use an in-place operation
         println!("after result (+): {i:?}");
         if i != N - 1 {
-            x_pow_i = cs.operate(mul_op, &x_pow_i, Some(x)); // TODO: use an in-place operation
+            x_pow_i = cs.operate2(mul_op, &x_pow_i, x); // TODO: use an in-place operation
             cs.relinearize(&mut x_pow_i);
             println!("after x_pow (=): {i:?}");
         }
@@ -165,7 +165,7 @@ mod tests {
     use super::*;
     use fhe_core::f64::approx_eq;
     use seal_lib::{
-        CkksHOperation, DegreeType, SealCkksCS, SecurityLevel, context::SealCkksContext,
+        CkksHOperation2, DegreeType, SealCkksCS, SecurityLevel, context::SealCkksContext,
     };
 
     #[test]
@@ -173,10 +173,10 @@ mod tests {
     fn test_sign() {
         let context: SealCkksContext =
             SealCkksContext::new(DegreeType::D4096, SecurityLevel::TC128);
-        let cs = SealCkksCS::new(context, 1e6);
+        let cs = SealCkksCS::new(&context, 1e6);
 
         let two = cs.cipher(&2.);
-        let result = sign(&two, &cs, CkksHOperation::Add, CkksHOperation::Mul);
+        let result = sign(&two, &cs, CkksHOperation2::Add, CkksHOperation2::Mul);
         assert!(approx_eq(cs.decipher(&result), 2., 1e-4));
     }
 }

@@ -6,6 +6,7 @@ use tfhe::{ClientKey, Config, ConfigBuilder, generate_keys};
 pub struct ServerKey(pub(super) tfhe::ServerKey);
 
 impl Encode for ServerKey {
+    #[allow(clippy::similar_names)]
     fn encode<E: bincode::enc::Encoder>(
         &self,
         encoder: &mut E,
@@ -28,6 +29,7 @@ impl Encode for ServerKey {
 }
 
 impl<Context> Decode<Context> for ServerKey {
+    #[allow(clippy::similar_names)]
     fn decode<D: bincode::de::Decoder<Context = Context>>(
         decoder: &mut D,
     ) -> Result<Self, bincode::error::DecodeError> {
@@ -43,7 +45,7 @@ impl<Context> Decode<Context> for ServerKey {
         let dk = compat_dk.0;
         let tag = compat_tag.0;
 
-        Ok(ServerKey(tfhe::ServerKey::from_raw_parts(
+        Ok(Self(tfhe::ServerKey::from_raw_parts(
             skey, ksm, ck, dk, tag,
         )))
     }
@@ -96,13 +98,13 @@ impl ZamaTfheContext {
     #[inline]
     /// Generate a set of secret, public and relinearization keys.
     pub fn generate_keys(&self) -> (Option<ClientKey>, ServerKey) {
-        match &self.server_key {
-            Some(server_key) => (None, server_key.clone()),
-            None => {
+        self.server_key.as_ref().map_or_else(
+            || {
                 let (client_key, server_key) = generate_keys(self.config);
                 (Some(client_key), ServerKey(server_key))
-            }
-        }
+            },
+            |server_key| (None, server_key.clone()),
+        )
     }
 }
 

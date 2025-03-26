@@ -26,7 +26,7 @@ pub fn homom_add_inplace(
     lhs: &mut Ciphertext,
     rhs: &Ciphertext,
 ) {
-    evaluator.add_inplace(lhs, rhs).unwrap()
+    evaluator.add_inplace(lhs, rhs).unwrap();
 }
 
 #[inline]
@@ -35,7 +35,7 @@ pub fn homom_add_plain_inplace(
     lhs: &mut Ciphertext,
     rhs: &Plaintext,
 ) {
-    evaluator.add_plain_inplace(lhs, rhs).unwrap()
+    evaluator.add_plain_inplace(lhs, rhs).unwrap();
 }
 
 #[must_use]
@@ -64,7 +64,7 @@ pub fn homom_mul_inplace(
     lhs: &mut Ciphertext,
     rhs: &Ciphertext,
 ) {
-    evaluator.multiply_inplace(lhs, rhs).unwrap()
+    evaluator.multiply_inplace(lhs, rhs).unwrap();
 }
 
 #[inline]
@@ -73,7 +73,7 @@ pub fn homom_mul_plain_inplace(
     lhs: &mut Ciphertext,
     rhs: &Plaintext,
 ) {
-    evaluator.multiply_plain_inplace(lhs, rhs).unwrap()
+    evaluator.multiply_plain_inplace(lhs, rhs).unwrap();
 }
 
 #[must_use]
@@ -92,7 +92,7 @@ pub fn resize(
     _evaluator: &impl sealy::Evaluator<Plaintext = Plaintext, Ciphertext = Ciphertext>,
     _ciphertext: &mut Ciphertext,
 ) {
-    todo!("resize")
+    todo!("resize");
     // TODO: implement resize
 }
 
@@ -100,7 +100,7 @@ pub fn resize(
 #[inline]
 pub fn relinearize(
     evaluator: &impl sealy::Evaluator<Plaintext = Plaintext, Ciphertext = Ciphertext>,
-    ciphertext: &mut Ciphertext,
+    ciphertext: &Ciphertext,
     relin_key: &RelinearizationKey,
 ) -> Ciphertext {
     evaluator.relinearize(ciphertext, relin_key).unwrap()

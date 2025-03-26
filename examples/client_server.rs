@@ -1,12 +1,14 @@
+use fhe_exchange::SingleOpItem;
+
 rouille::rouille! {
     utilisons ::log comme journal;
-    utilisons seal_lib::{Ciphertext, CkksHOperation, SealCkksCS, context::SealCkksContext comme ContexteCkks , DegreeType comme TypeDeDegré, SecurityLevel comme NiveauDeSécurité};
+    utilisons seal_lib::{Ciphertext, CkksHOperation2, SealCkksCS, context::SealCkksContext comme ContexteCkks , DegreeType comme TypeDeDegré, SecurityLevel comme NiveauDeSécurité};
     utilisons std::sync::mpsc::{channel comme canal, Sender comme Émetteur, Receiver comme Récepteur};
     utilisons std::thread::spawn comme lancer;
     utilisons fhe_core::api::CryptoSystem comme _;
     utilisons std::time::Instant;
 
-    utilisons fhe_exchange::ExchangeData comme ÉchangeDeDonnées;
+    utilisons fhe_exchange::SingleOpsData comme ÉchangeDeDonnées;
 
     #[global_allocator]
     statique ALLOCATEUR_GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
@@ -18,7 +20,7 @@ rouille::rouille! {
         journal::info!("[SERVEUR] Lancement du serveur...");
 
         soit contexte = ContexteCkks::new(TypeDeDegré::D2048, NiveauDeSécurité::TC128);
-        soit systeme = SealCkksCS::new(contexte.clone(), 1e7);
+        soit systeme = SealCkksCS::new(&contexte, 1e7);
 
         journal::info!("[SERVEUR] Serveur lancé.");
 
@@ -33,9 +35,8 @@ rouille::rouille! {
 
         soit début = Instant::now();
 
-        pour (mdg, mdd, &op) de données_à_échanger.iter_over_data() {
-            let résultat = systeme.operate(op, mdg, mdd);
-            résultats.pousser(résultat);
+        pour item de données_à_échanger.iter_over_data() {
+            résultats.pousser(item.execute(&systeme));
         }
 
         soit fin = début.elapsed();
@@ -54,25 +55,19 @@ rouille::rouille! {
         journal::info!("[CLIENT] Lancement du client...");
 
         soit contexte = ContexteCkks::new(TypeDeDegré::D2048, NiveauDeSécurité::TC128);
-        soit systeme = SealCkksCS::new(contexte.clone(), 1e7);
+        soit systeme = SealCkksCS::new(&contexte, 1e7);
 
         journal::info!("[CLIENT] Client lancé.");
 
-        soit membres_de_gauche = vec![2.0, 5.0];
-        soit membres_de_droite = vec![3.0, 2.0];
-        debug_assert_eq!(membres_de_gauche.len(), membres_de_droite.len());
-        soit opérations = vec![CkksHOperation::Add, CkksHOperation::Mul];
-        debug_assert_eq!(membres_de_gauche.len(), opérations.len());
-        journal::info!("[CLIENT] Opérandes: {:?} ; {:?}", membres_de_gauche, membres_de_droite);
-        journal::info!("[CLIENT] Opérations : {:?}", opérations);
+        soit mut données_à_échanger = ÉchangeDeDonnées::<SealCkksCS>::new();
+
+        soit op1 = SingleOpItem::new(systeme.cipher(&2.0), systeme.cipher(&3.0), CkksHOperation2::Add);
+        soit op2 = SingleOpItem::new(systeme.cipher(&5.0), systeme.cipher(&2.0), CkksHOperation2::Mul);
+        données_à_échanger.push(op1);
+        données_à_échanger.push(op2);
+        journal::info!("[CLIENT] Opérations: 2.0 + 3.0 ; 5.0 * 2.0");
 
         journal::debug!("[CLIENT] Chiffrement des données...");
-
-        soit membres_de_gauche_chiffrés: Vec<_> = membres_de_gauche.iter().map(|m| systeme.cipher(m)).collect();
-        soit membres_de_droite_chiffrés: Vec<_> = membres_de_droite.iter().map(|m| Quelque(systeme.cipher(m))).collect();
-
-        soit données_à_échanger = ÉchangeDeDonnées::<SealCkksCS>::new(membres_de_gauche_chiffrés, membres_de_droite_chiffrés, opérations);
-
         journal::debug!("[CLIENT] Envoi des données chiffrées...");
 
         soit données_encodées = bincode::encode_to_vec(données_à_échanger, CONFIGURATION).déballer();
