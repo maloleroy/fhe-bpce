@@ -354,7 +354,7 @@ dependencies = [
  "criterion",
  "csv",
  "fhe-core",
- "fhe-exchange",
+ "fhe-operations",
  "log",
  "mimalloc",
  "parquet",
@@ -774,16 +774,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "fhe-exchange"
-version = "0.1.0"
-dependencies = [
- "bincode 2.0.1",
- "fhe-core",
- "seal-lib",
-]
-
-[[package]]
-name = "fhe-select"
+name = "fhe-operations"
 version = "0.1.0"
 dependencies = [
  "bincode 2.0.1",

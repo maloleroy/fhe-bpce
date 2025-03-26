@@ -1,8 +1,6 @@
 use bincode::{Decode, Encode};
-use fhe_core::api::{
-    CryptoSystem,
-    select::{Flag, SelectableCS},
-};
+pub use fhe_core::api::select::Flag;
+use fhe_core::api::{CryptoSystem, select::SelectableCS};
 
 pub struct SelectableItem<const F: usize, C: CryptoSystem> {
     ciphertext: C::Ciphertext,

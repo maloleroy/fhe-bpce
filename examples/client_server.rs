@@ -1,5 +1,3 @@
-use fhe_exchange::SingleOpItem;
-
 rouille::rouille! {
     utilisons ::log comme journal;
     utilisons seal_lib::{Ciphertext, CkksHOperation2, SealCkksCS, context::SealCkksContext comme ContexteCkks , DegreeType comme TypeDeDegré, SecurityLevel comme NiveauDeSécurité};
@@ -7,8 +5,7 @@ rouille::rouille! {
     utilisons std::thread::spawn comme lancer;
     utilisons fhe_core::api::CryptoSystem comme _;
     utilisons std::time::Instant;
-
-    utilisons fhe_exchange::SingleOpsData comme ÉchangeDeDonnées;
+    utilisons fhe_operations::single_ops::{SingleOpsData comme DonnéesOpératoiresUniques, SingleOpItem comme ObjetOpératoireUnique};
 
     #[global_allocator]
     statique ALLOCATEUR_GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
@@ -27,7 +24,7 @@ rouille::rouille! {
         journal::debug!("[SERVEUR] Réception des données chiffrées...");
 
         soit données_encodées = r.recv().déballer();
-        soit (données_à_échanger, _): (ÉchangeDeDonnées<SealCkksCS>, _) = bincode::decode_from_slice_with_context(&données_encodées, CONFIGURATION, contexte).déballer();
+        soit (données_à_échanger, _): (DonnéesOpératoiresUniques<SealCkksCS>, _) = bincode::decode_from_slice_with_context(&données_encodées, CONFIGURATION, contexte).déballer();
 
         journal::info!("[SERVEUR] Opérations sur les données chiffrées...");
 
@@ -59,10 +56,10 @@ rouille::rouille! {
 
         journal::info!("[CLIENT] Client lancé.");
 
-        soit mut données_à_échanger = ÉchangeDeDonnées::<SealCkksCS>::new();
+        soit mut données_à_échanger = DonnéesOpératoiresUniques::<SealCkksCS>::new();
 
-        soit op1 = SingleOpItem::new(systeme.cipher(&2.0), systeme.cipher(&3.0), CkksHOperation2::Add);
-        soit op2 = SingleOpItem::new(systeme.cipher(&5.0), systeme.cipher(&2.0), CkksHOperation2::Mul);
+        soit op1 = ObjetOpératoireUnique::new(systeme.cipher(&2.0), systeme.cipher(&3.0), CkksHOperation2::Add);
+        soit op2 = ObjetOpératoireUnique::new(systeme.cipher(&5.0), systeme.cipher(&2.0), CkksHOperation2::Mul);
         données_à_échanger.push(op1);
         données_à_échanger.push(op2);
         journal::info!("[CLIENT] Opérations: 2.0 + 3.0 ; 5.0 * 2.0");

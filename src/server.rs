@@ -1,6 +1,6 @@
 use super::{unsized_data_recv, unsized_data_send};
 use fhe_core::api::CryptoSystem;
-use fhe_exchange::SingleOpsData;
+use fhe_operations::single_ops::SingleOpsData;
 use rayon::prelude::*;
 use seal_lib::{SealBfvCS, context::SealBFVContext};
 use tokio::net::TcpStream;
