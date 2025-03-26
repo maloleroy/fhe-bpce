@@ -28,3 +28,13 @@ rust_nightly_miri:
     - rustup component add miri
   script:
     - cargo miri test -p fhe-core
+
+openfhe:
+  stage: check
+  tags:
+    - docker
+  image: fluteur/openfhe-ci:latest
+  script:
+    - cd openfhe-lib
+    - cargo build --verbose
+    - 
