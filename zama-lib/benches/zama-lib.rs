@@ -4,7 +4,7 @@ use zama_lib::{FheUint32, TfheHOperation, ZamaTfheUintCS, config::ZamaTfheContex
 
 fn benchmark_tfhe(c: &mut Criterion) {
     let ctx = ZamaTfheContext::new();
-    let cipher = ZamaTfheUintCS::<u32, _, FheUint32>::new(ctx);
+    let cipher = ZamaTfheUintCS::<u32, FheUint32>::new(ctx);
 
     let input = 42;
 
