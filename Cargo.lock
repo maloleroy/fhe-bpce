@@ -786,6 +786,7 @@ dependencies = [
 name = "fhe-select"
 version = "0.1.0"
 dependencies = [
+ "bincode 2.0.1",
  "fhe-core",
  "seal-lib",
 ]
