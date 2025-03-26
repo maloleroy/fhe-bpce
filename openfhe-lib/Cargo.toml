@@ -1,10 +1,14 @@
 [package]
-name = "openfhe-lib"
-version = "0.1.0"
-edition = "2024"
+name = "openfhe"
+version = "0.3.2"
+edition = "2021"
+description = "Rust package of the OpenFHE Fully Homomorphic Encryption Library."
+license = "BSD-2-Clause"
+documentation = "https://openfhe-rust-wrapper.readthedocs.io/"
+repository = "https://github.com/fairmath/openfhe-rs"
 
 [dependencies]
-openfhe = "0.2.0"
+cxx = "1.0"
 
 [build-dependencies]
-cxx-build = "1.0.150"
+cxx-build = "1.0"
