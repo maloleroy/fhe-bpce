@@ -37,7 +37,7 @@ pub async fn handle_client(mut stream: TcpStream) {
 
     let results = exch_data
         .iter_over_data()
-        .par_bridge()
+        .par_bridge() // FIXME: Results are unordered
         .map(|item| bfv_cs.operate2(*item.op(), item.lhs(), item.rhs()))
         .collect::<Vec<_>>();
 
