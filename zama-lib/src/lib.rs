@@ -168,6 +168,9 @@ where
         + Rem<Output = I>
         + Sub<Output = I>,
 {
+    const ADD_OPP: Self::Operation2 = TfheHOperation2::Add;
+    const MUL_OPP: Self::Operation2 = TfheHOperation2::Mul;
+
     fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext {
         const FLAG_ON: u64 = 1;
         const FLAG_OFF: u64 = 0;

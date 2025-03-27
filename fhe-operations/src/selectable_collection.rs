@@ -3,6 +3,9 @@ use fhe_core::api::CryptoSystem;
 
 /// A `CryptoSystem` that can be used to perform selection operations.
 pub trait SelectableCS: CryptoSystem {
+    const ADD_OPP: Self::Operation2;
+    const MUL_OPP: Self::Operation2;
+
     fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext;
 }
 
@@ -152,9 +155,7 @@ impl<const F: usize, C: SelectableCS<Ciphertext: Clone>> SelectableCollection<F,
     /// Panics if the collection is empty.
     pub fn operate_many_where_flag(
         &self,
-        op: C::Operation2,
         flag_index: usize,
-        select_op: C::Operation2,
         cs: &C,
     ) -> C::Ciphertext
     where
@@ -164,12 +165,12 @@ impl<const F: usize, C: SelectableCS<Ciphertext: Clone>> SelectableCollection<F,
 
         let first_item = &self.items[0];
         let first_flag = first_item.get_flag(flag_index).unwrap();
-        let mut sum: C::Ciphertext = cs.operate2(select_op, &first_item.ciphertext, first_flag);
+        let mut sum: C::Ciphertext = cs.operate2(C::MUL_OPP, &first_item.ciphertext, first_flag);
 
         for item in self.items.iter().skip(1) {
             let flag = item.get_flag(flag_index).unwrap();
-            let product = cs.operate2(select_op, &item.ciphertext, flag);
-            sum = cs.operate2(op, &sum, &product).clone();
+            let product = cs.operate2(C::MUL_OPP, &item.ciphertext, flag);
+            sum = cs.operate2(C::ADD_OPP, &sum, &product).clone();
         }
         sum
     }
@@ -243,6 +244,9 @@ mod tests {
         fn relinearize(&self, _ciphertext: &mut Self::Ciphertext) {}
     }
     impl SelectableCS for TestCryptoSystem {
+        const ADD_OPP: Self::Operation2 = Op::Add;
+        const MUL_OPP: Self::Operation2 = Op::Mul;
+
         fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext {
             match flag {
                 Flag::On => TestPlaintext(1),
@@ -336,7 +340,7 @@ mod tests {
         let item = SelectableItem::new(&TestPlaintext(2), &cs);
         collection.push(item);
 
-        let sum = collection.operate_many_where_flag(Op::Add, 0, Op::Mul, &cs);
+        let sum = collection.operate_many_where_flag(0, &cs);
         let decrypted = cs.decipher(&sum);
 
         let expected = TestPlaintext(1);
