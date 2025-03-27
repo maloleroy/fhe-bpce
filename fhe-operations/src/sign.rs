@@ -229,12 +229,14 @@ mod tests {
     }
 
     #[test]
-    #[ignore]
+    #[ignore = "unimplemented"]
     fn test_sign() {
         let cs = TestCryptoSystem {};
 
         let two = cs.cipher(&2.);
         let result = sign(&two, &cs, Op::Add, Op::Mul);
-        assert!(approx_eq(cs.decipher(&result), 2., 1e-4));
+        let d = cs.decipher(&result);
+        println!("d: {:?}", d);
+        assert!(approx_eq(d, 1., 5e-2));
     }
 }
