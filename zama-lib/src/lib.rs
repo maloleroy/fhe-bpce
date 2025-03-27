@@ -6,10 +6,11 @@
 
 extern crate alloc;
 
-use bincode::{Decode, Encode};
+use bincode::{Decode, Encode, serde::Compat};
 use core::ops::{Add, Div, Mul, Neg, Rem, Sub};
 use fhe_core::api::{Arity1Operation, Arity2Operation, CryptoSystem, Operation};
 use fhe_operations::selectable_collection::{Flag, SelectableCS};
+use serde::{Deserialize, Serialize};
 use tfhe::{
     ClientKey,
     prelude::{FheDecrypt, FheEncrypt},
@@ -26,23 +27,27 @@ pub struct Ciphertext<T, I: FheEncrypt<T, tfhe::ClientKey>> {
     _phantom: core::marker::PhantomData<T>,
 }
 
-impl<T, I: FheEncrypt<T, tfhe::ClientKey> + Encode> Encode for Ciphertext<T, I> {
+impl<T, I: FheEncrypt<T, tfhe::ClientKey> + Serialize> Encode for Ciphertext<T, I> {
     fn encode<E: bincode::enc::Encoder>(
         &self,
         encoder: &mut E,
     ) -> Result<(), bincode::error::EncodeError> {
-        self.value.encode(encoder)
+        let compat_value = Compat(&self.value);
+        compat_value.encode(encoder)
     }
 }
 
-impl<Context, T, I: FheEncrypt<T, tfhe::ClientKey> + Encode + Decode<Context>> Decode<Context>
-    for Ciphertext<T, I>
+impl<Context, T, I: FheEncrypt<T, tfhe::ClientKey>> Decode<Context> for Ciphertext<T, I>
+where
+    for<'de> I: Deserialize<'de>,
 {
     fn decode<D: bincode::de::Decoder<Context = Context>>(
         decoder: &mut D,
     ) -> Result<Self, bincode::error::DecodeError> {
+        let compat_value = Compat::decode(decoder)?;
+
         Ok(Self {
-            value: I::decode(decoder)?,
+            value: compat_value.0,
             _phantom: core::marker::PhantomData,
         })
     }
@@ -211,6 +216,8 @@ mod tests {
     use super::*;
     use crate::config::ZamaTfheContext;
 
+    const CONFIG: bincode::config::Configuration = bincode::config::standard();
+
     #[test]
     fn test_tfhe() {
         let context = ZamaTfheContext::new();
@@ -226,5 +233,20 @@ mod tests {
         let clear_result = 27 + 128;
 
         assert_eq!(decrypted_result, clear_result);
+    }
+
+    #[test]
+    fn test_tfhe_encode_decode() {
+        let context = ZamaTfheContext::new();
+        let cs = ZamaTfheUintCS::<u8, FheUint8>::new(&context);
+
+        let a = cs.cipher(&27);
+
+        let a_encoded = bincode::encode_to_vec(a, CONFIG).unwrap();
+        let (a_decoded, _) = bincode::decode_from_slice(&a_encoded, CONFIG).unwrap();
+
+        let decrypted_a = cs.decipher(&a_decoded);
+
+        assert_eq!(decrypted_a, 27);
     }
 }

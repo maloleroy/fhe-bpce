@@ -153,11 +153,7 @@ impl<const F: usize, C: SelectableCS<Ciphertext: Clone>> SelectableCollection<F,
     /// ## Panics
     ///
     /// Panics if the collection is empty.
-    pub fn operate_many_where_flag(
-        &self,
-        flag_index: usize,
-        cs: &C,
-    ) -> C::Ciphertext
+    pub fn operate_many_where_flag(&self, flag_index: usize, cs: &C) -> C::Ciphertext
     where
         C::Operation2: Copy,
     {
