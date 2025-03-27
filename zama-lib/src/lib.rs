@@ -37,6 +37,7 @@ impl<T, I: FheEncrypt<T, tfhe::ClientKey> + Serialize> Encode for Ciphertext<T, 
     }
 }
 
+#[allow(clippy::type_repetition_in_bounds)] // Readability
 impl<Context, T, I: FheEncrypt<T, tfhe::ClientKey>> Decode<Context> for Ciphertext<T, I>
 where
     for<'de> I: Deserialize<'de>,
