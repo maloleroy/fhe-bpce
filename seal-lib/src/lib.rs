@@ -171,6 +171,9 @@ impl CryptoSystem for SealCkksCS {
 }
 
 impl SelectableCS for SealCkksCS {
+    const ADD_OPP: Self::Operation2 = CkksHOperation2::Add;
+    const MUL_OPP: Self::Operation2 = CkksHOperation2::Mul;
+
     fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext {
         const FLAG_ON: f64 = 1.0;
         const FLAG_OFF: f64 = 0.0;
@@ -329,6 +332,9 @@ impl CryptoSystem for SealBfvCS {
 }
 
 impl SelectableCS for SealBfvCS {
+    const ADD_OPP: Self::Operation2 = BfvHOperation2::Add;
+    const MUL_OPP: Self::Operation2 = BfvHOperation2::Mul;
+
     fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext {
         const FLAG_ON: u64 = 1;
         const FLAG_OFF: u64 = 0;
