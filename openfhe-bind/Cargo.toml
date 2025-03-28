@@ -1,0 +1,11 @@
+[package]
+name = "openfhe-bind"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+
+[build-dependencies]
+bindgen = "0.71.1"
+cmake = "0.1.54"
+pkg-config = "0.3.32"
