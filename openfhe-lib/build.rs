@@ -123,6 +123,9 @@ fn compile_openfhe(
         .define("BUILD_SHARED", "ON")
         .define("WITH_OPENMP", "OFF")
         .define("NTL_THREADS", "OFF")
+        .define("BUILD_UNITTESTS", "OFF")
+        .define("BUILD_EXAMPLES", "OFF")
+        .define("BUILD_BENCHMARKS", "OFF")
         .define(
             "CMAKE_PREFIX_PATH",
             format!(
