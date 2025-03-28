@@ -21,7 +21,7 @@ pub use tfhe::{FheUint8, FheUint16, FheUint32, FheUint64, FheUint128};
 pub mod config;
 
 #[derive(Clone)]
-/// Ciphertext from Microsoft SEAL.
+/// Ciphertext from Zama TFHE
 pub struct Ciphertext<T, I: FheEncrypt<T, tfhe::ClientKey>> {
     value: I,
     _phantom: core::marker::PhantomData<T>,

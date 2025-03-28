@@ -8,7 +8,7 @@ pub mod parquet;
 
 use bincode::Encode;
 use fhe_core::api::CryptoSystem;
-use fhe_operations::single_ops::SingleOpsData;
+use fhe_operations::single_ops::SeqOpsData;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -30,5 +30,5 @@ where
     C::Operation2: Encode,
     C::Ciphertext: Encode,
 {
-    fn load(file: std::fs::File, cs: &C) -> DataResult<SingleOpsData<C>>;
+    fn load(file: std::fs::File, cs: &C) -> DataResult<SeqOpsData<C>>;
 }

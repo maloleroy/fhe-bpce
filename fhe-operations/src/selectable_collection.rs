@@ -1,12 +1,18 @@
+//! SQL-like operations on encrypted data.
+
 use bincode::{Decode, Encode};
 use fhe_core::api::CryptoSystem;
 
 /// A `CryptoSystem` that can be used to perform selection operations.
 pub trait SelectableCS: CryptoSystem {
+    /// The operation that adds two ciphertexts.
     const ADD_OPP: Self::Operation2;
+    /// The operation that multiplies two ciphertexts.
     const MUL_OPP: Self::Operation2;
 
+    /// The plaintext that is neutral with respect to addition.
     const NEUTRAL_ADD: Self::Plaintext;
+    /// The plaintext that is neutral with respect to multiplication.
     const NEUTRAL_MUL: Self::Plaintext;
 }
 
@@ -17,6 +23,7 @@ pub enum Flag {
     Off,
 }
 
+/// A selectable item that can be used in a collection.
 pub struct SelectableItem<const F: usize, C: CryptoSystem> {
     ciphertext: C::Ciphertext,
     flags: [C::Ciphertext; F],
@@ -87,6 +94,9 @@ impl<const F: usize, C: SelectableCS> SelectableItem<F, C> {
     }
 }
 
+/// A collection of `SelectableItem`s.
+///
+/// This is the collection used to perform the selection operations.
 #[derive(Default)]
 pub struct SelectableCollection<const F: usize, C: CryptoSystem> {
     items: Vec<SelectableItem<F, C>>,
@@ -119,33 +129,40 @@ where
 impl<const F: usize, C: SelectableCS<Ciphertext: Clone>> SelectableCollection<F, C> {
     #[must_use]
     #[inline]
+    /// Create a new empty collection.
     pub const fn new() -> Self {
         Self { items: Vec::new() }
     }
 
     #[must_use]
     #[inline]
+    /// Get the number of items in the collection.
     pub fn len(&self) -> usize {
         self.items.len()
     }
 
     #[must_use]
     #[inline]
+    /// Check if the collection is empty.
     pub fn is_empty(&self) -> bool {
         self.items.is_empty()
     }
 
     #[inline]
+    /// Add an item to the collection.
     pub fn push(&mut self, item: SelectableItem<F, C>) {
         self.items.push(item);
     }
 
     #[inline]
+    /// Add a plaintext item to the collection.
+    /// This plaintext will be ciphered using the given `CryptoSystem`.
     pub fn push_plain(&mut self, item: &C::Plaintext, cs: &C) {
         self.items.push(SelectableItem::new(item, cs));
     }
 
     #[must_use]
+    /// Operates on all items in the collection.
     pub fn operate_many(&self, op: C::Operation2, cs: &C) -> C::Ciphertext
     where
         C::Operation2: Copy,

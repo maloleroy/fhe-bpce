@@ -43,7 +43,8 @@ There are other benchmarks in the workspace's crates. You can use `cargo bench -
 
 ## Architecture
 
-The main binary uses crates to organize its dependencies:
+The main binary uses crates to organize its dependencies. For more information about their usage,
+use `cargo doc --open -p <crate>`.
 
 ### fhe-core
 
@@ -64,3 +65,6 @@ Implements `CryptoSystem` for systems backed by Microsoft SEAL (BFV and CKKS).
 ### zama-lib
 
 Implements `CryptoSystem` for systems backed by Zama (TFHE).
+
+Note that currently, the underlying crate (`tfhe`) fails to build its documentation.
+Please use `cargo doc --open --no-deps -p zama-lib`

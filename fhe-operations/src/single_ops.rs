@@ -1,7 +1,9 @@
+//! Sequentially executed operations.
+
 use bincode::{Decode, Encode};
 use fhe_core::api::CryptoSystem;
 
-pub struct SingleOpItem<C: CryptoSystem>
+pub struct SeqOpItem<C: CryptoSystem>
 where
     C::Ciphertext: Encode,
     C::Operation2: Encode,
@@ -11,7 +13,7 @@ where
     operation: C::Operation2,
 }
 
-impl<C: CryptoSystem> SingleOpItem<C>
+impl<C: CryptoSystem> SeqOpItem<C>
 where
     C::Ciphertext: Encode,
     C::Operation2: Encode,
@@ -47,6 +49,7 @@ where
 
     #[must_use]
     #[inline]
+    /// Executes the operation.
     pub fn execute(&self, cs: &C) -> C::Ciphertext
     where
         C::Operation2: Copy,
@@ -55,7 +58,7 @@ where
     }
 }
 
-impl<C: CryptoSystem> Encode for SingleOpItem<C>
+impl<C: CryptoSystem> Encode for SeqOpItem<C>
 where
     C::Ciphertext: Encode,
     C::Operation2: Encode,
@@ -70,7 +73,7 @@ where
     }
 }
 
-impl<C: CryptoSystem, Context> Decode<Context> for SingleOpItem<C>
+impl<C: CryptoSystem, Context> Decode<Context> for SeqOpItem<C>
 where
     C::Ciphertext: Decode<Context> + Encode,
     C::Operation2: Decode<Context> + Encode,
@@ -92,12 +95,12 @@ where
 #[derive(Default)]
 /// The data that will be exchanged by the client and the server, for
 /// sequential single operations.
-pub struct SingleOpsData<C: CryptoSystem>(Vec<SingleOpItem<C>>)
+pub struct SeqOpsData<C: CryptoSystem>(Vec<SeqOpItem<C>>)
 where
     C::Ciphertext: Encode,
     C::Operation2: Encode;
 
-impl<C: CryptoSystem> SingleOpsData<C>
+impl<C: CryptoSystem> SeqOpsData<C>
 where
     C::Ciphertext: Encode,
     C::Operation2: Encode,
@@ -110,14 +113,14 @@ where
     }
 
     #[inline]
-    pub fn push(&mut self, item: SingleOpItem<C>) {
+    pub fn push(&mut self, item: SeqOpItem<C>) {
         self.0.push(item);
     }
 
     #[must_use]
     #[inline]
     /// Creates a new instance of `ExchangeData`.
-    pub const fn from_vec(data: Vec<SingleOpItem<C>>) -> Self {
+    pub const fn from_vec(data: Vec<SeqOpItem<C>>) -> Self {
         Self(data)
     }
 
@@ -137,12 +140,12 @@ where
 
     #[inline]
     /// Iterate over the exchanged data.
-    pub fn iter_over_data(&self) -> impl Iterator<Item = &SingleOpItem<C>> {
+    pub fn iter_over_data(&self) -> impl Iterator<Item = &SeqOpItem<C>> {
         self.0.iter()
     }
 }
 
-impl<C: CryptoSystem> Encode for SingleOpsData<C>
+impl<C: CryptoSystem> Encode for SeqOpsData<C>
 where
     C::Ciphertext: Encode,
     C::Operation2: Encode,
@@ -156,7 +159,7 @@ where
     }
 }
 
-impl<C: CryptoSystem, Context> Decode<Context> for SingleOpsData<C>
+impl<C: CryptoSystem, Context> Decode<Context> for SeqOpsData<C>
 where
     C::Ciphertext: Decode<Context> + Encode,
     C::Operation2: Decode<Context> + Encode,
