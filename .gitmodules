@@ -1,3 +1,7 @@
 [submodule "seal-lib/sealy/SEAL"]
 	path = seal-lib/sealy/SEAL
 	url = https://github.com/microsoft/SEAL
+
+[submodule "openfhe-bind/openfhe-development"]
+	path = openfhe-bind/openfhe-development
+	url = https://github.com/openfheorg/openfhe-development.git
