@@ -1,6 +1,6 @@
 use super::{unsized_data_recv, unsized_data_send};
 use fhe_core::api::CryptoSystem;
-use fhe_operations::single_ops::SingleOpsData;
+use fhe_operations::single_ops::SeqOpsData;
 use rayon::prelude::*;
 use seal_lib::{SealBfvCS, context::SealBFVContext};
 use tokio::net::TcpStream;
@@ -25,7 +25,7 @@ pub async fn handle_client(mut stream: TcpStream) {
         return;
     };
 
-    let exch_data: SingleOpsData<SealBfvCS> = exch_data.0;
+    let exch_data: SeqOpsData<SealBfvCS> = exch_data.0;
 
     log::info!(
         "Operating on {} data pairs with {} threads",

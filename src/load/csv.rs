@@ -3,7 +3,7 @@
 use bincode::Encode;
 use csv::Reader;
 use fhe_core::api::CryptoSystem;
-use fhe_operations::single_ops::{SingleOpItem, SingleOpsData};
+use fhe_operations::single_ops::{SeqOpItem, SeqOpsData};
 use seal_lib::BfvHOperation2; // Mock implementation tied to seal-lib (temporary)
 
 const SIZE_LIMIT: u64 = 1024 * 1024;
@@ -18,10 +18,10 @@ where
     C::Operation2: Encode,
     C::Ciphertext: Encode,
 {
-    fn load(file: std::fs::File, cs: &C) -> super::DataResult<SingleOpsData<C>> {
+    fn load(file: std::fs::File, cs: &C) -> super::DataResult<SeqOpsData<C>> {
         let mut rdr = Reader::from_reader(file);
 
-        let mut items = SingleOpsData::new();
+        let mut items = SeqOpsData::new();
 
         for result in rdr.records() {
             let record = result.map_err(|_| super::DataError::Parsing)?;
@@ -40,7 +40,7 @@ where
                 _ => return Err(super::DataError::Parsing),
             };
 
-            items.push(SingleOpItem::new(cs.cipher(&lhs), cs.cipher(&rhs), op));
+            items.push(SeqOpItem::new(cs.cipher(&lhs), cs.cipher(&rhs), op));
         }
 
         Ok(items)

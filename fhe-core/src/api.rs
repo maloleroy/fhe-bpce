@@ -1,10 +1,13 @@
 //! This module defines the core API of FHE cryptosystems.
 
+/// A trait that defines the operations that can be performed on the ciphertexts.
 pub trait Operation {}
 impl Operation for () {}
 
+/// A trait that defines the operations that can be performed on one ciphertext.
 pub trait Arity1Operation: Operation {}
 impl Arity1Operation for () {}
+/// A trait that defines the operations that can be performed on two ciphertexts.
 pub trait Arity2Operation: Operation {}
 impl Arity2Operation for () {}
 
@@ -57,6 +60,7 @@ pub trait CryptoSystem {
         *lhs = self.operate2(operation, lhs, rhs);
     }
 
+    /// Relinearizes a ciphertext.
     fn relinearize(&self, ciphertext: &mut Self::Ciphertext);
 }
 

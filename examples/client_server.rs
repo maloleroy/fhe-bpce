@@ -5,7 +5,7 @@ rouille::rouille! {
     utilisons std::thread::spawn comme lancer;
     utilisons fhe_core::api::CryptoSystem comme _;
     utilisons std::time::Instant;
-    utilisons fhe_operations::single_ops::{SingleOpsData comme DonnéesOpératoiresUniques, SingleOpItem comme ObjetOpératoireUnique};
+    utilisons fhe_operations::single_ops::{SeqOpsData comme DonnéesOpératoiresUniques, SeqOpItem comme ObjetOpératoireUnique};
 
     #[global_allocator]
     statique ALLOCATEUR_GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;

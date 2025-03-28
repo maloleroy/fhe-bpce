@@ -1,4 +1,4 @@
-//! CKKS Backend
+//! Complex operations on ciphertexts
 #![warn(clippy::nursery, clippy::pedantic)]
 #![forbid(unsafe_code)]
 
