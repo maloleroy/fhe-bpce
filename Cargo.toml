@@ -28,7 +28,7 @@ parquet = "54.3.0"
 zama-lib = { path = "zama-lib" }
 
 [workspace]
-members = ["fhe-core", "seal-lib", "fhe-operations", "zama-lib", "openfhe-lib"]
+members = ["fhe-core", "seal-lib", "fhe-operations", "zama-lib", "openfhe-lib", "openfhe-bind"]
 
 [workspace.dependencies]
 bincode = { version = "2.0.1", features = ["serde"] }
