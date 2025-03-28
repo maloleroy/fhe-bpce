@@ -8,3 +8,6 @@
 # Test files
 fhe.toml
 test.data
+
+# VS Code
+.vscode
