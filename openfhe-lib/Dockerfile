@@ -18,3 +18,5 @@ RUN make -C ${OPENFHE_BUILD:-build} -j$(nproc)
 RUN make -C ${OPENFHE_BUILD:-build} install
 
 WORKDIR /
+
+COPY . .
