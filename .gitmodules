@@ -3,5 +3,5 @@
 	url = https://github.com/microsoft/SEAL
 
 [submodule "openfhe-bind/openfhe-development"]
-	path = openfhe-bind/openfhe-development
+	path = openfhe-lib/openfhe-development
 	url = https://github.com/openfheorg/openfhe-development.git
