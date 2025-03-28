@@ -9,7 +9,7 @@ use alloc::vec::Vec;
 
 pub use bincode::{Decode, Encode};
 use fhe_core::api::{Arity1Operation, Arity2Operation, CryptoSystem, Operation};
-use fhe_operations::selectable_collection::{Flag, SelectableCS};
+use fhe_operations::selectable_collection::SelectableCS;
 pub use sealy::{
     BFVEncoder, BFVEvaluator, CKKSEncoder, CKKSEvaluator, Decryptor, DegreeType, Evaluator,
     Plaintext, PublicKey, SecretKey, SecurityLevel,
@@ -174,15 +174,8 @@ impl SelectableCS for SealCkksCS {
     const ADD_OPP: Self::Operation2 = CkksHOperation2::Add;
     const MUL_OPP: Self::Operation2 = CkksHOperation2::Mul;
 
-    fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext {
-        const FLAG_ON: f64 = 1.0;
-        const FLAG_OFF: f64 = 0.0;
-
-        match flag {
-            Flag::On => FLAG_ON,
-            Flag::Off => FLAG_OFF,
-        }
-    }
+    const NEUTRAL_ADD: Self::Plaintext = 0.0;
+    const NEUTRAL_MUL: Self::Plaintext = 1.0;
 }
 
 #[derive(Clone, Copy, Debug, Encode, Decode)]
@@ -335,15 +328,8 @@ impl SelectableCS for SealBfvCS {
     const ADD_OPP: Self::Operation2 = BfvHOperation2::Add;
     const MUL_OPP: Self::Operation2 = BfvHOperation2::Mul;
 
-    fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext {
-        const FLAG_ON: u64 = 1;
-        const FLAG_OFF: u64 = 0;
-
-        match flag {
-            Flag::On => FLAG_ON,
-            Flag::Off => FLAG_OFF,
-        }
-    }
+    const NEUTRAL_ADD: Self::Plaintext = 0;
+    const NEUTRAL_MUL: Self::Plaintext = 1;
 }
 
 #[derive(Clone, Copy, Debug, Encode, Decode)]

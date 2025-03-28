@@ -9,7 +9,7 @@ extern crate alloc;
 use bincode::{Decode, Encode, serde::Compat};
 use core::ops::{Add, Div, Mul, Neg, Rem, Sub};
 use fhe_core::api::{Arity1Operation, Arity2Operation, CryptoSystem, Operation};
-use fhe_operations::selectable_collection::{Flag, SelectableCS};
+use fhe_operations::selectable_collection::SelectableCS;
 use serde::{Deserialize, Serialize};
 use tfhe::{
     ClientKey,
@@ -177,15 +177,8 @@ where
     const ADD_OPP: Self::Operation2 = TfheHOperation2::Add;
     const MUL_OPP: Self::Operation2 = TfheHOperation2::Mul;
 
-    fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext {
-        const FLAG_ON: u64 = 1;
-        const FLAG_OFF: u64 = 0;
-
-        match flag {
-            Flag::On => FLAG_ON,
-            Flag::Off => FLAG_OFF,
-        }
-    }
+    const NEUTRAL_ADD: Self::Plaintext = 0;
+    const NEUTRAL_MUL: Self::Plaintext = 1;
 }
 
 #[derive(Clone, Copy, Debug, Encode, Decode)]

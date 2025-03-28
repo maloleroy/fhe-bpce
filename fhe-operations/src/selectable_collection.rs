@@ -6,7 +6,8 @@ pub trait SelectableCS: CryptoSystem {
     const ADD_OPP: Self::Operation2;
     const MUL_OPP: Self::Operation2;
 
-    fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext;
+    const NEUTRAL_ADD: Self::Plaintext;
+    const NEUTRAL_MUL: Self::Plaintext;
 }
 
 /// A flag that can be used to select items.
@@ -47,11 +48,20 @@ where
     }
 }
 
+#[must_use]
+#[inline]
+const fn flag_to_plaintext<C: SelectableCS>(flag: Flag) -> C::Plaintext {
+    match flag {
+        Flag::On => C::NEUTRAL_MUL,
+        Flag::Off => C::NEUTRAL_ADD,
+    }
+}
+
 impl<const F: usize, C: SelectableCS> SelectableItem<F, C> {
     #[must_use]
     pub fn new(value: &C::Plaintext, cs: &C) -> Self {
         const DEFAULT_FLAG: Flag = Flag::Off;
-        let default_flag = cs.flag_to_plaintext(DEFAULT_FLAG);
+        let default_flag = flag_to_plaintext::<C>(DEFAULT_FLAG);
         Self {
             ciphertext: cs.cipher(value),
             flags: core::array::from_fn(|_| cs.cipher(&default_flag)),
@@ -60,7 +70,7 @@ impl<const F: usize, C: SelectableCS> SelectableItem<F, C> {
 
     #[must_use]
     #[inline]
-    pub fn get_flag(&self, index: usize) -> Option<&C::Ciphertext> {
+    fn get_flag(&self, index: usize) -> Option<&C::Ciphertext> {
         self.flags.get(index)
     }
 
@@ -73,7 +83,7 @@ impl<const F: usize, C: SelectableCS> SelectableItem<F, C> {
 
     #[inline]
     pub fn set_flag_plain(&mut self, index: usize, flag: Flag, cs: &C) {
-        self.flags[index] = cs.cipher(&cs.flag_to_plaintext(flag));
+        self.flags[index] = cs.cipher(&flag_to_plaintext::<C>(flag));
     }
 }
 
@@ -243,12 +253,8 @@ mod tests {
         const ADD_OPP: Self::Operation2 = Op::Add;
         const MUL_OPP: Self::Operation2 = Op::Mul;
 
-        fn flag_to_plaintext(&self, flag: Flag) -> Self::Plaintext {
-            match flag {
-                Flag::On => TestPlaintext(1),
-                Flag::Off => TestPlaintext(0),
-            }
-        }
+        const NEUTRAL_ADD: Self::Plaintext = TestPlaintext(0);
+        const NEUTRAL_MUL: Self::Plaintext = TestPlaintext(1);
     }
 
     #[test]
