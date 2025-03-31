@@ -21,10 +21,10 @@ fn download_and_build_gmp(out_dir: &Path) -> (PathBuf, PathBuf) {
         archive.unpack(&out_dir).unwrap();
         std::fs::rename(out_dir.join(format!("gmp-{}", gmp_version)), &source_dir).unwrap();
     }
-    println!(
-        "cargo:warning=GMP debug mode. Check directory: {}",
-        source_dir.display()
-    );
+    // println!(
+    //     "cargo:warning=GMP debug mode. Check directory: {}",
+    //     source_dir.display()
+    // );
 
     // Create build directories
     let _ = create_dir_all(&build_dir);
@@ -51,7 +51,7 @@ fn download_and_build_gmp(out_dir: &Path) -> (PathBuf, PathBuf) {
     let lib_dir = install_dir.join("lib");
     println!("cargo:rustc-link-search={}", lib_dir.display());
 
-    println!("cargo:warning=Built dependency GMP");
+    // println!("cargo:warning=Built dependency GMP");
     (install_dir.join("include"), lib_dir)
 }
 
@@ -65,10 +65,10 @@ fn download_and_build_ntl(
     let ntl_url = format!("https://libntl.org/ntl-{}.tar.gz", ntl_version);
     let source_dir = out_dir.join("ntl-src");
     let build_dir = out_dir.join("ntl-build");
-    println!(
-        "cargo:warning=NTL debug mode. Check directory: {}",
-        source_dir.display()
-    );
+    // println!(
+    //     "cargo:warning=NTL debug mode. Check directory: {}",
+    //     source_dir.display()
+    // );
     // Download and extract
     if !source_dir.exists() {
         let _ = remove_dir_all(&source_dir);
@@ -105,7 +105,7 @@ fn download_and_build_ntl(
     let lib_dir = install_dir.join("lib");
     println!("cargo:rustc-link-search={}", lib_dir.display());
 
-    println!("cargo:warning=Built dependency NTL");
+    // println!("cargo:warning=Built dependency NTL");
     (install_dir.join("include"), lib_dir)
 }
 
@@ -140,10 +140,10 @@ fn compile_openfhe(
     println!("cargo:warning=Building OpenFHE in {}", out_dir.display());
 
     let dst = config.build();
-    println!(
-        "cargo:warning=Finished building OpenFHE in {}",
-        out_dir.display()
-    );
+    // println!(
+    //     "cargo:warning=Finished building OpenFHE in {}",
+    //     out_dir.display()
+    // );
 
     println!("cargo:rustc-link-search={}/build/lib", dst.display());
     dst
@@ -152,10 +152,10 @@ fn compile_openfhe(
 fn get_cpp_compiler() -> cc::Tool {
     let compiler = cc::Build::new().cpp(true).get_compiler();
 
-    println!(
-        "cargo:warning=Using C++ compiler: {}",
-        compiler.path().display()
-    );
+    // println!(
+    //     "cargo:warning=Using C++ compiler: {}",
+    //     compiler.path().display()
+    // );
     compiler
 }
 
@@ -213,8 +213,6 @@ fn main() {
         &ntl_lib,
     );
 
-    println!("cargo:warning=Built OpenFHE in {}", openfhe_dst.display());
-
     // Linker configuration
     println!("cargo:rustc-link-lib=static=gmp");
     println!("cargo:rustc-link-lib=static=ntl");
@@ -230,6 +228,9 @@ fn main() {
         .clang_arg("-x")
         .clang_arg("c++")
         .clang_arg("-std=c++17")
+        .wrap_unsafe_ops(true)
+        .layout_tests(false)
+        .blocklist_item("FP_INT_*")  // Block the duplicate constant
         // Include directories
         .clang_arg(format!("-I{}", include_base.display()))
         .clang_arg(format!("-I{}", include_base.join("binfhe").display()))
