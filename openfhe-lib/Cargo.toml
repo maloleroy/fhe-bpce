@@ -11,7 +11,7 @@ link-cplusplus = "1.0.9"
 
 [build-dependencies]
 cmake = "0.1.54"
-bindgen = "0.71.1"
+bindgen = { git = "https://github.com/rust-lang/rust-bindgen.git", rev = "20aa65a" }
 reqwest = { version = "0.11", features = ["blocking"] }
 flate2 = "1.0"
 xz2 = "0.1.7"
