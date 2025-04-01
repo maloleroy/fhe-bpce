@@ -1,7 +1,6 @@
-use core::net::{IpAddr, Ipv4Addr, SocketAddr};
-
 use bpce_fhe::{start_client, start_server};
 use clap::{Parser, Subcommand};
+use core::net::{IpAddr, Ipv4Addr, SocketAddr};
 
 #[global_allocator]
 static GLOBAL_ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
