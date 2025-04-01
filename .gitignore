@@ -8,3 +8,4 @@
 # Test files
 fhe.toml
 test.data
+data.parquet
