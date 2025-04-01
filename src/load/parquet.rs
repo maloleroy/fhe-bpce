@@ -1,2 +1,2 @@
 //! Data stored in Parquet format.
-use parquet;
+use parquet as _;
