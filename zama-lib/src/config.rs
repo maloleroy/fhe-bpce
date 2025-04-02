@@ -11,17 +11,19 @@ impl Encode for ServerKey {
         &self,
         encoder: &mut E,
     ) -> Result<(), bincode::error::EncodeError> {
-        let (skey, ksm, ck, dk, tag) = self.0.clone().into_raw_parts();
+        let (skey, ksm, ck, dk, nsk, tag) = self.0.clone().into_raw_parts();
 
         let compat_skey = Compat(skey);
         let compat_ksm = Compat(ksm);
         let compat_ck = Compat(ck);
         let compat_dk = Compat(dk);
+        let compat_nsk = Compat(nsk);
         let compat_tag = Compat(tag);
         compat_skey.encode(encoder)?;
         compat_ksm.encode(encoder)?;
         compat_ck.encode(encoder)?;
         compat_dk.encode(encoder)?;
+        compat_nsk.encode(encoder)?;
         compat_tag.encode(encoder)?;
 
         Ok(())
@@ -37,16 +39,18 @@ impl<Context> Decode<Context> for ServerKey {
         let compat_ksm = Compat::decode(decoder)?;
         let compat_ck = Compat::decode(decoder)?;
         let compat_dk = Compat::decode(decoder)?;
+        let compat_nsk = Compat::decode(decoder)?;
         let compat_tag = Compat::decode(decoder)?;
 
         let skey = compat_skey.0;
         let ksm = compat_ksm.0;
         let ck = compat_ck.0;
         let dk = compat_dk.0;
+        let nsk = compat_nsk.0;
         let tag = compat_tag.0;
 
         Ok(Self(tfhe::ServerKey::from_raw_parts(
-            skey, ksm, ck, dk, tag,
+            skey, ksm, ck, dk, nsk, tag,
         )))
     }
 }
