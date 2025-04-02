@@ -14,9 +14,7 @@ fn main() {
     let bfv_cs = SealBfvCS::new(&bfv_ctx);
 
     let file = std::fs::File::open("data.csv").unwrap();
-    let mut reader = ReaderBuilder::new()
-        .has_headers(true)
-        .from_reader(file);
+    let mut reader = ReaderBuilder::new().has_headers(true).from_reader(file);
 
     let headers = reader.headers().unwrap();
     let column_index = headers
