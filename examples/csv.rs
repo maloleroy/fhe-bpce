@@ -1,7 +1,5 @@
-use arrow::array::Float64Array;
 use csv::ReaderBuilder;
 use fhe_core::api::CryptoSystem as _;
-use rayon::iter::{ParallelBridge, ParallelIterator};
 use seal_lib::{BfvHOperation2, SealBfvCS, context::SealBFVContext};
 use std::sync::Mutex;
 
