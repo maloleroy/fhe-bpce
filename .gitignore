@@ -9,3 +9,6 @@
 fhe.toml
 test.data
 data.parquet
+*.csv
+
+*.DS_Store

@@ -1,7 +1,8 @@
 use arrow::array::Float64Array;
+use csv::ReaderBuilder;
 use fhe_core::api::CryptoSystem as _;
-use parquet::arrow::arrow_reader::ParquetRecordBatchReaderBuilder;
 use rayon::iter::{ParallelBridge, ParallelIterator};
+use rayon::prelude::ParallelSlice;
 use seal_lib::{BfvHOperation2, SealBfvCS, context::SealBFVContext};
 use std::sync::Mutex;
 
@@ -15,37 +16,29 @@ fn main() {
     );
     let bfv_cs = SealBfvCS::new(&bfv_ctx);
 
-    let file = std::fs::File::open("data.parquet").unwrap();
-    let parquet_reader = ParquetRecordBatchReaderBuilder::try_new(file)
-        .unwrap()
-        .with_batch_size(BATCH_SIZE) // 32 KB
-        .build()
-        .unwrap();
+    let file = std::fs::File::open("data.csv").unwrap();
+    let mut reader = ReaderBuilder::new()
+        .has_headers(true)
+        .from_reader(file);
 
-    let iter = parquet_reader.into_iter();
+    let headers = reader.headers().unwrap();
+    let column_index = headers
+        .iter()
+        .position(|h| h == "rwa")
+        .expect("Column 'rwa' not found");
 
+    let records: Vec<_> = reader.records().collect::<Result<_, _>>().unwrap();
+    let records = &records;
     let sum = Mutex::new(bfv_cs.cipher(&0));
 
-    iter.par_bridge().for_each(|batch| {
-        let batch = batch.unwrap();
-
-        let column_index = batch
-            .schema()
-            .fields()
-            .iter()
-            .position(|f| f.name() == "rwa")
-            .expect("Column 'rwa' not found");
-
-        let column = batch.column(column_index);
-        let array = column
-            .as_any()
-            .downcast_ref::<Float64Array>()
-            .expect("Column is not Float64Array");
-
+    records.par_chunks(BATCH_SIZE).for_each(|chunk| {
         let mut local_sum = bfv_cs.cipher(&0);
 
-        for i in 0..array.len() {
-            let value = array.value(i);
+        for record in chunk {
+            let record = record;
+            let value: f64 = record[column_index]
+                .parse()
+                .expect("Failed to parse value as f64");
             let value_uint = (value * 100.0) as u64;
             let v_cipher = bfv_cs.cipher(&value_uint);
             bfv_cs.operate2_inplace(BfvHOperation2::Add, &mut local_sum, &v_cipher);
