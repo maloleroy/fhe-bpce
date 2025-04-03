@@ -84,7 +84,7 @@ impl CKKSEncoder {
             bindgen::CKKSEncoder_Encode1(
                 self.get_handle(),
                 data.len() as u64,
-                data.as_ptr() as *mut f64,
+                data.as_ptr().cast_mut(),
                 parms_id_ptr,
                 self.scale,
                 plaintext.get_handle(),
@@ -116,9 +116,10 @@ impl CKKSEncoder {
             )
         })?;
 
-        if data.capacity() < size as usize {
-            panic!("Allocation overflow BVTEncoder::decode_unsigned");
-        }
+        assert!(
+            (data.capacity() >= size as usize),
+            "Allocation overflow BVTEncoder::decode_unsigned"
+        );
 
         unsafe {
             data.set_len(size as usize);

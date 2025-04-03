@@ -4,7 +4,7 @@ use std::ptr::null_mut;
 use std::sync::atomic::{AtomicPtr, Ordering};
 
 use crate::{Context, FromBytes, ToBytes, bindgen, serialization::CompressionType};
-use crate::{error::*, try_seal};
+use crate::{error::Result, try_seal};
 
 /// Class to store a ciphertext element. The data for a ciphertext consists
 /// of two or more polynomials, which are in Microsoft SEAL stored in a CRT
@@ -135,7 +135,7 @@ impl Clone for Ciphertext {
     }
 }
 
-impl AsRef<Ciphertext> for Ciphertext {
+impl AsRef<Self> for Ciphertext {
     fn as_ref(&self) -> &Self {
         self
     }
@@ -190,7 +190,7 @@ impl FromBytes for Ciphertext {
             bindgen::Ciphertext_Load(
                 ciphertext.get_handle(),
                 context.get_handle(),
-                bytes.as_ptr() as *mut u8,
+                bytes.as_ptr().cast_mut(),
                 bytes.len() as u64,
                 &mut bytes_read,
             )

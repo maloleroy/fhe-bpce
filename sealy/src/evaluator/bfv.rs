@@ -20,8 +20,8 @@ impl std::ops::Deref for BFVEvaluator {
 impl BFVEvaluator {
     /// Creates a BFVEvaluator instance initialized with the specified Context.
     ///  * `ctx` - The context.
-    pub fn new(ctx: &Context) -> Result<BFVEvaluator> {
-        Ok(BFVEvaluator(EvaluatorBase::new(ctx)?))
+    pub fn new(ctx: &Context) -> Result<Self> {
+        Ok(Self(EvaluatorBase::new(ctx)?))
     }
 }
 

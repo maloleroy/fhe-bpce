@@ -31,7 +31,7 @@ impl MemoryPool {
 
         try_seal!(unsafe { bindgen::MemoryPoolHandle_New(clear_on_destruction, &mut handle) })?;
 
-        Ok(MemoryPool {
+        Ok(Self {
             handle: AtomicPtr::new(handle),
         })
     }
@@ -86,7 +86,7 @@ impl Drop for MemoryPool {
     fn drop(&mut self) {
         if let Err(err) = try_seal!(unsafe { bindgen::MemoryPoolHandle_Destroy(self.get_handle()) })
         {
-            panic!("Failed to destroy memory pool: {:?}", err);
+            panic!("Failed to destroy memory pool: {err:?}");
         }
     }
 }

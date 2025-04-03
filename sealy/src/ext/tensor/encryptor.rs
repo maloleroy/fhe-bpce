@@ -13,7 +13,7 @@ pub struct TensorEncryptor<T = ()> {
 
 impl<T> TensorEncryptor<T> {
     /// Creates a new tensorEncryptor instance.
-    pub fn new(encryptor: Encryptor<T>) -> Self {
+    pub const fn new(encryptor: Encryptor<T>) -> Self {
         Self {
             encryptor,
             typ: std::marker::PhantomData,

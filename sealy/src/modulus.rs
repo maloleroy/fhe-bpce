@@ -4,7 +4,7 @@ use std::sync::atomic::AtomicPtr;
 use std::sync::atomic::Ordering;
 
 use crate::bindgen;
-use crate::error::*;
+use crate::error::{Error, Result};
 use crate::try_seal;
 
 use serde::{Deserialize, Serialize};
@@ -31,14 +31,13 @@ pub enum SecurityLevel {
 impl TryFrom<i32> for SecurityLevel {
     type Error = Error;
 
-    fn try_from(val: i32) -> Result<SecurityLevel> {
+    fn try_from(val: i32) -> Result<Self> {
         Ok(match val {
-            128 => SecurityLevel::TC128,
-            192 => SecurityLevel::TC192,
-            256 => SecurityLevel::TC256,
+            128 => Self::TC128,
+            192 => Self::TC192,
+            256 => Self::TC256,
             _ => Err(Error::SerializationError(Box::new(format!(
-                "Invalid security level: {}",
-                val
+                "Invalid security level: {val}"
             ))))?,
         })
     }
@@ -94,14 +93,14 @@ impl TryFrom<u64> for DegreeType {
 
     fn try_from(value: u64) -> std::result::Result<Self, Self::Error> {
         match value {
-            256 => Ok(DegreeType::D256),
-            512 => Ok(DegreeType::D512),
-            1024 => Ok(DegreeType::D1024),
-            2048 => Ok(DegreeType::D2048),
-            4096 => Ok(DegreeType::D4096),
-            8192 => Ok(DegreeType::D8192),
-            16384 => Ok(DegreeType::D16384),
-            32768 => Ok(DegreeType::D32768),
+            256 => Ok(Self::D256),
+            512 => Ok(Self::D512),
+            1024 => Ok(Self::D1024),
+            2048 => Ok(Self::D2048),
+            4096 => Ok(Self::D4096),
+            8192 => Ok(Self::D8192),
+            16384 => Ok(Self::D16384),
+            32768 => Ok(Self::D32768),
             _ => Err(Error::DegreeNotSet),
         }
     }
@@ -125,7 +124,7 @@ impl Modulus {
 
         try_seal!(unsafe { bindgen::Modulus_Create1(value, &mut handle) })?;
 
-        Ok(Modulus {
+        Ok(Self {
             handle: AtomicPtr::new(handle),
         })
     }
@@ -137,8 +136,8 @@ impl Modulus {
     ///
     /// # Safety
     /// The handle must be a valid modulus handle.
-    pub(crate) unsafe fn new_unchecked_from_handle(handle: *mut c_void) -> Self {
-        Modulus {
+    pub(crate) const unsafe fn new_unchecked_from_handle(handle: *mut c_void) -> Self {
+        Self {
             handle: AtomicPtr::new(handle),
         }
     }
@@ -188,7 +187,7 @@ impl Clone for Modulus {
 
         unsafe {
             try_seal!(bindgen::Modulus_Create2(self.get_handle(), &mut copy))
-                .expect("Failed to clone modulus")
+                .expect("Failed to clone modulus");
         };
 
         Self {
@@ -198,6 +197,7 @@ impl Clone for Modulus {
 }
 
 /// This struct contains static methods for creating a coefficient modulus easily.
+///
 /// Note that while these functions take a SecLevelType argument, all security
 /// guarantees are lost if the output is used with encryption parameters with
 /// a mismatching value for the PolyModulusDegree.
@@ -291,6 +291,7 @@ impl CoefficientModulusFactory {
     /// of the product of the primes in the coefficient modulus, that guarantees
     /// a given security level when using a given PolyModulusDegree, according
     /// to the HomomorphicEncryption.org security standard.
+    #[must_use]
     pub fn max_bit_count(degree: u64, security_level: SecurityLevel) -> u32 {
         let mut bits: i32 = 0;
 

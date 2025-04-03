@@ -63,13 +63,13 @@ const_assert!(std::mem::size_of::<Error>() <= 16);
 impl From<c_long> for Error {
     fn from(err: c_long) -> Self {
         match err {
-            E_POINTER => Error::InvalidPointer,
-            E_INVALIDARG => Error::InvalidArgument,
-            E_OUTOFMEMORY => Error::OutOfMemory,
-            E_UNEXPECTED => Error::Unexpected,
-            COR_E_IO => Error::InternalError(err),
-            COR_E_INVALIDOPERATION => Error::InternalError(err),
-            _ => Error::Unknown(err),
+            E_POINTER => Self::InvalidPointer,
+            E_INVALIDARG => Self::InvalidArgument,
+            E_OUTOFMEMORY => Self::OutOfMemory,
+            E_UNEXPECTED => Self::Unexpected,
+            COR_E_IO => Self::InternalError(err),
+            COR_E_INVALIDOPERATION => Self::InternalError(err),
+            _ => Self::Unknown(err),
         }
     }
 }

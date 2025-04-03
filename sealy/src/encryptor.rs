@@ -6,7 +6,7 @@ use std::sync::atomic::Ordering;
 
 use crate::bindgen;
 use crate::component_marker;
-use crate::error::*;
+use crate::error::Result;
 // use crate::poly_array::PolynomialArray;
 use crate::try_seal;
 use crate::{Asym, Ciphertext, Context, Plaintext, PublicKey, SecretKey, Sym, SymAsym};

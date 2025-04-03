@@ -5,7 +5,7 @@ use std::sync::atomic::AtomicPtr;
 use std::sync::atomic::Ordering;
 
 use crate::bindgen;
-use crate::error::*;
+use crate::error::Result;
 use crate::try_seal;
 use crate::{Context, Plaintext};
 
@@ -101,7 +101,7 @@ impl BFVEncoder {
             bindgen::BatchEncoder_Encode1(
                 self.get_handle(),
                 data.len() as u64,
-                data.as_ptr() as *mut u64,
+                data.as_ptr().cast_mut(),
                 plaintext.get_handle(),
             )
         })?;
@@ -134,9 +134,10 @@ impl BFVEncoder {
             )
         })?;
 
-        if data.capacity() < size as usize {
-            panic!("Allocation overflow BVTEncoder::decode_unsigned");
-        }
+        assert!(
+            (data.capacity() >= size as usize),
+            "Allocation overflow BVTEncoder::decode_unsigned"
+        );
 
         unsafe {
             data.set_len(size as usize);
@@ -165,7 +166,7 @@ impl BFVEncoder {
             bindgen::BatchEncoder_Encode2(
                 self.get_handle(),
                 data.len() as u64,
-                data.as_ptr() as *mut i64,
+                data.as_ptr().cast_mut(),
                 plaintext.get_handle(),
             )
         })?;
@@ -198,9 +199,10 @@ impl BFVEncoder {
             )
         })?;
 
-        if data.capacity() < size as usize {
-            panic!("Allocation overflow BVTEncoder::decode_unsigned");
-        }
+        assert!(
+            (data.capacity() >= size as usize),
+            "Allocation overflow BVTEncoder::decode_unsigned"
+        );
 
         unsafe {
             data.set_len(size as usize);

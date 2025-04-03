@@ -7,7 +7,7 @@ use std::sync::atomic::Ordering;
 use crate::EncryptionParameters;
 use crate::SecurityLevel;
 use crate::bindgen;
-use crate::error::*;
+use crate::error::{Error, Result};
 use crate::try_seal;
 
 /// Performs sanity checks (validation) and pre-computations for a given set of encryption
@@ -70,7 +70,7 @@ impl Context {
             )
         })?;
 
-        Ok(Context {
+        Ok(Self {
             handle: AtomicPtr::new(handle),
         })
     }

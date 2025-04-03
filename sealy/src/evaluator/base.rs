@@ -4,7 +4,7 @@ use std::sync::atomic::AtomicPtr;
 use std::sync::atomic::Ordering;
 
 use crate::bindgen;
-use crate::error::*;
+use crate::error::Result;
 use crate::try_seal;
 use crate::{Ciphertext, Context, Plaintext, RelinearizationKey};
 

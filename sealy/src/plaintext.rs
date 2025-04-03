@@ -5,7 +5,7 @@ use std::ptr::null_mut;
 use std::sync::atomic::{AtomicPtr, Ordering};
 
 use crate::{Context, FromBytes, ToBytes, bindgen, serialization::CompressionType};
-use crate::{MemoryPool, error::*, try_seal};
+use crate::{MemoryPool, error::Result, try_seal};
 
 use serde::ser::Error;
 use serde::{Serialize, Serializer};
@@ -96,7 +96,7 @@ impl Plaintext {
         let hex_string = CString::new(hex_str).unwrap();
 
         try_seal!(unsafe {
-            bindgen::Plaintext_Create4(hex_string.as_ptr() as *mut i8, null_mut(), &mut handle)
+            bindgen::Plaintext_Create4(hex_string.as_ptr().cast_mut(), null_mut(), &mut handle)
         })?;
 
         Ok(Self {
@@ -113,9 +113,12 @@ impl Plaintext {
     pub fn get_coefficient(&self, index: usize) -> u64 {
         let mut coeff: u64 = 0;
 
-        if index > self.len() {
-            panic!("Index {} out of bounds {}", index, self.len());
-        }
+        assert!(
+            (index <= self.len()),
+            "Index {} out of bounds {}",
+            index,
+            self.len()
+        );
 
         try_seal!(unsafe {
             bindgen::Plaintext_CoeffAt(self.get_handle(), index as u64, &mut coeff)
@@ -132,9 +135,12 @@ impl Plaintext {
     /// # Panics
     /// Panics if index is greater than len().
     pub fn set_coefficient(&mut self, index: usize, value: u64) {
-        if index > self.len() {
-            panic!("Index {} out of bounds {}", index, self.len());
-        }
+        assert!(
+            (index <= self.len()),
+            "Index {} out of bounds {}",
+            index,
+            self.len()
+        );
 
         try_seal!(unsafe { bindgen::Plaintext_SetCoeffAt(self.get_handle(), index as u64, value) })
             .expect("Fatal error in Plaintext::index().");
@@ -193,7 +199,7 @@ impl Clone for Plaintext {
     }
 }
 
-impl AsRef<Plaintext> for Plaintext {
+impl AsRef<Self> for Plaintext {
     fn as_ref(&self) -> &Self {
         self
     }
@@ -238,13 +244,11 @@ impl Serialize for Plaintext {
                 &mut num_bytes,
             )
         })
-        .map_err(|e| {
-            S::Error::custom(format!("Failed to get private key serialized size: {}", e))
-        })?;
+        .map_err(|e| S::Error::custom(format!("Failed to get private key serialized size: {e}")))?;
 
         let bytes = self
             .as_bytes()
-            .map_err(|e| S::Error::custom(format!("Failed to serialize bytes: {}", e)))?;
+            .map_err(|e| S::Error::custom(format!("Failed to serialize bytes: {e}")))?;
 
         serializer.serialize_bytes(&bytes)
     }
@@ -257,14 +261,14 @@ impl FromBytes for Plaintext {
     fn from_bytes(context: &Context, data: &[u8]) -> Result<Self> {
         let mut bytes_read = 0;
 
-        let plaintext = Plaintext::new()?;
+        let plaintext = Self::new()?;
 
         try_seal!(unsafe {
             // While the interface marks data as mut, SEAL doesn't actually modify it, so we're okay.
             bindgen::Plaintext_Load(
                 plaintext.get_handle(),
                 context.get_handle(),
-                data.as_ptr() as *mut u8,
+                data.as_ptr().cast_mut(),
                 data.len() as u64,
                 &mut bytes_read,
             )

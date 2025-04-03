@@ -11,7 +11,7 @@ where
     E: Evaluator,
 {
     /// Creates a new batch evaluator.
-    pub fn new(evaluator: E) -> Self {
+    pub const fn new(evaluator: E) -> Self {
         Self { evaluator }
     }
 }
@@ -65,13 +65,13 @@ where
 
     fn add_many(&self, a: &[Self::Ciphertext]) -> Result<Self::Ciphertext> {
         let mut result = Vec::with_capacity(a.len());
-        let length = a.first().ok_or_else(|| Error::InvalidArgument)?.len();
+        let length = a.first().ok_or(Error::InvalidArgument)?.len();
 
         for i in 0..length {
             let mut values = Vec::with_capacity(a.len());
 
-            for tensor in a.iter() {
-                let value = tensor.get_cloned(i).ok_or_else(|| Error::InvalidArgument)?;
+            for tensor in a {
+                let value = tensor.get_cloned(i).ok_or(Error::InvalidArgument)?;
                 values.push(value);
             }
 
@@ -87,13 +87,13 @@ where
         relin_keys: &RelinearizationKey,
     ) -> Result<Self::Ciphertext> {
         let mut result = Vec::with_capacity(a.len());
-        let length = a.first().ok_or_else(|| Error::InvalidArgument)?.len();
+        let length = a.first().ok_or(Error::InvalidArgument)?.len();
 
         for i in 0..length {
             let mut values = Vec::with_capacity(a.len());
 
-            for tensor in a.iter() {
-                let value = tensor.get_cloned(i).ok_or_else(|| Error::InvalidArgument)?;
+            for tensor in a {
+                let value = tensor.get_cloned(i).ok_or(Error::InvalidArgument)?;
                 values.push(value);
             }
 
@@ -148,7 +148,7 @@ where
     }
 
     fn mod_switch_to_next_inplace(&self, a: &Self::Ciphertext) -> Result<()> {
-        for value in a.iter() {
+        for value in a {
             self.evaluator.mod_switch_to_next_inplace(value)?;
         }
 
@@ -161,7 +161,7 @@ where
     }
 
     fn mod_switch_to_next_inplace_plaintext(&self, a: &Self::Plaintext) -> Result<()> {
-        for value in a.iter() {
+        for value in a {
             self.evaluator.mod_switch_to_next_inplace_plaintext(value)?;
         }
 
@@ -184,7 +184,7 @@ where
         exponent: u64,
         relin_keys: &RelinearizationKey,
     ) -> Result<()> {
-        for value in a.iter() {
+        for value in a {
             self.evaluator
                 .exponentiate_inplace(value, exponent, relin_keys)?;
         }
@@ -270,7 +270,7 @@ where
         steps: i32,
         galois_keys: &GaloisKey,
     ) -> Result<()> {
-        for value in a.iter() {
+        for value in a {
             self.evaluator
                 .rotate_rows_inplace(value, steps, galois_keys)?;
         }
@@ -288,7 +288,7 @@ where
     }
 
     fn rotate_columns_inplace(&self, a: &Self::Ciphertext, galois_keys: &GaloisKey) -> Result<()> {
-        for value in a.iter() {
+        for value in a {
             self.evaluator.rotate_columns_inplace(value, galois_keys)?;
         }
 

@@ -3,6 +3,7 @@ use crate::{DegreeType, EncryptionParameters, Error, Modulus, SchemeType};
 use super::CoefficientModulusType;
 
 /// Represents a builder that sets up and creates encryption scheme parameters.
+///
 /// The parameters (most importantly PolyModulus, CoeffModulus)
 /// significantly affect the performance, capabilities, and security of the
 /// encryption scheme.
@@ -14,7 +15,8 @@ pub struct CKKSEncryptionParametersBuilder {
 
 impl CKKSEncryptionParametersBuilder {
     /// Creates a new builder.
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             poly_modulus_degree: None,
             coefficient_modulus: CoefficientModulusType::NotSet,
@@ -24,7 +26,8 @@ impl CKKSEncryptionParametersBuilder {
     /// Set the degree of the polynomial used in the CKKS scheme. Genrally,
     /// larger values provide more security and noise margin at the expense
     /// of performance.
-    pub fn set_poly_modulus_degree(mut self, degree: DegreeType) -> Self {
+    #[must_use]
+    pub const fn set_poly_modulus_degree(mut self, degree: DegreeType) -> Self {
         self.poly_modulus_degree = Some(degree);
         self
     }
@@ -36,6 +39,7 @@ impl CKKSEncryptionParametersBuilder {
     /// perform (bigger is better), and the security level (bigger is worse). In
     /// Microsoft SEAL each of the prime numbers in the coefficient modulus must
     /// be at most 60 bits, and must be congruent to 1 modulo 2*poly_modulus_degree.
+    #[must_use]
     pub fn set_coefficient_modulus(mut self, modulus: Vec<Modulus>) -> Self {
         self.coefficient_modulus = CoefficientModulusType::Modulus(modulus);
         self
@@ -55,7 +59,7 @@ impl CKKSEncryptionParametersBuilder {
             CoefficientModulusType::Modulus(m) => {
                 params.set_coefficient_modulus(m)?;
             }
-        };
+        }
 
         Ok(params)
     }

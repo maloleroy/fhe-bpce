@@ -47,21 +47,25 @@ impl<'a, T> IntoIterator for &'a Tensor<T> {
 
 impl<T> Tensor<T> {
     /// Returns the first element in this tensor.
+    #[must_use]
     pub fn first(&self) -> Option<&T> {
         self.get(0)
     }
 
     /// Returns the element given by the index.
+    #[must_use]
     pub fn get(&self, index: usize) -> Option<&T> {
         self.0.get(index)
     }
 
     /// Returns the number of elements in this tensor.
+    #[must_use]
     pub fn len(&self) -> usize {
         self.0.len()
     }
 
     /// Returns true if this tensor contains no elements.
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
@@ -108,7 +112,7 @@ where
             .iter()
             .map(|bytes| T::from_bytes(context, bytes))
             .collect::<Result<Vec<_>>>()?;
-        Ok(Tensor(values))
+        Ok(Self(values))
     }
 }
 
@@ -117,7 +121,10 @@ where
     T: ToBytes,
 {
     fn to_chunk(&self) -> Result<Vec<Vec<u8>>> {
-        self.0.iter().map(|value| value.as_bytes()).collect()
+        self.0
+            .iter()
+            .map(super::super::serialization::ToBytes::as_bytes)
+            .collect()
     }
 }
 
@@ -126,6 +133,7 @@ where
     T: Clone,
 {
     /// Returns a cloned copy of the element given by the index.
+    #[must_use]
     pub fn get_cloned(&self, index: usize) -> Option<T> {
         self.get(index).cloned()
     }

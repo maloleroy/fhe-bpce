@@ -35,17 +35,19 @@ pub enum SchemeType {
 
 impl SchemeType {
     /// Converts a u8 to a SchemeType.
+    #[must_use]
     pub fn from_u8(val: u8) -> Self {
         match val {
-            0x0 => SchemeType::None,
-            0x1 => SchemeType::Bfv,
-            0x2 => SchemeType::Ckks,
+            0x0 => Self::None,
+            0x1 => Self::Bfv,
+            0x2 => Self::Ckks,
             _ => panic!("Illegal scheme type"),
         }
     }
 
     /// Converts a SchemeType to a u8.
-    pub fn to_u8(&self) -> u8 {
+    #[must_use]
+    pub const fn to_u8(&self) -> u8 {
         *self as u8
     }
 }
@@ -98,16 +100,19 @@ impl EncryptionParameters {
     /// The block size is always 4 for SEAL. That means every
     /// parms_id is a 4-tuple of 64-bit integers. representing the
     /// hash of the encryption parameters.
+    #[must_use]
     pub const fn block_size() -> u8 {
         4
     }
 
     /// Returns the handle to the underlying SEAL object.
-    pub fn get_handle(&self) -> *mut c_void {
+    #[must_use]
+    pub const fn get_handle(&self) -> *mut c_void {
         self.handle
     }
 
     /// Returns the polynomial degree of the underlying CKKS or BFV scheme.
+    #[must_use]
     pub fn get_poly_modulus_degree(&self) -> u64 {
         let mut degree: u64 = 0;
 
@@ -123,6 +128,7 @@ impl EncryptionParameters {
     }
 
     /// Get the underlying scheme.
+    #[must_use]
     pub fn get_scheme(&self) -> SchemeType {
         let mut scheme: u8 = 0;
 
@@ -135,6 +141,7 @@ impl EncryptionParameters {
     }
 
     /// Returns the plain text modulus for the encryption scheme.
+    #[must_use]
     pub fn get_plain_modulus(&self) -> Modulus {
         let mut borrowed_modulus = null_mut();
 
@@ -143,7 +150,7 @@ impl EncryptionParameters {
                 self.handle,
                 &mut borrowed_modulus,
             ))
-            .expect("Internal error")
+            .expect("Internal error");
         };
 
         let borrowed_modulus = unsafe { Modulus::new_unchecked_from_handle(borrowed_modulus) };
@@ -157,6 +164,7 @@ impl EncryptionParameters {
     }
 
     /// Returns the coefficient modulus for the encryption scheme.
+    #[must_use]
     pub fn get_coefficient_modulus(&self) -> Vec<Modulus> {
         let mut len: u64 = 0;
 
@@ -166,7 +174,7 @@ impl EncryptionParameters {
                 &mut len,
                 null_mut(),
             ))
-            .expect("Internal error")
+            .expect("Internal error");
         };
 
         let mut borrowed_modulus = Vec::with_capacity(len as usize);
@@ -197,6 +205,7 @@ impl EncryptionParameters {
     }
 
     /// Returns the parms id.
+    #[must_use]
     pub fn get_parms_id(&self) -> u64 {
         let mut parms_id: c_ulong = 0;
 
@@ -216,7 +225,7 @@ impl EncryptionParameters {
                 .map(|m| m.get_handle())
                 .collect::<Vec<*mut c_void>>();
 
-            let modulus_ptr = modulus_ref.as_ptr() as *mut *mut c_void;
+            let modulus_ptr = modulus_ref.as_ptr().cast_mut();
 
             try_seal!(bindgen::EncParams_SetCoeffModulus(
                 self.handle,
@@ -309,7 +318,7 @@ impl FromBytes for EncryptionParameters {
         convert_seal_error(unsafe {
             bindgen::EncParams_Load(
                 key.handle,
-                bytes.as_ptr() as *mut u8,
+                bytes.as_ptr().cast_mut(),
                 bytes.len() as u64,
                 &mut bytes_read,
             )

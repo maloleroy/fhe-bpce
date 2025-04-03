@@ -9,7 +9,7 @@ pub struct TensorEncoder<E> {
 
 impl<E> TensorEncoder<E> {
     /// Creates a new tensor encoder.
-    pub fn new(encoder: E) -> Self {
+    pub const fn new(encoder: E) -> Self {
         Self { encoder }
     }
 }

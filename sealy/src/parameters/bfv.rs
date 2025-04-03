@@ -3,6 +3,7 @@ use crate::{DegreeType, EncryptionParameters, Error, Modulus, SchemeType};
 use super::{CoefficientModulusType, PlainModulusType};
 
 /// Represents a builder that sets up and creates encryption scheme parameters.
+///
 /// The parameters (most importantly PolyModulus, CoeffModulus, PlainModulus)
 /// significantly affect the performance, capabilities, and security of the
 /// encryption scheme.
@@ -15,7 +16,8 @@ pub struct BFVEncryptionParametersBuilder {
 
 impl BFVEncryptionParametersBuilder {
     /// Creates a new builder.
-    pub fn new() -> Self {
+    #[must_use]
+    pub const fn new() -> Self {
         Self {
             poly_modulus_degree: None,
             coefficient_modulus: CoefficientModulusType::NotSet,
@@ -26,7 +28,7 @@ impl BFVEncryptionParametersBuilder {
     /// Set the degree of the polynomial used in the BFV scheme. Genrally,
     /// larger values provide more security and noise margin at the expense
     /// of performance.
-    pub fn set_poly_modulus_degree(mut self, degree: DegreeType) -> Self {
+    pub const fn set_poly_modulus_degree(mut self, degree: DegreeType) -> Self {
         self.poly_modulus_degree = Some(degree);
         self
     }
@@ -70,7 +72,7 @@ impl BFVEncryptionParametersBuilder {
         match self.coefficient_modulus {
             CoefficientModulusType::NotSet => return Err(Error::CoefficientModulusNotSet),
             CoefficientModulusType::Modulus(m) => params.set_coefficient_modulus(m)?,
-        };
+        }
 
         match self.plain_modulus {
             PlainModulusType::NotSet => return Err(Error::PlainModulusNotSet),
@@ -80,7 +82,7 @@ impl BFVEncryptionParametersBuilder {
             PlainModulusType::Modulus(m) => {
                 params.set_plain_modulus(m)?;
             }
-        };
+        }
 
         Ok(params)
     }

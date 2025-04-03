@@ -20,8 +20,8 @@ impl std::ops::Deref for CKKSEvaluator {
 impl CKKSEvaluator {
     /// Creates a CKKSEvaluator instance initialized with the specified Context.
     ///  * `ctx` - The context.
-    pub fn new(ctx: &Context) -> Result<CKKSEvaluator> {
-        Ok(CKKSEvaluator(EvaluatorBase::new(ctx)?))
+    pub fn new(ctx: &Context) -> Result<Self> {
+        Ok(Self(EvaluatorBase::new(ctx)?))
     }
 }
 

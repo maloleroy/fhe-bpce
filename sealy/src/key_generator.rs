@@ -4,7 +4,7 @@ use std::sync::atomic::AtomicPtr;
 use std::sync::atomic::Ordering;
 
 use crate::bindgen;
-use crate::error::*;
+use crate::error::Result;
 use crate::serialization::CompressionType;
 use crate::try_seal;
 use crate::{Context, FromBytes, ToBytes};
@@ -30,7 +30,7 @@ impl KeyGenerator {
 
         try_seal!(unsafe { bindgen::KeyGenerator_Create1(ctx.get_handle(), &mut handle) })?;
 
-        Ok(KeyGenerator {
+        Ok(Self {
             handle: AtomicPtr::new(handle),
         })
     }
@@ -50,7 +50,7 @@ impl KeyGenerator {
             bindgen::KeyGenerator_Create2(ctx.get_handle(), secret_key.handle, &mut handle)
         })?;
 
-        Ok(KeyGenerator {
+        Ok(Self {
             handle: AtomicPtr::new(handle),
         })
     }
@@ -222,14 +222,14 @@ impl PartialEq for PublicKey {
 impl FromBytes for PublicKey {
     type State = Context;
     fn from_bytes(context: &Context, bytes: &[u8]) -> Result<Self> {
-        let key = PublicKey::new()?;
+        let key = Self::new()?;
         let mut bytes_read = 0;
 
         try_seal!(unsafe {
             bindgen::PublicKey_Load(
                 key.handle,
                 context.get_handle(),
-                bytes.as_ptr() as *mut u8,
+                bytes.as_ptr().cast_mut(),
                 bytes.len() as u64,
                 &mut bytes_read,
             )
@@ -250,7 +250,8 @@ impl PublicKey {
     }
 
     /// Returns the handle to the underlying SEAL object.
-    pub fn get_handle(&self) -> *mut c_void {
+    #[must_use]
+    pub const fn get_handle(&self) -> *mut c_void {
         self.handle
     }
 }
@@ -258,7 +259,7 @@ impl PublicKey {
 impl Drop for PublicKey {
     fn drop(&mut self) {
         try_seal!(unsafe { bindgen::PublicKey_Destroy(self.handle) })
-            .expect("Fatal error in PublicKey::drop")
+            .expect("Fatal error in PublicKey::drop");
     }
 }
 
@@ -273,8 +274,8 @@ impl Clone for PublicKey {
     }
 }
 
-impl AsRef<PublicKey> for PublicKey {
-    fn as_ref(&self) -> &PublicKey {
+impl AsRef<Self> for PublicKey {
+    fn as_ref(&self) -> &Self {
         self
     }
 }
@@ -309,7 +310,8 @@ impl SecretKey {
     }
 
     /// Returns the handle to the underlying SEAL object.
-    pub fn get_handle(&self) -> *mut c_void {
+    #[must_use]
+    pub const fn get_handle(&self) -> *mut c_void {
         self.handle
     }
 }
@@ -353,14 +355,14 @@ impl ToBytes for SecretKey {
 impl FromBytes for SecretKey {
     type State = Context;
     fn from_bytes(context: &Context, bytes: &[u8]) -> Result<Self> {
-        let key = SecretKey::new()?;
+        let key = Self::new()?;
         let mut bytes_read = 0;
 
         try_seal!(unsafe {
             bindgen::SecretKey_Load(
                 key.handle,
                 context.get_handle(),
-                bytes.as_ptr() as *mut u8,
+                bytes.as_ptr().cast_mut(),
                 bytes.len() as u64,
                 &mut bytes_read,
             )
@@ -373,7 +375,7 @@ impl FromBytes for SecretKey {
 impl Drop for SecretKey {
     fn drop(&mut self) {
         try_seal!(unsafe { bindgen::SecretKey_Destroy(self.handle) })
-            .expect("Fatal error in SecretKey::drop")
+            .expect("Fatal error in SecretKey::drop");
     }
 }
 
@@ -384,7 +386,7 @@ impl Serialize for SecretKey {
     {
         let data = self
             .as_bytes()
-            .map_err(|e| S::Error::custom(format!("Failed to get secret key bytes: {}", e)))?;
+            .map_err(|e| S::Error::custom(format!("Failed to get secret key bytes: {e}")))?;
 
         serializer.serialize_bytes(&data)
     }
@@ -409,8 +411,8 @@ impl core::fmt::Debug for SecretKey {
     }
 }
 
-impl AsRef<SecretKey> for SecretKey {
-    fn as_ref(&self) -> &SecretKey {
+impl AsRef<Self> for SecretKey {
+    fn as_ref(&self) -> &Self {
         self
     }
 }
@@ -448,7 +450,8 @@ unsafe impl Send for RelinearizationKey {}
 
 impl RelinearizationKey {
     /// Returns the handle to the underlying SEAL object.
-    pub fn get_handle(&self) -> *mut c_void {
+    #[must_use]
+    pub const fn get_handle(&self) -> *mut c_void {
         self.handle
     }
 
@@ -528,14 +531,14 @@ impl ToBytes for RelinearizationKey {
 impl FromBytes for RelinearizationKey {
     type State = Context;
     fn from_bytes(context: &Context, bytes: &[u8]) -> Result<Self> {
-        let keys = RelinearizationKey::new()?;
+        let keys = Self::new()?;
         let mut write_bytes: i64 = 0;
 
         try_seal!(unsafe {
             bindgen::KSwitchKeys_Load(
                 keys.handle,
                 context.get_handle(),
-                bytes.as_ptr() as *mut u8,
+                bytes.as_ptr().cast_mut(),
                 bytes.len() as u64,
                 &mut write_bytes,
             )
@@ -553,7 +556,7 @@ impl Drop for RelinearizationKey {
             // destructor.
             bindgen::KSwitchKeys_Destroy(self.handle)
         })
-        .expect("Fatal error in PublicKey::drop()")
+        .expect("Fatal error in PublicKey::drop()");
     }
 }
 
@@ -605,12 +608,13 @@ unsafe impl Send for GaloisKey {}
 
 impl GaloisKey {
     /// Returns the handle to the underlying SEAL object.
-    pub fn get_handle(&self) -> *mut c_void {
+    #[must_use]
+    pub const fn get_handle(&self) -> *mut c_void {
         self.handle
     }
 
     /// Creates a new GaloisKey.
-    pub fn new() -> Result<GaloisKey> {
+    pub fn new() -> Result<Self> {
         let mut handle: *mut c_void = null_mut();
 
         try_seal!(unsafe { bindgen::KSwitchKeys_Create1(&mut handle) })?;
@@ -657,14 +661,14 @@ impl ToBytes for GaloisKey {
 impl FromBytes for GaloisKey {
     type State = Context;
     fn from_bytes(context: &Context, bytes: &[u8]) -> Result<Self> {
-        let keys = GaloisKey::new()?;
+        let keys = Self::new()?;
         let mut write_bytes: i64 = 0;
 
         try_seal!(unsafe {
             bindgen::KSwitchKeys_Load(
                 keys.handle,
                 context.get_handle(),
-                bytes.as_ptr() as *mut u8,
+                bytes.as_ptr().cast_mut(),
                 bytes.len() as u64,
                 &mut write_bytes,
             )
@@ -682,7 +686,7 @@ impl Drop for GaloisKey {
             // destructor.
             bindgen::KSwitchKeys_Destroy(self.handle)
         })
-        .expect("Fatal error in GaloisKeys::drop()")
+        .expect("Fatal error in GaloisKeys::drop()");
     }
 }
 
