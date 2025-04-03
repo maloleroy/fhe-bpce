@@ -1,7 +1,7 @@
 use csv::ReaderBuilder;
 use fhe_core::api::CryptoSystem as _;
+use rayon::prelude::*;
 use seal_lib::{BfvHOperation2, SealBfvCS, context::SealBFVContext};
-use std::sync::Mutex;
 
 const BATCH_SIZE: usize = 1 << 15; // 32 KB
 
@@ -22,26 +22,20 @@ fn main() {
         .position(|h| h == "rwa")
         .expect("Column 'rwa' not found");
 
-    let sum = Mutex::new(bfv_cs.cipher(&0));
+    let records: Vec<_> = reader.records().map(|r| r.unwrap()).collect();
 
-    let mut batch = Vec::with_capacity(BATCH_SIZE);
+    let sum = records
+        .par_chunks(BATCH_SIZE)
+        .map(|batch| process_batch(batch, column_index, &bfv_cs))
+        .reduce(
+            || bfv_cs.cipher(&0),
+            |mut acc, local_sum| {
+                bfv_cs.operate2_inplace(BfvHOperation2::Add, &mut acc, &local_sum);
+                acc
+            },
+        );
 
-    for record in reader.records() {
-        let record = record.unwrap();
-        batch.push(record);
-
-        if batch.len() == BATCH_SIZE {
-            process_batch(&batch, column_index, &bfv_cs, &sum);
-            batch.clear();
-        }
-    }
-
-    // Process any remaining records
-    if !batch.is_empty() {
-        process_batch(&batch, column_index, &bfv_cs, &sum);
-    }
-
-    let sum_d = bfv_cs.decipher(&sum.lock().unwrap());
+    let sum_d = bfv_cs.decipher(&sum);
     println!("Sum of all f64 of the column \"rwa\": {}", sum_d);
 }
 
@@ -49,8 +43,7 @@ fn process_batch(
     batch: &[csv::StringRecord],
     column_index: usize,
     bfv_cs: &SealBfvCS,
-    sum: &Mutex<seal_lib::Ciphertext>,
-) {
+) -> seal_lib::Ciphertext {
     let mut local_sum = bfv_cs.cipher(&0);
 
     for record in batch {
@@ -63,7 +56,5 @@ fn process_batch(
     }
 
     println!("Processed {} records.", batch.len());
-
-    let mut sum_lock = sum.lock().unwrap();
-    bfv_cs.operate2_inplace(BfvHOperation2::Add, &mut sum_lock, &local_sum);
+    local_sum
 }

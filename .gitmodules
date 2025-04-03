@@ -1,0 +1,3 @@
+[submodule "sealy/SEAL"]
+	path = sealy/SEAL
+	url = https://github.com/microsoft/SEAL

@@ -69,14 +69,6 @@ impl SealCkksContext {
     }
 }
 
-impl Clone for SealCkksContext {
-    fn clone(&self) -> Self {
-        let params = self.0.get_encryption_parameters().unwrap();
-        let sl = self.0.get_security_level().unwrap();
-        Self(Context::new(&params, false, sl).unwrap())
-    }
-}
-
 /// A structure to build a BFV context.
 pub struct SealBFVContext(Context);
 
@@ -139,13 +131,5 @@ impl SealBFVContext {
     /// Create a new decryptor.
     pub fn decryptor(&self, secret_key: &SecretKey) -> Decryptor {
         Decryptor::new(self.context(), secret_key).unwrap()
-    }
-}
-
-impl Clone for SealBFVContext {
-    fn clone(&self) -> Self {
-        let params = self.0.get_encryption_parameters().unwrap();
-        let sl = self.0.get_security_level().unwrap();
-        Self(Context::new(&params, false, sl).unwrap())
     }
 }

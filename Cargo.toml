@@ -27,7 +27,7 @@ parquet = "54.3.0"
 rouille = { git = "https://github.com/bnjbvr/rouille.git" }
 
 [workspace]
-members = ["fhe-core", "seal-lib", "fhe-operations", "zama-lib"]
+members = ["fhe-core", "seal-lib", "sealy", "fhe-operations", "zama-lib"]
 
 [workspace.dependencies]
 bincode = { version = "2.0.1", features = ["serde"] }
