@@ -146,8 +146,8 @@ impl TensorEncoder<BFVEncoder> {
 mod tests {
 
     use crate::{
-        ext::tensor::encoder::TensorEncoder, BFVEncoder, BFVEncryptionParametersBuilder,
-        CoefficientModulusFactory, Context, DegreeType, PlainModulusFactory, SecurityLevel,
+        BFVEncoder, BFVEncryptionParametersBuilder, CoefficientModulusFactory, Context, DegreeType,
+        PlainModulusFactory, SecurityLevel, ext::tensor::encoder::TensorEncoder,
     };
 
     #[test]

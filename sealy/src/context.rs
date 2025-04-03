@@ -4,11 +4,11 @@ use std::ptr::null_mut;
 use std::sync::atomic::AtomicPtr;
 use std::sync::atomic::Ordering;
 
+use crate::EncryptionParameters;
+use crate::SecurityLevel;
 use crate::bindgen;
 use crate::error::*;
 use crate::try_seal;
-use crate::EncryptionParameters;
-use crate::SecurityLevel;
 
 /// Performs sanity checks (validation) and pre-computations for a given set of encryption
 /// parameters. While the EncryptionParameters class is intended to be a light-weight class
@@ -68,25 +68,6 @@ impl Context {
                 security_level as c_int,
                 &mut handle,
             )
-        })?;
-
-        Ok(Context {
-            handle: AtomicPtr::new(handle),
-        })
-    }
-
-    /// Creates an instance of SEALContext and performs several pre-computations
-    /// on the given EncryptionParameters. This function explicitly allows insecure parameters,
-    /// and is only for testing!
-    ///
-    /// * `params` - The encryption parameters.
-    /// * `expand_mod_chain` - Determines whether the modulus switching chain should be created.
-    #[cfg(feature = "insecure-params")]
-    pub fn new_insecure(params: &EncryptionParameters, expand_mod_chain: bool) -> Result<Self> {
-        let mut handle: *mut c_void = null_mut();
-
-        try_seal!(unsafe {
-            bindgen::SEALContext_Create(params.get_handle(), expand_mod_chain, 0, &mut handle)
         })?;
 
         Ok(Context {

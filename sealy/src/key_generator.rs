@@ -729,9 +729,9 @@ mod tests {
             .unwrap();
 
         let ctx = Context::new(&params, false, SecurityLevel::TC128).unwrap();
-        let gen = KeyGenerator::new(&ctx).unwrap();
+        let key_gen = KeyGenerator::new(&ctx).unwrap();
 
-        let _secret_key = gen.secret_key();
+        let _secret_key = key_gen.secret_key();
     }
 
     #[test]
@@ -746,9 +746,9 @@ mod tests {
             .unwrap();
 
         let ctx = Context::new(&params, false, SecurityLevel::TC128).unwrap();
-        let gen = KeyGenerator::new(&ctx).unwrap();
+        let key_gen = KeyGenerator::new(&ctx).unwrap();
 
-        gen.create_public_key();
+        key_gen.create_public_key();
     }
 
     #[test]
@@ -763,9 +763,9 @@ mod tests {
             .unwrap();
 
         let ctx = Context::new(&params, false, SecurityLevel::TC128).unwrap();
-        let gen = KeyGenerator::new(&ctx).unwrap();
+        let key_gen = KeyGenerator::new(&ctx).unwrap();
 
-        gen.create_relinearization_keys().unwrap();
+        key_gen.create_relinearization_keys().unwrap();
     }
 
     #[test]
@@ -780,9 +780,9 @@ mod tests {
             .unwrap();
 
         let ctx = Context::new(&params, false, SecurityLevel::TC128).unwrap();
-        let gen = KeyGenerator::new(&ctx).unwrap();
+        let key_gen = KeyGenerator::new(&ctx).unwrap();
 
-        gen.create_galois_keys().unwrap();
+        key_gen.create_galois_keys().unwrap();
     }
 
     #[test]
@@ -797,8 +797,8 @@ mod tests {
             .unwrap();
 
         let ctx = Context::new(&params, false, SecurityLevel::TC128).unwrap();
-        let gen = KeyGenerator::new(&ctx).unwrap();
+        let key_gen = KeyGenerator::new(&ctx).unwrap();
 
-        let _secret_key = gen.secret_key();
+        let _secret_key = key_gen.secret_key();
     }
 }

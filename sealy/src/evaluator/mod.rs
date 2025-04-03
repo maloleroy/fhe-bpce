@@ -154,7 +154,7 @@ pub trait Evaluator {
     ///  * `a` - the ciphertext
     ///  * `b` - the plaintext
     fn multiply_plain(&self, a: &Self::Ciphertext, b: &Self::Plaintext)
-        -> Result<Self::Ciphertext>;
+    -> Result<Self::Ciphertext>;
 
     /// Multiply a ciphertext by a plaintext and store in the ciphertext.
     ///  * `a` - the ciphertext

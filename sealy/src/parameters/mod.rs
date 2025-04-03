@@ -4,10 +4,10 @@ use std::os::raw::c_ulong;
 use std::ptr::null_mut;
 
 use crate::bindgen::{self};
-use crate::error::convert_seal_error;
 use crate::error::Result;
+use crate::error::convert_seal_error;
 use crate::serialization::CompressionType;
-use crate::{try_seal, FromBytes, Modulus, ToBytes};
+use crate::{FromBytes, Modulus, ToBytes, try_seal};
 
 use serde::{Deserialize, Serialize};
 

@@ -4,7 +4,7 @@ use std::{
     sync::atomic::{AtomicPtr, Ordering},
 };
 
-use crate::{bindgen, error::Result, try_seal, Ciphertext, Context, Plaintext, SecretKey};
+use crate::{Ciphertext, Context, Plaintext, SecretKey, bindgen, error::Result, try_seal};
 
 /// Decrypts Ciphertext objects into Plaintext objects. Constructing a Decryptor requires
 /// a SEALContext with valid encryption parameters, and the secret key. The Decryptor is
@@ -132,8 +132,6 @@ impl Drop for Decryptor {
 mod tests {
     use crate::*;
 
-    use super::Decryptor;
-
     fn mk_ctx<F>(enc_modifier: F) -> Context
     where
         F: FnOnce(BFVEncryptionParametersBuilder) -> BFVEncryptionParametersBuilder,
@@ -161,9 +159,9 @@ mod tests {
             .unwrap();
 
         let ctx = Context::new(&params, false, SecurityLevel::TC128).unwrap();
-        let gen = KeyGenerator::new(&ctx).unwrap();
+        let key_gen = KeyGenerator::new(&ctx).unwrap();
 
-        let secret_key = gen.secret_key();
+        let secret_key = key_gen.secret_key();
         let decryptor = Decryptor::new(&ctx, &secret_key);
 
         std::mem::drop(decryptor);
@@ -174,7 +172,7 @@ mod tests {
         let ctx = mk_ctx(|b| {
             b.set_plain_modulus(PlainModulusFactory::batching(DegreeType::D8192, 20).unwrap())
         });
-        let gen = KeyGenerator::new(&ctx).unwrap();
+        let key_gen = KeyGenerator::new(&ctx).unwrap();
 
         let encoder = BFVEncoder::new(&ctx).unwrap();
 
@@ -186,8 +184,8 @@ mod tests {
 
         let plaintext = encoder.encode_u64(&data).unwrap();
 
-        let public_key = gen.create_public_key();
-        let secret_key = gen.secret_key();
+        let public_key = key_gen.create_public_key();
+        let secret_key = key_gen.secret_key();
 
         let encryptor =
             Encryptor::with_public_and_secret_key(&ctx, &public_key, &secret_key).unwrap();
@@ -211,7 +209,7 @@ mod tests {
         let ctx = mk_ctx(|b| {
             b.set_plain_modulus(PlainModulusFactory::batching(DegreeType::D8192, 20).unwrap())
         });
-        let gen = KeyGenerator::new(&ctx).unwrap();
+        let key_gen = KeyGenerator::new(&ctx).unwrap();
 
         let encoder = BFVEncoder::new(&ctx).unwrap();
 
@@ -223,8 +221,8 @@ mod tests {
 
         let plaintext = encoder.encode_i64(&data).unwrap();
 
-        let public_key = gen.create_public_key();
-        let secret_key = gen.secret_key();
+        let public_key = key_gen.create_public_key();
+        let secret_key = key_gen.secret_key();
 
         let encryptor =
             Encryptor::with_public_and_secret_key(&ctx, &public_key, &secret_key).unwrap();

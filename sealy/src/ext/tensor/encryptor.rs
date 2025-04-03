@@ -1,6 +1,6 @@
 use crate::{
-    component_marker, Asym, Ciphertext, Context, Encryptor, Plaintext, PublicKey, Result,
-    SecretKey, Sym, SymAsym,
+    Asym, Ciphertext, Context, Encryptor, Plaintext, PublicKey, Result, SecretKey, Sym, SymAsym,
+    component_marker,
 };
 
 use super::Tensor;

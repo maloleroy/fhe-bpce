@@ -1,11 +1,11 @@
 use core::hash::Hash;
-use std::ffi::{c_void, CString};
+use std::ffi::{CString, c_void};
 use std::fmt::Debug;
 use std::ptr::null_mut;
 use std::sync::atomic::{AtomicPtr, Ordering};
 
-use crate::{bindgen, serialization::CompressionType, Context, FromBytes, ToBytes};
-use crate::{error::*, try_seal, MemoryPool};
+use crate::{Context, FromBytes, ToBytes, bindgen, serialization::CompressionType};
+use crate::{MemoryPool, error::*, try_seal};
 
 use serde::ser::Error;
 use serde::{Serialize, Serializer};

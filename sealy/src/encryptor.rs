@@ -490,9 +490,9 @@ mod tests {
     #[test]
     fn can_create_encryptor_from_public_key() {
         let ctx = mk_ctx(|b| b);
-        let gen = KeyGenerator::new(&ctx).unwrap();
+        let key_gen = KeyGenerator::new(&ctx).unwrap();
 
-        let public_key = gen.create_public_key();
+        let public_key = key_gen.create_public_key();
 
         let encryptor = Encryptor::with_public_key(&ctx, &public_key).unwrap();
 
@@ -503,9 +503,9 @@ mod tests {
     fn can_create_encryptor_from_secret_key() {
         let ctx = mk_ctx(|b| b);
 
-        let gen = KeyGenerator::new(&ctx).unwrap();
+        let key_gen = KeyGenerator::new(&ctx).unwrap();
 
-        let secret_key = gen.secret_key();
+        let secret_key = key_gen.secret_key();
 
         let encryptor = Encryptor::with_secret_key(&ctx, &secret_key).unwrap();
 
@@ -516,10 +516,10 @@ mod tests {
     fn can_create_encryptor_from_public_and_secret_key() {
         let ctx = mk_ctx(|b| b);
 
-        let gen = KeyGenerator::new(&ctx).unwrap();
+        let key_gen = KeyGenerator::new(&ctx).unwrap();
 
-        let public_key = gen.create_public_key();
-        let secret_key = gen.secret_key();
+        let public_key = key_gen.create_public_key();
+        let secret_key = key_gen.secret_key();
 
         let encryptor =
             Encryptor::with_public_and_secret_key(&ctx, &public_key, &secret_key).unwrap();

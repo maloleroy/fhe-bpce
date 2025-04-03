@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use std::ptr::null_mut;
 use std::sync::atomic::{AtomicPtr, Ordering};
 
-use crate::{bindgen, serialization::CompressionType, Context, FromBytes, ToBytes};
+use crate::{Context, FromBytes, ToBytes, bindgen, serialization::CompressionType};
 use crate::{error::*, try_seal};
 
 /// Class to store a ciphertext element. The data for a ciphertext consists

@@ -46,10 +46,8 @@
 //!     Ok(())
 //! }
 //! ```
-
-#![deny(missing_docs)]
-#![deny(rustdoc::broken_intra_doc_links)]
-#![warn(missing_docs)]
+#![warn(clippy::nursery, clippy::pedantic)]
+#![allow(clippy::missing_panics_doc, clippy::doc_markdown)]
 
 #[cfg(not(target_arch = "wasm32"))]
 extern crate link_cplusplus;
@@ -88,19 +86,19 @@ mod plaintext;
 mod serialization;
 
 pub use ciphertext::Ciphertext;
-pub use components::{marker as component_marker, Asym, Sym, SymAsym};
+pub use components::{Asym, Sym, SymAsym, marker as component_marker};
 pub use context::Context;
 pub use decryptor::Decryptor;
 pub use encoder::bfv::BFVEncoder;
 pub use encoder::ckks::CKKSEncoder;
 pub use encryptor::{AsymmetricEncryptor, Encryptor, SymmetricEncryptor};
 pub use error::{Error, Result};
+pub use evaluator::Evaluator;
 pub use evaluator::bfv::BFVEvaluator;
 pub use evaluator::ckks::CKKSEvaluator;
-pub use evaluator::Evaluator;
 pub use ext::tensor::{
-    decryptor::TensorDecryptor, encoder::TensorEncoder, encryptor::TensorEncryptor,
-    evaluator::TensorEvaluator, FromChunk, Tensor, ToChunk,
+    FromChunk, Tensor, ToChunk, decryptor::TensorDecryptor, encoder::TensorEncoder,
+    encryptor::TensorEncryptor, evaluator::TensorEvaluator,
 };
 pub use key_generator::{GaloisKey, KeyGenerator, PublicKey, RelinearizationKey, SecretKey};
 pub use memory::MemoryPool;

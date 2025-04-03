@@ -2,8 +2,8 @@ use std::ptr::null_mut;
 
 use crate::evaluator::base::EvaluatorBase;
 use crate::{
-    bindgen, try_seal, Ciphertext, Context, Evaluator, GaloisKey, Plaintext, RelinearizationKey,
-    Result,
+    Ciphertext, Context, Evaluator, GaloisKey, Plaintext, RelinearizationKey, Result, bindgen,
+    try_seal,
 };
 
 /// An evaluator that contains additional operations specific to the CKKS scheme.
@@ -268,20 +268,20 @@ mod tests {
             .unwrap();
 
         let ctx = Context::new(&params, false, SecurityLevel::TC128).unwrap();
-        let gen = KeyGenerator::new(&ctx).unwrap();
+        let key_gen = KeyGenerator::new(&ctx).unwrap();
 
         let scale = 2.0f64.powi(40);
         let encoder = CKKSEncoder::new(&ctx, scale).unwrap();
 
-        let public_key = gen.create_public_key();
-        let secret_key = gen.secret_key();
+        let public_key = key_gen.create_public_key();
+        let secret_key = key_gen.secret_key();
 
         let encryptor =
             Encryptor::with_public_and_secret_key(&ctx, &public_key, &secret_key).unwrap();
         let decryptor = Decryptor::new(&ctx, &secret_key).unwrap();
         let evaluator = CKKSEvaluator::new(&ctx).unwrap();
 
-        test(decryptor, encoder, encryptor, evaluator, gen);
+        test(decryptor, encoder, encryptor, evaluator, key_gen);
     }
 
     fn make_vec(encoder: &CKKSEncoder) -> Vec<f64> {

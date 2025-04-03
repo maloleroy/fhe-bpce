@@ -4,7 +4,7 @@ use std::ptr::null_mut;
 use std::sync::atomic::{AtomicPtr, Ordering};
 
 use crate::error::Result;
-use crate::{bindgen, try_seal, Context, MemoryPool, Plaintext};
+use crate::{Context, MemoryPool, Plaintext, bindgen, try_seal};
 
 /// To create CKKS plaintexts we need a special encoder: there is no other way
 /// to create them. The BatchEncoder cannot be used with the
