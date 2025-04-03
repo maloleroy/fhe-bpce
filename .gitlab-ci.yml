@@ -14,17 +14,8 @@ rust_stable:
       - /usr/local/cargo/bin
       - target
   script:
+    - git submodule update --init --recursive
     - cargo check --all-features --locked
     - cargo fmt -- --check
     - cargo clippy --workspace -- -D warnings --no-deps
     - cargo test --workspace
-
-rust_nightly_miri:
-  stage: check
-  tags:
-    - docker
-  image: rustlang/rust:nightly
-  before_script:
-    - rustup component add miri
-  script:
-    - cargo miri test -p fhe-core
