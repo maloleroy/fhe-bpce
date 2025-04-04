@@ -17,6 +17,7 @@ pub struct BFVEncryptionParametersBuilder {
 impl BFVEncryptionParametersBuilder {
     /// Creates a new builder.
     #[must_use]
+    #[inline]
     pub const fn new() -> Self {
         Self {
             poly_modulus_degree: None,
@@ -25,6 +26,8 @@ impl BFVEncryptionParametersBuilder {
         }
     }
 
+    #[must_use]
+    #[inline]
     /// Set the degree of the polynomial used in the BFV scheme. Genrally,
     /// larger values provide more security and noise margin at the expense
     /// of performance.
@@ -33,6 +36,8 @@ impl BFVEncryptionParametersBuilder {
         self
     }
 
+    #[must_use]
+    #[inline]
     /// Sets the coefficient modulus parameter. The coefficient modulus consists
     /// of a list of distinct prime numbers, and is represented by a vector of
     /// Modulus objects. The coefficient modulus directly affects the size
@@ -45,6 +50,8 @@ impl BFVEncryptionParametersBuilder {
         self
     }
 
+    #[must_use]
+    #[inline]
     /// Set the plaintext modulus to a fixed size. Not recommended.
     /// Ideally, create a PlainModulus to set up batching and call
     /// set_plain_modulus.
@@ -53,6 +60,8 @@ impl BFVEncryptionParametersBuilder {
         self
     }
 
+    #[must_use]
+    #[inline]
     /// Set the plaintext modulus. This method enables batching, use
     /// `PlainModulus::batching()` to create a suitable modulus chain.
     pub fn set_plain_modulus(mut self, modulus: Modulus) -> Self {
@@ -71,7 +80,7 @@ impl BFVEncryptionParametersBuilder {
 
         match self.coefficient_modulus {
             CoefficientModulusType::NotSet => return Err(Error::CoefficientModulusNotSet),
-            CoefficientModulusType::Modulus(m) => params.set_coefficient_modulus(m)?,
+            CoefficientModulusType::Modulus(m) => params.set_coefficient_modulus(&m)?,
         }
 
         match self.plain_modulus {
@@ -80,7 +89,7 @@ impl BFVEncryptionParametersBuilder {
                 params.set_plain_modulus_u64(p)?;
             }
             PlainModulusType::Modulus(m) => {
-                params.set_plain_modulus(m)?;
+                params.set_plain_modulus(&m)?;
             }
         }
 

@@ -9,43 +9,6 @@ use crate::error::Result;
 use crate::try_seal;
 use crate::{Context, Plaintext};
 
-/// Provides functionality for CRT batching. If the polynomial modulus degree is N, and
-/// the plaintext modulus is a prime number T such that T is congruent to 1 modulo 2N,
-/// then BatchEncoder allows the plaintext elements to be viewed as 2-by-(N/2)
-/// matrices of integers modulo T. Homomorphic operations performed on such encrypted
-/// matrices are applied coefficient (slot) wise, enabling powerful Batched functionality
-/// for computations that are vectorizable. This functionality is often called "batching"
-/// in the homomorphic encryption literature.
-///
-/// # Mathematical Background
-/// Mathematically speaking, if the polynomial modulus is `X^N+1`, `N` is a power of two, and
-/// PlainModulus is a prime number `T` such that `2N` divides `T-1`, then integers modulo `T`
-/// contain a primitive `2N`-th root of unity and the polynomial `X^N+1` splits into `n` distinct
-/// linear factors as `X^N+1 = (X-a_1)*...*(X-a_N) mod T`, where the constants `a_1, ..., a_n`
-/// are all the distinct primitive `2N`-th roots of unity in integers modulo `T`. The Chinese
-/// Remainder Theorem (CRT) states that the plaintext space `Z_T[X]/(X^N+1)` in this case is
-/// isomorphic (as an algebra) to the N-fold direct product of fields `Z_T`. The isomorphism
-/// is easy to compute explicitly in both directions, which is what this class does.
-/// Furthermore, the Galois group of the extension is `(Z/2NZ)* ~= Z/2Z x Z/(N/2)` whose
-/// action on the primitive roots of unity is easy to describe. Since the batching slots
-/// correspond 1-to-1 to the primitive roots of unity, applying Galois automorphisms on the
-/// plaintext act by permuting the slots. By applying generators of the two cyclic
-/// subgroups of the Galois group, we can effectively view the plaintext as a `2`-by-`(N/2)`
-/// matrix, and enable cyclic row rotations, and column rotations (row swaps).
-///
-/// # Floating point numbers
-///
-/// In SEAL the batching functionality is only defined for integer plaintext elements, but
-/// we can interpret the input and output as integer representations of fixed-point numbers
-/// with a certain base. This is a rough model of fixed-point arithmetic. The base can be
-/// configured by the user.
-///     
-///
-/// # Valid Parameters
-/// Whether batching can be used depends on whether the plaintext modulus has been chosen
-/// appropriately. Thus, to construct a BatchEncoder the user must provide an instance
-/// of SEALContext such that its associated EncryptionParameterQualifiers object has the
-/// flags ParametersSet and EnableBatching set to true.
 pub struct BFVEncoder {
     handle: AtomicPtr<c_void>,
 }
@@ -78,7 +41,7 @@ impl BFVEncoder {
         try_seal!(unsafe { bindgen::BatchEncoder_GetSlotCount(self.get_handle(), &mut count) })
             .expect("Internal error in BVTEncoder::get_slot_count().");
 
-        count as usize
+        usize::try_from(count).unwrap()
     }
 
     /// Creates a plaintext from a given matrix. This function "batches" a given matrix
@@ -100,7 +63,7 @@ impl BFVEncoder {
         try_seal!(unsafe {
             bindgen::BatchEncoder_Encode1(
                 self.get_handle(),
-                data.len() as u64,
+                u64::try_from(data.len()).unwrap(),
                 data.as_ptr().cast_mut(),
                 plaintext.get_handle(),
             )
@@ -135,12 +98,12 @@ impl BFVEncoder {
         })?;
 
         assert!(
-            (data.capacity() >= size as usize),
+            (data.capacity() >= usize::try_from(size).unwrap()),
             "Allocation overflow BVTEncoder::decode_unsigned"
         );
 
         unsafe {
-            data.set_len(size as usize);
+            data.set_len(usize::try_from(size).unwrap());
         }
 
         Ok(data)
@@ -165,7 +128,7 @@ impl BFVEncoder {
         try_seal!(unsafe {
             bindgen::BatchEncoder_Encode2(
                 self.get_handle(),
-                data.len() as u64,
+                u64::try_from(data.len()).unwrap(),
                 data.as_ptr().cast_mut(),
                 plaintext.get_handle(),
             )
@@ -200,12 +163,12 @@ impl BFVEncoder {
         })?;
 
         assert!(
-            (data.capacity() >= size as usize),
+            (data.capacity() >= usize::try_from(size).unwrap()),
             "Allocation overflow BVTEncoder::decode_unsigned"
         );
 
         unsafe {
-            data.set_len(size as usize);
+            data.set_len(usize::try_from(size).unwrap());
         }
 
         Ok(data)
@@ -215,6 +178,7 @@ impl BFVEncoder {
     ///
     /// * `values` - The slice of float point numbers to encode.
     pub fn encode_f64(&self, data: &[f64], base: f64) -> Result<Plaintext> {
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
         let unsigned_data: Vec<u64> = data.iter().map(|v| (v * base).round() as u64).collect();
 
         self.encode_u64(&unsigned_data)
@@ -226,6 +190,7 @@ impl BFVEncoder {
     pub fn decode_f64(&self, plaintext: &Plaintext, base: f64) -> Result<Vec<f64>> {
         let unsigned_data: Vec<u64> = self.decode_u64(plaintext)?;
 
+        #[allow(clippy::cast_precision_loss)]
         Ok(unsigned_data.iter().map(|v| *v as f64 / base).collect())
     }
 }
@@ -303,7 +268,7 @@ mod tests {
         let mut data = Vec::with_capacity(8192);
 
         for i in 0..encoder.get_slot_count() {
-            data.push(i as u64);
+            data.push(u64::try_from(i).unwrap());
         }
 
         let plaintext = encoder.encode_u64(&data).unwrap();
@@ -330,7 +295,7 @@ mod tests {
         let mut data = Vec::with_capacity(8192);
 
         for i in 0..encoder.get_slot_count() {
-            data.push(i as i64);
+            data.push(i64::try_from(i).unwrap());
         }
 
         let plaintext = encoder.encode_i64(&data).unwrap();

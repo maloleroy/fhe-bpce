@@ -95,6 +95,8 @@ fn main() {
     let target = std::env::var("TARGET").expect("Failed to get target");
 
     println!("cargo:rerun-if-changed=SEAL");
+    println!("cargo:rerun-if-changed=src");
+    println!("cargo:rerun-if-changed=bingen_wrapper.h");
 
     let profile = if profile == "release" {
         "Release"

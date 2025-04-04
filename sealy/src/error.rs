@@ -1,10 +1,8 @@
-use std::os::raw::c_long;
-
-use static_assertions::const_assert;
-
 use crate::bindgen::{
     COR_E_INVALIDOPERATION, COR_E_IO, E_INVALIDARG, E_OUTOFMEMORY, E_POINTER, E_UNEXPECTED,
 };
+use static_assertions::const_assert;
+use std::os::raw::c_long;
 
 /// A type representing all errors that can occur in SEAL.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
@@ -67,8 +65,8 @@ impl From<c_long> for Error {
             E_INVALIDARG => Self::InvalidArgument,
             E_OUTOFMEMORY => Self::OutOfMemory,
             E_UNEXPECTED => Self::Unexpected,
-            COR_E_IO => Self::InternalError(err),
-            COR_E_INVALIDOPERATION => Self::InternalError(err),
+            COR_E_IO => Self::InternalError(COR_E_IO),
+            COR_E_INVALIDOPERATION => Self::InternalError(COR_E_INVALIDOPERATION),
             _ => Self::Unknown(err),
         }
     }

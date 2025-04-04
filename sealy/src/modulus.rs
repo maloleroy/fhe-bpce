@@ -9,46 +9,31 @@ use crate::try_seal;
 
 use serde::{Deserialize, Serialize};
 
-/// Represents a standard security level according to the HomomorphicEncryption.org
-/// security standard. The value SecLevelType.None signals that no standard
+/// Standard security level according to the HomomorphicEncryption.org.
+///
+/// The value SecLevelType.None signals that no standard
 /// security level should be imposed. The value SecLevelType.TC128 provides
 /// a very high level of security and is the default security level enforced by
-/// Microsoft SEAL when constructing a SEALContext object. Normal users should not
-/// have to specify the security level explicitly anywhere.
+/// Microsoft SEAL when constructing a SEALContext object.
 #[derive(Debug, Copy, Clone, Hash, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(i32)]
 pub enum SecurityLevel {
     /// 128-bit security level according to HomomorphicEncryption.org standard.
     TC128 = 128,
-
     /// 192-bit security level according to HomomorphicEncryption.org standard.
     TC192 = 192,
-
     /// 256-bit security level according to HomomorphicEncryption.org standard.
     TC256 = 256,
 }
 
-impl TryFrom<i32> for SecurityLevel {
-    type Error = Error;
-
-    fn try_from(val: i32) -> Result<Self> {
-        Ok(match val {
-            128 => Self::TC128,
-            192 => Self::TC192,
-            256 => Self::TC256,
-            _ => Err(Error::SerializationError(Box::new(format!(
-                "Invalid security level: {val}"
-            ))))?,
-        })
-    }
-}
-
-impl From<SecurityLevel> for i32 {
-    fn from(val: SecurityLevel) -> Self {
-        match val {
-            SecurityLevel::TC128 => 128,
-            SecurityLevel::TC192 => 192,
-            SecurityLevel::TC256 => 256,
+impl SecurityLevel {
+    #[must_use]
+    #[inline]
+    pub const fn bits(self) -> u16 {
+        match self {
+            Self::TC128 => 128,
+            Self::TC192 => 192,
+            Self::TC256 => 256,
         }
     }
 }
@@ -106,7 +91,9 @@ impl TryFrom<u64> for DegreeType {
     }
 }
 
-/// Represent an integer modulus of up to 61 bits. An instance of the Modulus
+/// Represent an integer modulus of up to 61 bits.
+///
+/// An instance of the Modulus
 /// struct represents a non-negative integer modulus up to 61 bits. In particular,
 /// the encryption parameter PlainModulus, and the primes in CoeffModulus, are
 /// represented by instances of Modulus. The purpose of this class is to
@@ -217,7 +204,7 @@ impl CoefficientModulusFactory {
     /// can be at most 60 bits.
     pub fn build(degree: DegreeType, bit_sizes: &[i32]) -> Result<Vec<Modulus>> {
         let mut bit_sizes = bit_sizes.to_owned();
-        let length = bit_sizes.len() as u64;
+        let length = u64::try_from(bit_sizes.len()).unwrap();
 
         let mut coefficients: Vec<*mut c_void> = Vec::with_capacity(bit_sizes.len());
         let coefficients_ptr = coefficients.as_mut_ptr();
@@ -231,7 +218,7 @@ impl CoefficientModulusFactory {
             )
         })?;
 
-        unsafe { coefficients.set_len(length as usize) };
+        unsafe { coefficients.set_len(usize::try_from(length).unwrap()) };
 
         let coeff_mod = unsafe {
             coefficients
@@ -263,7 +250,7 @@ impl CoefficientModulusFactory {
             )
         })?;
 
-        let mut coefficients: Vec<*mut c_void> = Vec::with_capacity(len as usize);
+        let mut coefficients: Vec<*mut c_void> = Vec::with_capacity(usize::try_from(len).unwrap());
         let coefficients_ptr = coefficients.as_mut_ptr();
 
         try_seal!(unsafe {
@@ -275,7 +262,7 @@ impl CoefficientModulusFactory {
             )
         })?;
 
-        unsafe { coefficients.set_len(len as usize) };
+        unsafe { coefficients.set_len(usize::try_from(len).unwrap()) };
 
         let coeff_mod = unsafe {
             coefficients
@@ -299,7 +286,7 @@ impl CoefficientModulusFactory {
 
         assert!(bits > 0);
 
-        bits as u32
+        u32::try_from(bits).unwrap()
     }
 }
 
@@ -318,7 +305,7 @@ impl PlainModulusFactory {
     /// Creates a prime number Modulus for use as PlainModulus encryption
     /// parameter that supports batching with a given PolyModulusDegree.
     pub fn batching(degree: DegreeType, bit_size: u32) -> Result<Modulus> {
-        let bit_sizes = vec![bit_size as i32];
+        let bit_sizes = vec![i32::try_from(bit_size).unwrap()];
 
         let modulus_chain = CoefficientModulusFactory::build(degree, bit_sizes.as_slice())?;
 
@@ -369,19 +356,5 @@ mod tests {
         assert_eq!(modulus[2].value(), 1073692673);
         assert_eq!(modulus[3].value(), 1125899906629633);
         assert_eq!(modulus[4].value(), 1125899906826241);
-    }
-
-    #[test]
-    fn can_roundtrip_security_level() {
-        for sec in [
-            SecurityLevel::TC128,
-            SecurityLevel::TC192,
-            SecurityLevel::TC256,
-        ] {
-            let sec_2: i32 = sec.into();
-            let sec_2 = SecurityLevel::try_from(sec_2).unwrap();
-
-            assert_eq!(sec, sec_2);
-        }
     }
 }

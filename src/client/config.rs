@@ -44,6 +44,7 @@ impl ClientConfig {
 
     #[must_use]
     #[inline]
+    #[allow(clippy::missing_const_for_fn)] // False positive
     pub fn data(&self) -> &Path {
         &self.data
     }

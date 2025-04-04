@@ -57,7 +57,7 @@ impl CKKSEncryptionParametersBuilder {
         match self.coefficient_modulus {
             CoefficientModulusType::NotSet => return Err(Error::CoefficientModulusNotSet),
             CoefficientModulusType::Modulus(m) => {
-                params.set_coefficient_modulus(m)?;
+                params.set_coefficient_modulus(&m)?;
             }
         }
 

@@ -70,11 +70,13 @@ impl<T> Tensor<T> {
         self.0.is_empty()
     }
 
+    #[allow(clippy::iter_without_into_iter)]
     /// Returns an iterator over the elements of this tensor.
     pub fn iter(&self) -> std::slice::Iter<T> {
         self.0.iter()
     }
 
+    #[allow(clippy::iter_without_into_iter)]
     /// Returns a mutable iterator over the elements of this tensor.
     pub fn iter_mut(&mut self) -> std::slice::IterMut<T> {
         self.0.iter_mut()

@@ -10,39 +10,6 @@ use crate::bindgen;
 use crate::error::{Error, Result};
 use crate::try_seal;
 
-/// Performs sanity checks (validation) and pre-computations for a given set of encryption
-/// parameters. While the EncryptionParameters class is intended to be a light-weight class
-/// to store the encryption parameters, the SEALContext class is a heavy-weight class that
-/// is constructed from a given set of encryption parameters. It validates the parameters
-/// for correctness, evaluates their properties, and performs and stores the results of
-/// several costly pre-computations.
-///
-/// After the user has set at least the PolyModulus, CoeffModulus, and PlainModulus
-/// parameters in a given EncryptionParameters instance, the parameters can be validated
-/// for correctness and functionality by constructing an instance of SEALContext. The
-/// constructor of SEALContext does all of its work automatically, and concludes by
-/// constructing and storing an instance of the EncryptionParameterQualifiers class, with
-/// its flags set according to the properties of the given parameters. If the created
-/// instance of EncryptionParameterQualifiers has the ParametersSet flag set to true, the
-/// given parameter set has been deemed valid and is ready to be used. If the parameters
-/// were for some reason not appropriately set, the ParametersSet flag will be false,
-/// and a new SEALContext will have to be created after the parameters are corrected.
-///
-/// By default, SEALContext creates a chain of SEALContext.ContextData instances. The
-/// first one in the chain corresponds to special encryption parameters that are reserved
-/// to be used by the various key classes (PrivateKey, PublicKey, etc.). These are the
-/// exact same encryption parameters that are created by the user and passed to the
-/// constructor of SEALContext. The properties KeyContextData and KeyParmsId return the
-/// ContextData and the ParmsId corresponding to these special parameters. The rest of the
-/// ContextData instances in the chain correspond to encryption parameters that are derived
-/// from the first encryption parameters by always removing the last one of the moduli in
-/// the CoeffModulus, until the resulting parameters are no longer valid, e.g., there are
-/// no more primes left. These derived encryption parameters are used by ciphertexts and
-/// plaintexts and their respective ContextData can be accessed through the
-/// GetContextData(ParmsId) function. The properties FirstContextData and LastContextData
-/// return the ContextData corresponding to the first and the last set of parameters in
-/// the "data" part of the chain, i.e., the second and the last element in the full chain.
-/// The chain is a doubly linked list and is referred to as the modulus switching chain.
 pub struct Context {
     handle: AtomicPtr<c_void>,
 }
@@ -53,7 +20,8 @@ impl Context {
     ///
     /// * `params` - The encryption parameters.
     /// * `expand_mod_chain` - Determines whether the modulus switching chain should be created.
-    /// * `security_level` - Determines whether a specific security level should be enforced according to HomomorphicEncryption.org security standard.
+    /// * `security_level` - Determines whether a specific security level should be enforced
+    ///   according to HomomorphicEncryption.org security standard.
     pub fn new(
         params: &EncryptionParameters,
         expand_mod_chain: bool,
@@ -94,7 +62,7 @@ impl Context {
     /// Returns the key ContextData in the modulus switching chain.
     pub fn get_key_parms_id(&self) -> Result<Vec<u64>> {
         let mut parms_id: Vec<u64> =
-            Vec::with_capacity(EncryptionParameters::block_size() as usize);
+            Vec::with_capacity(usize::from(EncryptionParameters::block_size()));
         try_seal!(unsafe {
             let parms_id_ptr = parms_id.as_mut_ptr();
             bindgen::SEALContext_KeyParmsId(self.get_handle(), parms_id_ptr)
@@ -106,24 +74,24 @@ impl Context {
     /// Returns the last ContextData in the modulus switching chain.
     pub fn get_last_parms_id(&self) -> Result<Vec<u64>> {
         let mut parms_id: Vec<u64> =
-            Vec::with_capacity(EncryptionParameters::block_size() as usize);
+            Vec::with_capacity(usize::from(EncryptionParameters::block_size()));
         try_seal!(unsafe {
             let parms_id_ptr = parms_id.as_mut_ptr();
             bindgen::SEALContext_LastParmsId(self.get_handle(), parms_id_ptr)
         })?;
-        unsafe { parms_id.set_len(EncryptionParameters::block_size() as usize) };
+        unsafe { parms_id.set_len(usize::from(EncryptionParameters::block_size())) };
         Ok(parms_id)
     }
 
     /// Returns the first ContextData in the modulus switching chain.
     pub fn get_first_parms_id(&self) -> Result<Vec<u64>> {
         let mut parms_id: Vec<u64> =
-            Vec::with_capacity(EncryptionParameters::block_size() as usize);
+            Vec::with_capacity(usize::from(EncryptionParameters::block_size()));
         try_seal!(unsafe {
             let parms_id_ptr = parms_id.as_mut_ptr();
             bindgen::SEALContext_FirstParmsId(self.get_handle(), parms_id_ptr)
         })?;
-        unsafe { parms_id.set_len(EncryptionParameters::block_size() as usize) };
+        unsafe { parms_id.set_len(usize::from(EncryptionParameters::block_size())) };
         Ok(parms_id)
     }
 

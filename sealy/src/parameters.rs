@@ -20,8 +20,8 @@ mod ckks;
 pub use ckks::CKKSEncryptionParametersBuilder;
 
 /// The FHE scheme supported by SEAL.
-#[repr(u8)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[repr(u8)]
 pub enum SchemeType {
     /// None. Don't use this.
     None = 0x0,
@@ -53,32 +53,8 @@ impl SchemeType {
 }
 
 /// An immutable collection of parameters that defines an encryption scheme.
-/// Use either the CKKSBuilder or BFVBuilder to create one of these. Once created,
+/// Use either the `CKKSBuilder` or `BFVBuilder` to create one of these. Once created,
 /// these objects are effectively immutable.
-///
-/// Picking appropriate encryption parameters is essential to enable a particular
-/// application while balancing performance and security. Some encryption settings
-/// will not allow some inputs (e.g. attempting to encrypt a polynomial with more
-/// coefficients than PolyModulus or larger coefficients than PlainModulus) or
-/// support the desired computations (with noise growing too fast due to too large
-/// PlainModulus and too small CoeffModulus).
-///
-/// The EncryptionParameters class maintains at all times a 256-bit hash of the
-/// currently set encryption parameters called the ParmsId. This hash acts as
-/// a unique identifier of the encryption parameters and is used by all further
-/// objects created for these encryption parameters. The ParmsId is not intended
-/// to be directly modified by the user but is used internally for pre-computation
-/// data lookup and input validity checks. In modulus switching the user can use
-/// the ParmsId to keep track of the chain of encryption parameters. The ParmsId is
-/// not exposed in the public API of EncryptionParameters, but can be accessed
-/// through the SEALContext.ContextData" class once the SEALContext
-/// has been created.
-///
-/// Choosing inappropriate encryption parameters may lead to an encryption scheme
-/// that is not secure, does not perform well, and/or does not support the input
-/// and computation of the desired application. We highly recommend consulting an
-/// expert in RLWE-based encryption when selecting parameters, as this is where
-/// inexperienced users seem to most often make critical mistakes.
 #[derive(Debug)]
 pub struct EncryptionParameters {
     pub(crate) handle: *mut c_void,
@@ -177,7 +153,7 @@ impl EncryptionParameters {
             .expect("Internal error");
         };
 
-        let mut borrowed_modulus = Vec::with_capacity(len as usize);
+        let mut borrowed_modulus = Vec::with_capacity(usize::try_from(len).unwrap());
         let borrowed_modulus_ptr = borrowed_modulus.as_mut_ptr();
 
         unsafe {
@@ -188,7 +164,7 @@ impl EncryptionParameters {
             ))
             .expect("Internal error");
 
-            borrowed_modulus.set_len(len as usize);
+            borrowed_modulus.set_len(usize::try_from(len).unwrap());
         };
 
         borrowed_modulus
@@ -218,7 +194,7 @@ impl EncryptionParameters {
     }
 
     /// Sets the polynomial modulus degree.
-    pub fn set_coefficient_modulus(&mut self, modulus: Vec<Modulus>) -> Result<()> {
+    pub fn set_coefficient_modulus(&mut self, modulus: &[Modulus]) -> Result<()> {
         unsafe {
             let modulus_ref = modulus
                 .iter()
@@ -241,7 +217,7 @@ impl EncryptionParameters {
     }
 
     /// Sets the plain modulus as a [`Modulus`] instance.
-    pub fn set_plain_modulus(&mut self, modulus: Modulus) -> Result<()> {
+    pub fn set_plain_modulus(&mut self, modulus: &Modulus) -> Result<()> {
         convert_seal_error(unsafe {
             bindgen::EncParams_SetPlainModulus1(self.handle, modulus.get_handle())
         })
@@ -288,7 +264,7 @@ impl ToBytes for EncryptionParameters {
             bindgen::EncParams_SaveSize(self.handle, CompressionType::ZStd as u8, &mut num_bytes)
         })?;
 
-        let mut data: Vec<u8> = Vec::with_capacity(num_bytes as usize);
+        let mut data: Vec<u8> = Vec::with_capacity(usize::try_from(num_bytes).unwrap());
         let mut bytes_written: i64 = 0;
 
         convert_seal_error(unsafe {
@@ -297,13 +273,13 @@ impl ToBytes for EncryptionParameters {
             bindgen::EncParams_Save(
                 self.handle,
                 data_ptr,
-                num_bytes as u64,
+                u64::try_from(num_bytes).unwrap(),
                 CompressionType::ZStd as u8,
                 &mut bytes_written,
             )
         })?;
 
-        unsafe { data.set_len(bytes_written as usize) };
+        unsafe { data.set_len(usize::try_from(bytes_written).unwrap()) };
 
         Ok(data)
     }
@@ -319,7 +295,7 @@ impl FromBytes for EncryptionParameters {
             bindgen::EncParams_Load(
                 key.handle,
                 bytes.as_ptr().cast_mut(),
-                bytes.len() as u64,
+                u64::try_from(bytes.len()).unwrap(),
                 &mut bytes_read,
             )
         })?;

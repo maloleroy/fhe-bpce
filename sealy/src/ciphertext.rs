@@ -6,27 +6,7 @@ use std::sync::atomic::{AtomicPtr, Ordering};
 use crate::{Context, FromBytes, ToBytes, bindgen, serialization::CompressionType};
 use crate::{error::Result, try_seal};
 
-/// Class to store a ciphertext element. The data for a ciphertext consists
-/// of two or more polynomials, which are in Microsoft SEAL stored in a CRT
-/// form with respect to the factors of the coefficient modulus. This data
-/// itself is not meant to be modified directly by the user, but is instead
-/// operated on by functions in the Evaluator class. The size of the backing
-/// array of a ciphertext depends on the encryption parameters and the size
-/// of the ciphertext (at least 2). If the PolyModulusDegree encryption
-/// parameter is N, and the number of primes in the CoeffModulus encryption
-/// parameter is K, then the ciphertext backing array requires precisely
-/// 8*N*K*size bytes of memory. A ciphertext also carries with it the
-/// parmsId of its associated encryption parameters, which is used to check
-/// the validity of the ciphertext for homomorphic operations and decryption.
-///
-/// # Memory Management
-/// The size of a ciphertext refers to the number of polynomials it contains,
-/// whereas its capacity refers to the number of polynomials that fit in the
-/// current memory allocation. In high-performance applications unnecessary
-/// re-allocations should be avoided by reserving enough memory for the
-/// ciphertext to begin with either by providing the desired capacity to the
-/// constructor as an extra argument, or by calling the reserve function at
-/// any time.
+/// Class to store a ciphertext element.
 pub struct Ciphertext {
     handle: AtomicPtr<c_void>,
 }
@@ -74,7 +54,11 @@ impl Ciphertext {
         let mut value: u64 = 0;
 
         try_seal!(unsafe {
-            bindgen::Ciphertext_GetDataAt1(self.get_handle(), index as u64, &mut value)
+            bindgen::Ciphertext_GetDataAt1(
+                self.get_handle(),
+                u64::try_from(index).unwrap(),
+                &mut value,
+            )
         })?;
 
         Ok(value)
@@ -85,20 +69,20 @@ impl Ciphertext {
     /// number system (RNS) format.
     pub fn get_coefficient(&self, poly_index: usize, coeff_index: usize) -> Result<Vec<u64>> {
         let size = self.coeff_modulus_size();
-        let mut data: Vec<u64> = Vec::with_capacity(size as usize);
+        let mut data: Vec<u64> = Vec::with_capacity(usize::try_from(size).unwrap());
 
         try_seal!(unsafe {
             let data_ptr = data.as_mut_ptr();
 
             bindgen::Ciphertext_GetDataAt2(
                 self.get_handle(),
-                poly_index as u64,
-                coeff_index as u64,
+                u64::try_from(poly_index).unwrap(),
+                u64::try_from(coeff_index).unwrap(),
                 data_ptr,
             )
         })?;
 
-        unsafe { data.set_len(size as usize) };
+        unsafe { data.set_len(usize::try_from(size).unwrap()) };
 
         Ok(data.clone())
     }
@@ -159,7 +143,7 @@ impl ToBytes for Ciphertext {
             )
         })?;
 
-        let mut data: Vec<u8> = Vec::with_capacity(num_bytes as usize);
+        let mut data: Vec<u8> = Vec::with_capacity(usize::try_from(num_bytes).unwrap());
         let mut bytes_written: i64 = 0;
 
         try_seal!(unsafe {
@@ -168,13 +152,13 @@ impl ToBytes for Ciphertext {
             bindgen::Ciphertext_Save(
                 self.get_handle(),
                 data_ptr,
-                num_bytes as u64,
+                u64::try_from(num_bytes).unwrap(),
                 CompressionType::ZStd as u8,
                 &mut bytes_written,
             )
         })?;
 
-        unsafe { data.set_len(bytes_written as usize) };
+        unsafe { data.set_len(usize::try_from(bytes_written).unwrap()) };
 
         Ok(data)
     }
@@ -184,14 +168,14 @@ impl FromBytes for Ciphertext {
     type State = Context;
     fn from_bytes(context: &Context, bytes: &[u8]) -> Result<Self> {
         let ciphertext = Self::new()?;
-        let mut bytes_read = 0i64;
+        let mut bytes_read = 0_i64;
 
         try_seal!(unsafe {
             bindgen::Ciphertext_Load(
                 ciphertext.get_handle(),
                 context.get_handle(),
                 bytes.as_ptr().cast_mut(),
-                bytes.len() as u64,
+                u64::try_from(bytes.len()).unwrap(),
                 &mut bytes_read,
             )
         })?;

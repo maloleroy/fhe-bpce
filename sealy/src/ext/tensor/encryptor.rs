@@ -71,26 +71,6 @@ impl<T: component_marker::Asym> TensorEncryptor<T> {
             .map(|plaintext| self.encryptor.encrypt(plaintext))
             .collect()
     }
-
-    // /// Encrypts a plaintext with the public key and returns the ciphertext as a
-    // /// serializable object. Also returns the u and e values used in encrypting
-    // /// the value.
-    // ///
-    // /// The encryption parameters for the resulting ciphertext correspond to:
-    // /// 1) in BFV, the highest (data) level in the modulus switching chain,
-    // /// 2) in CKKS, the encryption parameters of the plaintext.
-    // ///    Dynamic memory allocations in the process are allocated from the memory
-    // ///    pool pointed to by the given MemoryPoolHandle.
-    // ///
-    // /// * `plaintext_tensor` - The plaintext to encrypt.
-    // pub fn encrypt_return_components(
-    // 	&self,
-    // 	plaintext_tensor: &Tensor<Plaintext>,
-    // ) -> Result<Tensor<(Ciphertext, AsymmetricComponents)>> {
-    // 	plaintext_tensor
-    // 		.map(|plaintext| self.encryptor.encrypt_return_components(plaintext))
-    // 		.collect()
-    // }
 }
 
 impl<T: component_marker::Sym> TensorEncryptor<T> {
@@ -112,26 +92,4 @@ impl<T: component_marker::Sym> TensorEncryptor<T> {
             .map(|plaintext| self.encryptor.encrypt_symmetric(plaintext))
             .collect()
     }
-
-    // /// Encrypts a plaintext with the secret key and returns the ciphertext as a
-    // /// serializable object. Also returns the e (noise) and r (remainder) values used in
-    // /// encrypting the value.
-    // ///
-    // /// The encryption parameters for the resulting ciphertext correspond to:
-    // /// 1) in BFV, the highest (data) level in the modulus switching chain,
-    // /// 2) in CKKS, the encryption parameters of the plaintext.
-    // ///    pool pointed to by the given MemoryPoolHandle.
-    // ///
-    // /// * `plaintext_tensor` - The plaintext to encrypt.
-    // pub fn encrypt_symmetric_return_components(
-    // 	&self,
-    // 	plaintext_tensor: &Tensor<Plaintext>,
-    // ) -> Result<Tensor<(Ciphertext, SymmetricComponents)>> {
-    // 	plaintext_tensor
-    // 		.map(|plaintext| {
-    // 			self.encryptor
-    // 				.encrypt_symmetric_return_components(plaintext)
-    // 		})
-    // 		.collect()
-    // }
 }

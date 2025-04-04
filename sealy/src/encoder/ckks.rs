@@ -6,12 +6,6 @@ use std::sync::atomic::{AtomicPtr, Ordering};
 use crate::error::Result;
 use crate::{Context, MemoryPool, Plaintext, bindgen, try_seal};
 
-/// To create CKKS plaintexts we need a special encoder: there is no other way
-/// to create them. The BatchEncoder cannot be used with the
-/// CKKS scheme. The CKKSEncoder encodes vectors of real or complex numbers into
-/// Plaintext objects, which can subsequently be encrypted. At a high level this
-/// looks a lot like what BatchEncoder does for the BFV scheme, but the theory
-/// behind it is completely different.
 pub struct CKKSEncoder {
     handle: AtomicPtr<c_void>,
     parms_id: Vec<u64>,
@@ -51,7 +45,7 @@ impl CKKSEncoder {
         try_seal!(unsafe { bindgen::CKKSEncoder_SlotCount(self.get_handle(), &mut count) })
             .expect("Internal error in BVTEncoder::get_slot_count().");
 
-        count as usize
+        usize::try_from(count).unwrap()
     }
 
     /// Creates a plaintext from a given matrix of f64 data.
@@ -83,7 +77,7 @@ impl CKKSEncoder {
             let parms_id_ptr = parms_id.as_mut_ptr();
             bindgen::CKKSEncoder_Encode1(
                 self.get_handle(),
-                data.len() as u64,
+                u64::try_from(data.len()).unwrap(),
                 data.as_ptr().cast_mut(),
                 parms_id_ptr,
                 self.scale,
@@ -117,12 +111,12 @@ impl CKKSEncoder {
         })?;
 
         assert!(
-            (data.capacity() >= size as usize),
+            (data.capacity() >= usize::try_from(size).unwrap()),
             "Allocation overflow BVTEncoder::decode_unsigned"
         );
 
         unsafe {
-            data.set_len(size as usize);
+            data.set_len(usize::try_from(size).unwrap());
         }
 
         Ok(data)

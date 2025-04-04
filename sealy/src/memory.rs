@@ -8,15 +8,6 @@ use std::{
 use crate::bindgen;
 
 /// Memory pool handle for SEAL.
-///
-/// The purpose of a custom memory management is to save allocation/deallocation overhead.
-/// SEAL has a significant runtime overhead caused by memory allocation/deallocation due to
-/// the large amount of memory space required by SEAL. The custom memory pool is designed to
-/// reduce this overhead by providing a way to allocate memory in advance and reuse it.
-///
-/// In the FFI, the memory pool is read-only and cannot be modified. The memory pool is
-/// initialized by the library and is used by the library to allocate memory. The methods
-/// provided by this crate are just to check the pool's health and status.
 #[derive(Debug)]
 pub struct MemoryPool {
     /// A pointer to the underlying SEAL memory pool.

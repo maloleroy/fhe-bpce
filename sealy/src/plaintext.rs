@@ -10,28 +10,7 @@ use crate::{MemoryPool, error::Result, try_seal};
 use serde::ser::Error;
 use serde::{Serialize, Serializer};
 
-/// Class to store a plaintext encoded items. The data encoded for the
-/// plaintext is a polynomial with coefficients modulo the plaintext modulus.
-/// The degree of the plaintext polynomial must be one less than the degree of the
-/// polynomial modulus. The backing array always allocates one 64-bit word
-/// per each coefficient of the polynomial.
-///
-/// # Memory Management
-/// The coefficient count of a plaintext refers to the number of word-size
-/// coefficients in the plaintext, whereas its capacity refers to the number
-/// of word-size coefficients that fit in the current memory allocation. In
-/// high-performance applications unnecessary re-allocations should be avoided
-/// by reserving enough memory for the plaintext to begin with either by
-/// providing the desired capacity to the constructor as an extra argument, or
-/// by calling the reserve function at any time.
-///
-/// When the scheme is SchemeType.BFV each coefficient of a plaintext is
-/// a 64-bit word, but when the scheme is SchemeType.CKKS the plaintext is
-/// by default stored in an NTT transformed form with respect to each of the
-/// primes in the coefficient modulus. Thus, the size of the allocation that
-/// is needed is the size of the coefficient modulus (number of primes) times
-/// the degree of the polynomial modulus. In addition, a valid CKKS plaintext
-/// will also store the ParmsId for the corresponding encryption parameters.
+/// Class to store a plaintext encoded items.
 pub struct Plaintext {
     handle: AtomicPtr<c_void>,
 }
@@ -86,7 +65,7 @@ impl Plaintext {
     /// 8. Other than the +, no other terms should have whitespace
     ///
     /// * `hex_str`: The formatted polynomial string specifying the plaintext
-    ///              polynomial.
+    ///   polynomial.
     ///
     /// # Panics
     /// Panics if `hex_str` contains a null character anywhere but the end of the string.
@@ -121,7 +100,7 @@ impl Plaintext {
         );
 
         try_seal!(unsafe {
-            bindgen::Plaintext_CoeffAt(self.get_handle(), index as u64, &mut coeff)
+            bindgen::Plaintext_CoeffAt(self.get_handle(), u64::try_from(index).unwrap(), &mut coeff)
         })
         .expect("Fatal error in Plaintext::index().");
 
@@ -133,6 +112,7 @@ impl Plaintext {
     /// coefficient.
     ///
     /// # Panics
+    ///
     /// Panics if index is greater than len().
     pub fn set_coefficient(&mut self, index: usize, value: u64) {
         assert!(
@@ -142,14 +122,18 @@ impl Plaintext {
             self.len()
         );
 
-        try_seal!(unsafe { bindgen::Plaintext_SetCoeffAt(self.get_handle(), index as u64, value) })
-            .expect("Fatal error in Plaintext::index().");
+        try_seal!(unsafe {
+            bindgen::Plaintext_SetCoeffAt(self.get_handle(), u64::try_from(index).unwrap(), value)
+        })
+        .expect("Fatal error in Plaintext::index().");
     }
 
     /// Sets the number of coefficients this plaintext can hold.
     pub fn resize(&mut self, count: usize) {
-        try_seal!(unsafe { bindgen::Plaintext_Resize(self.get_handle(), count as u64) })
-            .expect("Fatal error in Plaintext::resize().");
+        try_seal!(unsafe {
+            bindgen::Plaintext_Resize(self.get_handle(), u64::try_from(count).unwrap())
+        })
+        .expect("Fatal error in Plaintext::resize().");
     }
 
     /// Returns the number of coefficients this plaintext can hold.
@@ -159,7 +143,7 @@ impl Plaintext {
         try_seal!(unsafe { bindgen::Plaintext_CoeffCount(self.get_handle(), &mut size) })
             .expect("Fatal error in Plaintext::index().");
 
-        size as usize
+        usize::try_from(size).unwrap()
     }
 
     /// Returns `true` if the plaintext is empty.
@@ -269,7 +253,7 @@ impl FromBytes for Plaintext {
                 plaintext.get_handle(),
                 context.get_handle(),
                 data.as_ptr().cast_mut(),
-                data.len() as u64,
+                u64::try_from(data.len()).unwrap(),
                 &mut bytes_read,
             )
         })?;
@@ -290,7 +274,7 @@ impl ToBytes for Plaintext {
             )
         })?;
 
-        let mut data: Vec<u8> = Vec::with_capacity(num_bytes as usize);
+        let mut data: Vec<u8> = Vec::with_capacity(usize::try_from(num_bytes).unwrap());
         let mut bytes_written: i64 = 0;
 
         try_seal!(unsafe {
@@ -299,13 +283,13 @@ impl ToBytes for Plaintext {
             bindgen::Plaintext_Save(
                 self.get_handle(),
                 data_ptr,
-                num_bytes as u64,
+                u64::try_from(num_bytes).unwrap(),
                 CompressionType::ZStd as u8,
                 &mut bytes_written,
             )
         })?;
 
-        unsafe { data.set_len(bytes_written as usize) };
+        unsafe { data.set_len(usize::try_from(bytes_written).unwrap()) };
 
         Ok(data)
     }

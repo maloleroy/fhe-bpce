@@ -86,7 +86,6 @@ mod memory;
 mod modulus;
 mod parameters;
 mod plaintext;
-// mod poly_array;
 mod serialization;
 
 pub use ciphertext::Ciphertext;
@@ -111,5 +110,4 @@ pub use modulus::{
 };
 pub use parameters::*;
 pub use plaintext::Plaintext;
-// pub use poly_array::PolynomialArray;
 pub use serialization::{FromBytes, ToBytes};

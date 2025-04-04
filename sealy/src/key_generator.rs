@@ -12,8 +12,10 @@ use crate::{Context, FromBytes, ToBytes};
 use serde::ser::Error;
 use serde::{Serialize, Serializer};
 
-/// Generates matching secret key and public key. An existing KeyGenerator can
-/// also at any time be used to generate relinearization keys and Galois keys.
+/// Generates matching secret key and public key.
+///
+/// An existing KeyGenerator can also at any time be used to
+/// generate relinearization keys and Galois keys.
 /// Constructing a KeyGenerator requires only a SEALContext.
 #[derive(Debug)]
 pub struct KeyGenerator {
@@ -192,7 +194,7 @@ impl ToBytes for PublicKey {
             bindgen::PublicKey_SaveSize(self.handle, CompressionType::ZStd as u8, &mut num_bytes)
         })?;
 
-        let mut data: Vec<u8> = Vec::with_capacity(num_bytes as usize);
+        let mut data: Vec<u8> = Vec::with_capacity(usize::try_from(num_bytes).unwrap());
         let mut bytes_written: i64 = 0;
 
         try_seal!(unsafe {
@@ -201,13 +203,13 @@ impl ToBytes for PublicKey {
             bindgen::PublicKey_Save(
                 self.handle,
                 data_ptr,
-                num_bytes as u64,
+                u64::try_from(num_bytes).unwrap(),
                 CompressionType::ZStd as u8,
                 &mut bytes_written,
             )
         })?;
 
-        unsafe { data.set_len(bytes_written as usize) };
+        unsafe { data.set_len(usize::try_from(bytes_written).unwrap()) };
 
         Ok(data)
     }
@@ -230,7 +232,7 @@ impl FromBytes for PublicKey {
                 key.handle,
                 context.get_handle(),
                 bytes.as_ptr().cast_mut(),
-                bytes.len() as u64,
+                u64::try_from(bytes.len()).unwrap(),
                 &mut bytes_read,
             )
         })?;
@@ -331,7 +333,7 @@ impl ToBytes for SecretKey {
             bindgen::SecretKey_SaveSize(self.handle, CompressionType::ZStd as u8, &mut num_bytes)
         })?;
 
-        let mut data: Vec<u8> = Vec::with_capacity(num_bytes as usize);
+        let mut data: Vec<u8> = Vec::with_capacity(usize::try_from(num_bytes).unwrap());
         let mut bytes_written: i64 = 0;
 
         try_seal!(unsafe {
@@ -340,13 +342,13 @@ impl ToBytes for SecretKey {
             bindgen::SecretKey_Save(
                 self.handle,
                 data_ptr,
-                num_bytes as u64,
+                u64::try_from(num_bytes).unwrap(),
                 CompressionType::ZStd as u8,
                 &mut bytes_written,
             )
         })?;
 
-        unsafe { data.set_len(bytes_written as usize) };
+        unsafe { data.set_len(usize::try_from(bytes_written).unwrap()) };
 
         Ok(data)
     }
@@ -363,7 +365,7 @@ impl FromBytes for SecretKey {
                 key.handle,
                 context.get_handle(),
                 bytes.as_ptr().cast_mut(),
-                bytes.len() as u64,
+                u64::try_from(bytes.len()).unwrap(),
                 &mut bytes_read,
             )
         })?;
@@ -419,7 +421,6 @@ impl AsRef<Self> for SecretKey {
 
 /// Class to store relinearization keys.
 ///
-/// # Relinearization
 /// Freshly encrypted ciphertexts have a size of 2, and multiplying ciphertexts
 /// of sizes K and L results in a ciphertext of size K+L-1. Unfortunately, this
 /// growth in size slows down further multiplications and increases noise growth.
@@ -431,7 +432,6 @@ impl AsRef<Self> for SecretKey {
 /// evaluator. Note that plain multiplication is fundamentally different from
 /// normal multiplication and does not result in ciphertext size growth.
 ///
-/// # When to Relinearize
 /// Typically, one should always relinearize after each multiplications. However,
 /// in some cases relinearization should be postponed as late as possible due to
 /// its computational cost.For example, suppose the computation involves several
@@ -472,7 +472,7 @@ impl RelinearizationKey {
             bindgen::KSwitchKeys_SaveSize(self.handle, CompressionType::ZStd as u8, &mut num_bytes)
         })?;
 
-        let mut data: Vec<u8> = Vec::with_capacity(num_bytes as usize);
+        let mut data: Vec<u8> = Vec::with_capacity(usize::try_from(num_bytes).unwrap());
         let mut bytes_written: i64 = 0;
 
         try_seal!(unsafe {
@@ -481,13 +481,13 @@ impl RelinearizationKey {
             bindgen::KSwitchKeys_Save(
                 self.handle,
                 data_ptr,
-                num_bytes as u64,
+                u64::try_from(num_bytes).unwrap(),
                 CompressionType::ZStd as u8,
                 &mut bytes_written,
             )
         })?;
 
-        unsafe { data.set_len(bytes_written as usize) };
+        unsafe { data.set_len(usize::try_from(bytes_written).unwrap()) };
 
         Ok(data)
     }
@@ -507,7 +507,7 @@ impl ToBytes for RelinearizationKey {
             bindgen::KSwitchKeys_SaveSize(self.handle, CompressionType::ZStd as u8, &mut num_bytes)
         })?;
 
-        let mut data: Vec<u8> = Vec::with_capacity(num_bytes as usize);
+        let mut data: Vec<u8> = Vec::with_capacity(usize::try_from(num_bytes).unwrap());
         let mut bytes_written: i64 = 0;
 
         try_seal!(unsafe {
@@ -516,13 +516,13 @@ impl ToBytes for RelinearizationKey {
             bindgen::KSwitchKeys_Save(
                 self.handle,
                 data_ptr,
-                num_bytes as u64,
+                u64::try_from(num_bytes).unwrap(),
                 CompressionType::ZStd as u8,
                 &mut bytes_written,
             )
         })?;
 
-        unsafe { data.set_len(bytes_written as usize) };
+        unsafe { data.set_len(usize::try_from(bytes_written).unwrap()) };
 
         Ok(data)
     }
@@ -539,7 +539,7 @@ impl FromBytes for RelinearizationKey {
                 keys.handle,
                 context.get_handle(),
                 bytes.as_ptr().cast_mut(),
-                bytes.len() as u64,
+                u64::try_from(bytes.len()).unwrap(),
                 &mut write_bytes,
             )
         })?;
@@ -637,7 +637,7 @@ impl ToBytes for GaloisKey {
             bindgen::KSwitchKeys_SaveSize(self.handle, CompressionType::ZStd as u8, &mut num_bytes)
         })?;
 
-        let mut data: Vec<u8> = Vec::with_capacity(num_bytes as usize);
+        let mut data: Vec<u8> = Vec::with_capacity(usize::try_from(num_bytes).unwrap());
         let mut bytes_written: i64 = 0;
 
         try_seal!(unsafe {
@@ -646,13 +646,13 @@ impl ToBytes for GaloisKey {
             bindgen::KSwitchKeys_Save(
                 self.handle,
                 data_ptr,
-                num_bytes as u64,
+                u64::try_from(num_bytes).unwrap(),
                 CompressionType::ZStd as u8,
                 &mut bytes_written,
             )
         })?;
 
-        unsafe { data.set_len(bytes_written as usize) };
+        unsafe { data.set_len(usize::try_from(bytes_written).unwrap()) };
 
         Ok(data)
     }
@@ -669,7 +669,7 @@ impl FromBytes for GaloisKey {
                 keys.handle,
                 context.get_handle(),
                 bytes.as_ptr().cast_mut(),
-                bytes.len() as u64,
+                u64::try_from(bytes.len()).unwrap(),
                 &mut write_bytes,
             )
         })?;
