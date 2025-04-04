@@ -7,7 +7,7 @@ edition = "2024"
 bincode = { workspace = true }
 fhe-core = { workspace = true }
 fhe-operations = { workspace = true }
-sealy = { path = "../sealy" }
+sealy = { path = "sealy" }
 
 [[bench]]
 name = "seal-lib"
