@@ -356,12 +356,11 @@ pub struct SealBgvCS {
     evaluator: sealy::BGVEvaluator,
     encryptor: sealy::Encryptor<sealy::Asym>,
     decryptor: sealy::Decryptor,
-    relin_key: Option<sealy::RelinearizationKey>,
 }
 
 impl SealBgvCS {
     pub fn new(context: &context::SealBGVContext) -> Self {
-        let (skey, pkey, relin_key) = context.generate_keys();
+        let (skey, pkey, _) = context.generate_keys();
 
         let encoder = context.encoder();
         let evaluator = context.evaluator();
@@ -373,7 +372,6 @@ impl SealBgvCS {
             evaluator,
             encryptor,
             decryptor,
-            relin_key,
         }
     }
 }
@@ -406,15 +404,6 @@ impl CryptoSystem for SealBgvCS {
                 let result = impls::homom_mul_plain(&self.evaluator, &lhs.0, &plain_encoded);
                 Ciphertext(result)
             }
-            BgvHOperation1::Exp(exp) => {
-                let result = impls::homom_exp(
-                    &self.evaluator,
-                    &lhs.0,
-                    exp,
-                    self.relin_key.as_ref().unwrap(),
-                );
-                Ciphertext(result)
-            }
         }
     }
 
@@ -445,14 +434,6 @@ impl CryptoSystem for SealBgvCS {
             BgvHOperation1::MulPlain(plain) => {
                 let plain_encoded = self.encoder.encode_u64(&[plain]).unwrap();
                 impls::homom_mul_plain_inplace(&self.evaluator, &mut lhs.0, &plain_encoded);
-            }
-            BgvHOperation1::Exp(exp) => {
-                *lhs = Ciphertext(impls::homom_exp(
-                    &self.evaluator,
-                    &lhs.0,
-                    exp,
-                    self.relin_key.as_ref().unwrap(),
-                ));
             }
         }
     }
@@ -491,7 +472,6 @@ impl SelectableCS for SealBgvCS {
 pub enum BgvHOperation1 {
     AddPlain(u64),
     MulPlain(u64),
-    Exp(u64),
 }
 impl Operation for BgvHOperation1 {}
 impl Arity1Operation for BgvHOperation1 {}
@@ -618,11 +598,11 @@ mod tests {
 
     #[test]
     fn test_seal_bfv_cs_exp() {
-        let context = SealBGVContext::new(DegreeType::D4096, SecurityLevel::TC128, 16);
-        let cs = SealBgvCS::new(&context);
+        let context = SealBFVContext::new(DegreeType::D4096, SecurityLevel::TC128, 16);
+        let cs = SealBfvCS::new(&context);
 
         let a = cs.cipher(&4);
-        let e = cs.operate1(BgvHOperation1::Exp(2), &a);
+        let e = cs.operate1(BfvHOperation1::Exp(2), &a);
 
         let d = cs.decipher(&e);
 

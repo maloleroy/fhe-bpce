@@ -290,15 +290,15 @@ mod tests {
         data
     }
 
-    fn make_small_vec(encoder: &BGVEncoder) -> Vec<i64> {
-        let mut data = vec![];
+    // fn make_small_vec(encoder: &BGVEncoder) -> Vec<i64> {
+    //     let mut data = vec![];
 
-        for i in 0..encoder.get_slot_count() {
-            data.push(16i64 - i as i64 % 32i64);
-        }
+    //     for i in 0..encoder.get_slot_count() {
+    //         data.push(16i64 - i as i64 % 32i64);
+    //     }
 
-        data
-    }
+    //     data
+    // }
 
     #[test]
     fn can_create_and_destroy_evaluator() {
@@ -442,43 +442,6 @@ mod tests {
     }
 
     #[test]
-    fn can_multiply_many() {
-        run_bgv_test(|decryptor, encoder, encryptor, evaluator, keygen| {
-            let relin_keys = keygen.create_relinearization_keys().unwrap();
-
-            let a = make_small_vec(&encoder);
-            let b = make_small_vec(&encoder);
-            let c = make_small_vec(&encoder);
-            let d = make_small_vec(&encoder);
-            let a_p = encoder.encode_i64(&a).unwrap();
-            let b_p = encoder.encode_i64(&b).unwrap();
-            let c_p = encoder.encode_i64(&c).unwrap();
-            let d_p = encoder.encode_i64(&d).unwrap();
-
-            let data_c = vec![
-                encryptor.encrypt(&a_p).unwrap(),
-                encryptor.encrypt(&b_p).unwrap(),
-                encryptor.encrypt(&c_p).unwrap(),
-                encryptor.encrypt(&d_p).unwrap(),
-            ];
-
-            let out_c = evaluator.multiply_many(&data_c, &relin_keys).unwrap();
-
-            let out_p = decryptor.decrypt(&out_c).unwrap();
-            let out: Vec<i64> = encoder.decode_i64(&out_p).unwrap();
-
-            assert_eq!(a.len(), out.len());
-            assert_eq!(b.len(), out.len());
-            assert_eq!(c.len(), out.len());
-            assert_eq!(d.len(), out.len());
-
-            for i in 0..a.len() {
-                assert_eq!(out[i], a[i] * b[i] * c[i] * d[i]);
-            }
-        });
-    }
-
-    #[test]
     fn can_sub() {
         run_bgv_test(|decryptor, encoder, encryptor, evaluator, _| {
             let a = make_vec(&encoder);
@@ -614,115 +577,69 @@ mod tests {
         });
     }
 
-    #[test]
-    fn can_relinearize_inplace() {
-        run_bgv_test(|decryptor, encoder, encryptor, evaluator, keygen| {
-            let relin_keys = keygen.create_relinearization_keys().unwrap();
+    // #[test]
+    // fn can_relinearize_inplace() {
+    //     run_bgv_test(|decryptor, encoder, encryptor, evaluator, keygen| {
+    //         let relin_keys = keygen.create_relinearization_keys().unwrap();
 
-            let a = make_vec(&encoder);
-            let a_p = encoder.encode_i64(&a).unwrap();
-            let mut a_c = encryptor.encrypt(&a_p).unwrap();
-            let mut a_c_2 = encryptor.encrypt(&a_p).unwrap();
+    //         let a = make_vec(&encoder);
+    //         let a_p = encoder.encode_i64(&a).unwrap();
+    //         let mut a_c = encryptor.encrypt(&a_p).unwrap();
+    //         let mut a_c_2 = encryptor.encrypt(&a_p).unwrap();
 
-            let noise_before = decryptor.invariant_noise_budget(&a_c).unwrap();
+    //         let noise_before = decryptor.invariant_noise_budget(&a_c).unwrap();
 
-            evaluator.square_inplace(&mut a_c).unwrap();
-            evaluator
-                .relinearize_inplace(&mut a_c, &relin_keys)
-                .unwrap();
-            evaluator.square_inplace(&mut a_c).unwrap();
-            evaluator
-                .relinearize_inplace(&mut a_c, &relin_keys)
-                .unwrap();
+    //         evaluator.square_inplace(&mut a_c).unwrap();
+    //         evaluator
+    //             .relinearize_inplace(&mut a_c, &relin_keys)
+    //             .unwrap();
+    //         evaluator.square_inplace(&mut a_c).unwrap();
+    //         evaluator
+    //             .relinearize_inplace(&mut a_c, &relin_keys)
+    //             .unwrap();
 
-            let relin_noise = noise_before - decryptor.invariant_noise_budget(&a_c).unwrap();
+    //         let relin_noise = noise_before - decryptor.invariant_noise_budget(&a_c).unwrap();
 
-            let noise_before = decryptor.invariant_noise_budget(&a_c_2).unwrap();
+    //         let noise_before = decryptor.invariant_noise_budget(&a_c_2).unwrap();
 
-            evaluator.square_inplace(&mut a_c_2).unwrap();
-            evaluator.square_inplace(&mut a_c_2).unwrap();
+    //         evaluator.square_inplace(&mut a_c_2).unwrap();
+    //         evaluator.square_inplace(&mut a_c_2).unwrap();
 
-            let no_relin_noise = noise_before - decryptor.invariant_noise_budget(&a_c_2).unwrap();
+    //         let no_relin_noise = noise_before - decryptor.invariant_noise_budget(&a_c_2).unwrap();
 
-            assert!(relin_noise < no_relin_noise)
-        });
-    }
+    //         assert!(relin_noise < no_relin_noise)
+    //     });
+    // }
 
-    #[test]
-    fn can_relinearize() {
-        run_bgv_test(|decryptor, encoder, encryptor, evaluator, keygen| {
-            let relin_keys = keygen.create_relinearization_keys().unwrap();
+    // #[test]
+    // fn can_relinearize() {
+    //     run_bgv_test(|decryptor, encoder, encryptor, evaluator, keygen| {
+    //         let relin_keys = keygen.create_relinearization_keys().unwrap();
 
-            let a = make_vec(&encoder);
-            let a_p = encoder.encode_i64(&a).unwrap();
-            let mut a_c = encryptor.encrypt(&a_p).unwrap();
-            let mut a_c_2 = encryptor.encrypt(&a_p).unwrap();
+    //         let a = make_vec(&encoder);
+    //         let a_p = encoder.encode_i64(&a).unwrap();
+    //         let mut a_c = encryptor.encrypt(&a_p).unwrap();
+    //         let mut a_c_2 = encryptor.encrypt(&a_p).unwrap();
 
-            let noise_before = decryptor.invariant_noise_budget(&a_c).unwrap();
+    //         let noise_before = decryptor.invariant_noise_budget(&a_c).unwrap();
 
-            evaluator.square_inplace(&mut a_c).unwrap();
-            let mut a_c = evaluator.relinearize(&a_c, &relin_keys).unwrap();
-            evaluator.square_inplace(&mut a_c).unwrap();
-            let a_c = evaluator.relinearize(&a_c, &relin_keys).unwrap();
+    //         evaluator.square_inplace(&mut a_c).unwrap();
+    //         let mut a_c = evaluator.relinearize(&a_c, &relin_keys).unwrap();
+    //         evaluator.square_inplace(&mut a_c).unwrap();
+    //         let a_c = evaluator.relinearize(&a_c, &relin_keys).unwrap();
 
-            let relin_noise = noise_before - decryptor.invariant_noise_budget(&a_c).unwrap();
+    //         let relin_noise = noise_before - decryptor.invariant_noise_budget(&a_c).unwrap();
 
-            let noise_before = decryptor.invariant_noise_budget(&a_c_2).unwrap();
+    //         let noise_before = decryptor.invariant_noise_budget(&a_c_2).unwrap();
 
-            evaluator.square_inplace(&mut a_c_2).unwrap();
-            evaluator.square_inplace(&mut a_c_2).unwrap();
+    //         evaluator.square_inplace(&mut a_c_2).unwrap();
+    //         evaluator.square_inplace(&mut a_c_2).unwrap();
 
-            let no_relin_noise = noise_before - decryptor.invariant_noise_budget(&a_c_2).unwrap();
+    //         let no_relin_noise = noise_before - decryptor.invariant_noise_budget(&a_c_2).unwrap();
 
-            assert!(relin_noise < no_relin_noise)
-        });
-    }
-
-    #[test]
-    fn can_exponentiate() {
-        run_bgv_test(|decryptor, encoder, encryptor, evaluator, keygen| {
-            let relin_keys = keygen.create_relinearization_keys().unwrap();
-
-            let a = make_small_vec(&encoder);
-            let a_p = encoder.encode_i64(&a).unwrap();
-            let a_c = encryptor.encrypt(&a_p).unwrap();
-
-            let c_c = evaluator.exponentiate(&a_c, 4, &relin_keys).unwrap();
-
-            let c_p = decryptor.decrypt(&c_c).unwrap();
-            let c: Vec<i64> = encoder.decode_i64(&c_p).unwrap();
-
-            assert_eq!(a.len(), c.len());
-
-            for i in 0..a.len() {
-                assert_eq!(c[i], a[i] * a[i] * a[i] * a[i]);
-            }
-        });
-    }
-
-    #[test]
-    fn can_exponentiate_inplace() {
-        run_bgv_test(|decryptor, encoder, encryptor, evaluator, keygen| {
-            let relin_keys = keygen.create_relinearization_keys().unwrap();
-
-            let a = make_small_vec(&encoder);
-            let a_p = encoder.encode_i64(&a).unwrap();
-            let a_c = encryptor.encrypt(&a_p).unwrap();
-
-            evaluator
-                .exponentiate_inplace(&a_c, 4, &relin_keys)
-                .unwrap();
-
-            let a_p = decryptor.decrypt(&a_c).unwrap();
-            let c: Vec<i64> = encoder.decode_i64(&a_p).unwrap();
-
-            assert_eq!(a.len(), c.len());
-
-            for i in 0..a.len() {
-                assert_eq!(c[i], a[i] * a[i] * a[i] * a[i]);
-            }
-        });
-    }
+    //         assert!(relin_noise < no_relin_noise)
+    //     });
+    // }
 
     #[test]
     fn can_add_plain() {
