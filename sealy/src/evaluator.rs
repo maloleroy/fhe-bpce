@@ -3,6 +3,7 @@ use crate::{GaloisKey, RelinearizationKey};
 
 pub mod base;
 pub mod bfv;
+pub mod bgv;
 pub mod ckks;
 
 /// An interface for an evaluator.

@@ -19,6 +19,10 @@ pub use bfv::BFVEncryptionParametersBuilder;
 mod ckks;
 pub use ckks::CKKSEncryptionParametersBuilder;
 
+/// BGV encryption parameters.
+mod bgv;
+pub use bgv::BGVEncryptionParametersBuilder;
+
 /// The FHE scheme supported by SEAL.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[repr(u8)]
@@ -31,6 +35,9 @@ pub enum SchemeType {
 
     /// Cheon-Kim-Kim-Song scheme
     Ckks = 0x2,
+
+    /// Brakerski-Gentry-Vaikuntanathan scheme
+    Bgv = 0x3,
 }
 
 impl SchemeType {
@@ -41,6 +48,7 @@ impl SchemeType {
             0x0 => Self::None,
             0x1 => Self::Bfv,
             0x2 => Self::Ckks,
+            0x3 => Self::Bgv,
             _ => panic!("Illegal scheme type"),
         }
     }

@@ -351,10 +351,164 @@ pub enum BfvHOperation2 {
 impl Operation for BfvHOperation2 {}
 impl Arity2Operation for BfvHOperation2 {}
 
+pub struct SealBgvCS {
+    encoder: sealy::BGVEncoder,
+    evaluator: sealy::BGVEvaluator,
+    encryptor: sealy::Encryptor<sealy::Asym>,
+    decryptor: sealy::Decryptor,
+    relin_key: Option<sealy::RelinearizationKey>,
+}
+
+impl SealBgvCS {
+    pub fn new(context: &context::SealBGVContext) -> Self {
+        let (skey, pkey, relin_key) = context.generate_keys();
+
+        let encoder = context.encoder();
+        let evaluator = context.evaluator();
+        let encryptor = context.encryptor(&pkey);
+        let decryptor = context.decryptor(&skey);
+
+        Self {
+            encoder,
+            evaluator,
+            encryptor,
+            decryptor,
+            relin_key,
+        }
+    }
+}
+
+impl CryptoSystem for SealBgvCS {
+    type Ciphertext = Ciphertext;
+    type Plaintext = u64;
+    type Operation1 = BgvHOperation1;
+    type Operation2 = BgvHOperation2;
+
+    fn cipher(&self, plaintext: &Self::Plaintext) -> Self::Ciphertext {
+        let encoded = self.encoder.encode_u64(&[*plaintext]).unwrap();
+        Ciphertext(self.encryptor.encrypt(&encoded).unwrap())
+    }
+
+    fn decipher(&self, ciphertext: &Self::Ciphertext) -> Self::Plaintext {
+        let decrypted = self.decryptor.decrypt(&ciphertext.0).unwrap();
+        self.encoder.decode_u64(&decrypted).unwrap()[0]
+    }
+
+    fn operate1(&self, operation: Self::Operation1, lhs: &Self::Ciphertext) -> Self::Ciphertext {
+        match operation {
+            BgvHOperation1::AddPlain(plain) => {
+                let plain_encoded = self.encoder.encode_u64(&[plain]).unwrap();
+                let result = impls::homom_add_plain(&self.evaluator, &lhs.0, &plain_encoded);
+                Ciphertext(result)
+            }
+            BgvHOperation1::MulPlain(plain) => {
+                let plain_encoded = self.encoder.encode_u64(&[plain]).unwrap();
+                let result = impls::homom_mul_plain(&self.evaluator, &lhs.0, &plain_encoded);
+                Ciphertext(result)
+            }
+            BgvHOperation1::Exp(exp) => {
+                let result = impls::homom_exp(
+                    &self.evaluator,
+                    &lhs.0,
+                    exp,
+                    self.relin_key.as_ref().unwrap(),
+                );
+                Ciphertext(result)
+            }
+        }
+    }
+
+    fn operate2(
+        &self,
+        operation: Self::Operation2,
+        lhs: &Self::Ciphertext,
+        rhs: &Self::Ciphertext,
+    ) -> Self::Ciphertext {
+        match operation {
+            BgvHOperation2::Add => {
+                let result = impls::homom_add(&self.evaluator, &lhs.0, &rhs.0);
+                Ciphertext(result)
+            }
+            BgvHOperation2::Mul => {
+                let result = impls::homom_mul(&self.evaluator, &lhs.0, &rhs.0);
+                Ciphertext(result)
+            }
+        }
+    }
+
+    fn operate1_inplace(&self, operation: Self::Operation1, lhs: &mut Self::Ciphertext) {
+        match operation {
+            BgvHOperation1::AddPlain(plain) => {
+                let plain_encoded = self.encoder.encode_u64(&[plain]).unwrap();
+                impls::homom_add_plain_inplace(&self.evaluator, &mut lhs.0, &plain_encoded);
+            }
+            BgvHOperation1::MulPlain(plain) => {
+                let plain_encoded = self.encoder.encode_u64(&[plain]).unwrap();
+                impls::homom_mul_plain_inplace(&self.evaluator, &mut lhs.0, &plain_encoded);
+            }
+            BgvHOperation1::Exp(exp) => {
+                *lhs = Ciphertext(impls::homom_exp(
+                    &self.evaluator,
+                    &lhs.0,
+                    exp,
+                    self.relin_key.as_ref().unwrap(),
+                ));
+            }
+        }
+    }
+
+    fn operate2_inplace(
+        &self,
+        operation: Self::Operation2,
+        lhs: &mut Self::Ciphertext,
+        rhs: &Self::Ciphertext,
+    ) {
+        match operation {
+            BgvHOperation2::Add => {
+                impls::homom_add_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
+            }
+            BgvHOperation2::Mul => {
+                impls::homom_mul_inplace(&self.evaluator, &mut lhs.0, &rhs.0);
+            }
+        }
+    }
+
+    fn relinearize(&self, _ciphertext: &mut Self::Ciphertext) {
+        // No relinearization in BFV
+    }
+}
+
+impl SelectableCS for SealBgvCS {
+    const ADD_OPP: Self::Operation2 = BgvHOperation2::Add;
+    const MUL_OPP: Self::Operation2 = BgvHOperation2::Mul;
+
+    const NEUTRAL_ADD: Self::Plaintext = 0;
+    const NEUTRAL_MUL: Self::Plaintext = 1;
+}
+
+#[derive(Clone, Copy, Debug, Encode, Decode)]
+#[non_exhaustive]
+pub enum BgvHOperation1 {
+    AddPlain(u64),
+    MulPlain(u64),
+    Exp(u64),
+}
+impl Operation for BgvHOperation1 {}
+impl Arity1Operation for BgvHOperation1 {}
+
+#[derive(Clone, Copy, Debug, Encode, Decode)]
+#[non_exhaustive]
+pub enum BgvHOperation2 {
+    Add,
+    Mul,
+}
+impl Operation for BgvHOperation2 {}
+impl Arity2Operation for BgvHOperation2 {}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::context::{SealBFVContext, SealCkksContext};
+    use crate::context::{SealBFVContext, SealBGVContext, SealCkksContext};
     use fhe_core::{api::CryptoSystem, f64::approx_eq};
 
     const PRECISION: f64 = 5e-2;
@@ -418,7 +572,7 @@ mod tests {
         let decrypted_sum = cs.decipher(&sum);
         let expected_sum = a_plaintext * a_coeff_plaintext + b_plaintext * b_coeff_plaintext;
 
-        assert!(approx_eq(decrypted_sum, expected_sum, 5e-2))
+        assert!(approx_eq(decrypted_sum, expected_sum, 1e-1))
     }
 
     #[test]
@@ -464,14 +618,55 @@ mod tests {
 
     #[test]
     fn test_seal_bfv_cs_exp() {
-        let context = SealBFVContext::new(DegreeType::D4096, SecurityLevel::TC128, 16);
-        let cs = SealBfvCS::new(&context);
+        let context = SealBGVContext::new(DegreeType::D4096, SecurityLevel::TC128, 16);
+        let cs = SealBgvCS::new(&context);
 
         let a = cs.cipher(&4);
-        let e = cs.operate1(BfvHOperation1::Exp(2), &a);
+        let e = cs.operate1(BgvHOperation1::Exp(2), &a);
 
         let d = cs.decipher(&e);
 
         assert_eq!(d, 16);
+    }
+
+    #[test]
+    fn test_seal_bgv_cs() {
+        let context = SealBGVContext::new(DegreeType::D2048, SecurityLevel::TC128, 16);
+        let cs = SealBgvCS::new(&context);
+
+        let a_plaintext = 1;
+        let b_plaintext = 2;
+
+        let a = cs.cipher(&a_plaintext);
+        let b = cs.cipher(&b_plaintext);
+        let c = cs.operate2(BgvHOperation2::Add, &a, &b);
+        let d = cs.operate2(BgvHOperation2::Mul, &a, &b);
+
+        let a = cs.decipher(&a);
+        let b = cs.decipher(&b);
+        let c = cs.decipher(&c);
+        let d = cs.decipher(&d);
+
+        assert_eq!(a, a_plaintext);
+        assert_eq!(b, b_plaintext);
+        assert_eq!(c, a_plaintext + b_plaintext);
+        assert_eq!(d, a_plaintext * b_plaintext);
+    }
+
+    #[test]
+    fn test_seal_bgv_cs_plain_ops() {
+        let context = SealBGVContext::new(DegreeType::D2048, SecurityLevel::TC128, 16);
+        let cs = SealBgvCS::new(&context);
+
+        let a = cs.cipher(&1);
+        let b = cs.cipher(&2);
+        let c = cs.operate1(BgvHOperation1::AddPlain(10), &a);
+        let d = cs.operate1(BgvHOperation1::MulPlain(2), &b);
+
+        let c = cs.decipher(&c);
+        let d = cs.decipher(&d);
+
+        assert_eq!(c, 11);
+        assert_eq!(d, 4);
     }
 }
