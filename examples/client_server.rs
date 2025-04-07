@@ -1,106 +1,113 @@
-rouille::rouille! {
-    utilisons ::log comme journal;
-    utilisons seal_lib::{Ciphertext, CkksHOperation2, SealCkksCS, context::SealCkksContext comme ContexteCkks , DegreeType comme TypeDeDegré, SecurityLevel comme NiveauDeSécurité};
-    utilisons std::sync::mpsc::{channel comme canal, Sender comme Émetteur, Receiver comme Récepteur};
-    utilisons std::thread::spawn comme lancer;
-    utilisons fhe_core::api::CryptoSystem comme _;
-    utilisons std::time::Instant;
-    utilisons fhe_operations::single_ops::{SeqOpsData comme DonnéesOpératoiresUniques, SeqOpItem comme ObjetOpératoireUnique};
+use fhe_core::api::CryptoSystem as _;
+use fhe_operations::single_ops::{SeqOpItem, SeqOpsData};
+use seal_lib::{
+    Ciphertext, CkksHOperation2, DegreeType, SealCkksCS, SecurityLevel, context::SealCkksContext,
+};
+use std::sync::mpsc::{Receiver, Sender, channel};
 
-    #[global_allocator]
-    statique ALLOCATEUR_GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
+#[global_allocator]
+static GLOBAL_ALLOCATOR: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
-    constant CONFIGURATION: bincode::config::Configuration = bincode::config::standard();
+const CONFIGURATION: bincode::config::Configuration = bincode::config::standard();
 
-    // Cette fonction sera lancée sur le serveur
-    fonction serveur(r: Récepteur<Vec<u8>>, e: Émetteur<Vec<u8>>) {
-        journal::info!("[SERVEUR] Lancement du serveur...");
+fn server(r: Receiver<Vec<u8>>, e: Sender<Vec<u8>>) {
+    log::info!("[SERVEUR] Lancement du serveur...");
 
-        soit contexte = ContexteCkks::new(TypeDeDegré::D2048, NiveauDeSécurité::TC128);
-        soit systeme = SealCkksCS::new(&contexte, 1e7);
+    let context = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+    let cs = SealCkksCS::new(&context, 1e7);
 
-        journal::info!("[SERVEUR] Serveur lancé.");
+    log::info!("[SERVEUR] Serveur lancé.");
 
-        journal::debug!("[SERVEUR] Réception des données chiffrées...");
+    log::debug!("[SERVEUR] Réception des données chiffrées...");
 
-        soit données_encodées = r.recv().déballer();
-        soit (données_à_échanger, _): (DonnéesOpératoiresUniques<SealCkksCS>, _) = bincode::decode_from_slice_with_context(&données_encodées, CONFIGURATION, contexte).déballer();
+    let encoded_data = r.recv().unwrap();
+    let (data, _): (SeqOpsData<SealCkksCS>, _) =
+        bincode::decode_from_slice_with_context(&encoded_data, CONFIGURATION, context).unwrap();
 
-        journal::info!("[SERVEUR] Opérations sur les données chiffrées...");
+    log::info!("[SERVEUR] Opérations sur les données chiffrées...");
 
-        soit mutable résultats: Vec<Ciphertext> = Vec::with_capacity(données_à_échanger.len());
+    let mut results: Vec<Ciphertext> = Vec::with_capacity(data.len());
 
-        soit début = Instant::now();
+    let start = std::time::Instant::now();
 
-        pour item de données_à_échanger.iter_over_data() {
-            résultats.pousser(item.execute(&systeme));
-        }
-
-        soit fin = début.elapsed();
-        journal::info!("[SERVEUR] Temps d'opération: {:?}", fin);
-
-        journal::debug!("[SERVEUR] Renvoi des résultats chiffrés...");
-
-        soit résultats_encodés = bincode::encode_to_vec(résultats, CONFIGURATION).déballer();
-
-        e.send(résultats_encodés).déballer();
-
-        journal::debug!("[SERVEUR] Extinction.");
+    for item in data.iter_over_data() {
+        results.push(item.execute(&cs));
     }
 
-    fonction client(e: Émetteur<Vec<u8>>, r: Récepteur<Vec<u8>>) {
-        journal::info!("[CLIENT] Lancement du client...");
+    let end = start.elapsed();
+    log::info!("[SERVEUR] Temps d'opération: {:?}", end);
 
-        soit contexte = ContexteCkks::new(TypeDeDegré::D2048, NiveauDeSécurité::TC128);
-        soit systeme = SealCkksCS::new(&contexte, 1e7);
+    log::debug!("[SERVEUR] Renvoi des résultats chiffrés...");
 
-        journal::info!("[CLIENT] Client lancé.");
+    let reencoded_results = bincode::encode_to_vec(results, CONFIGURATION).unwrap();
 
-        soit mut données_à_échanger = DonnéesOpératoiresUniques::<SealCkksCS>::new();
+    e.send(reencoded_results).unwrap();
 
-        soit op1 = ObjetOpératoireUnique::new(systeme.cipher(&2.0), systeme.cipher(&3.0), CkksHOperation2::Add);
-        soit op2 = ObjetOpératoireUnique::new(systeme.cipher(&5.0), systeme.cipher(&2.0), CkksHOperation2::Mul);
-        données_à_échanger.push(op1);
-        données_à_échanger.push(op2);
-        journal::info!("[CLIENT] Opérations: 2.0 + 3.0 ; 5.0 * 2.0");
+    log::debug!("[SERVEUR] Extinction.");
+}
 
-        journal::debug!("[CLIENT] Chiffrement des données...");
-        journal::debug!("[CLIENT] Envoi des données chiffrées...");
+fn client(e: Sender<Vec<u8>>, r: Receiver<Vec<u8>>) {
+    log::info!("[CLIENT] Lancement du client...");
 
-        soit données_encodées = bincode::encode_to_vec(données_à_échanger, CONFIGURATION).déballer();
+    let contexte = SealCkksContext::new(DegreeType::D2048, SecurityLevel::TC128);
+    let systeme = SealCkksCS::new(&contexte, 1e7);
 
-        e.send(données_encodées).déballer();
+    log::info!("[CLIENT] Client lancé.");
 
-        journal::debug!("[CLIENT] Réception des résultats chiffrés...");
+    let mut données_à_échanger = SeqOpsData::<SealCkksCS>::new();
 
-        soit résultats_encodés = r.recv().déballer();
+    let op1 = SeqOpItem::new(
+        systeme.cipher(&2.0),
+        systeme.cipher(&3.0),
+        CkksHOperation2::Add,
+    );
+    let op2 = SeqOpItem::new(
+        systeme.cipher(&5.0),
+        systeme.cipher(&2.0),
+        CkksHOperation2::Mul,
+    );
+    données_à_échanger.push(op1);
+    données_à_échanger.push(op2);
+    log::info!("[CLIENT] Opérations: 2.0 + 3.0 ; 5.0 * 2.0");
 
-        soit (résultats, _): (Vec<Box<Ciphertext>>, _) = bincode::decode_from_slice_with_context(&résultats_encodés, CONFIGURATION, contexte).déballer();
+    log::debug!("[CLIENT] Chiffrement des données...");
+    log::debug!("[CLIENT] Envoi des données chiffrées...");
 
-        journal::debug!("[CLIENT] Déchiffrement des résultats...");
+    let données_encodées = bincode::encode_to_vec(données_à_échanger, CONFIGURATION).unwrap();
 
-        soit résultats_déchiffrés: Vec<_> = résultats.iter().map(|r| systeme.decipher(r)).collect();
+    e.send(données_encodées).unwrap();
 
-        journal::info!("[CLIENT] Résultats : {:?}", résultats_déchiffrés);
-    }
+    log::debug!("[CLIENT] Réception des résultats chiffrés...");
 
-    fonction principale() {
-        pretty_env_logger::formatted_builder()
-            .filter_level(
-                #[cfg(debug_assertions)]
-                journal::LevelFilter::Debug,
-                #[cfg(not(debug_assertions))]
-                journal::LevelFilter::Info,
-            )
-            .init();
+    let résultats_encodés = r.recv().unwrap();
 
-        soit (c_émetteur, c_récepteur) = canal::<Vec<u8>>();
-        soit (r_émetteur, r_récepteur) = canal::<Vec<u8>>();
+    let (résultats, _): (Vec<Box<Ciphertext>>, _) =
+        bincode::decode_from_slice_with_context(&résultats_encodés, CONFIGURATION, contexte)
+            .unwrap();
 
-        let h_client = lancer(|| client(c_émetteur, r_récepteur));
-        let h_serveur = lancer(|| serveur(c_récepteur, r_émetteur));
+    log::debug!("[CLIENT] Déchiffrement des résultats...");
 
-        h_client.join().déballer();
-        h_serveur.join().déballer();
-    }
+    let résultats_déchiffrés: Vec<_> = résultats.iter().map(|r| systeme.decipher(r)).collect();
+
+    log::info!("[CLIENT] Résultats : {:?}", résultats_déchiffrés);
+}
+
+fn main() {
+    pretty_env_logger::formatted_builder()
+        .filter_level(
+            #[cfg(debug_assertions)]
+            log::LevelFilter::Debug,
+            #[cfg(not(debug_assertions))]
+            log::LevelFilter::Info,
+        )
+        .init();
+
+    let (c_émetteur, c_récepteur) = channel::<Vec<u8>>();
+    let (r_émetteur, r_récepteur) = channel::<Vec<u8>>();
+
+    let h_client = std::thread::spawn(|| client(c_émetteur, r_récepteur));
+    let h_serveur = std::thread::spawn(|| server(c_récepteur, r_émetteur));
+
+    h_client.join().unwrap();
+    h_serveur.join().unwrap();
 }

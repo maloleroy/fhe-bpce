@@ -24,7 +24,6 @@ toml = "0.8.20"
 arrow = "54.3.1"
 criterion = "0.5.1"
 parquet = "54.3.0"
-rouille = { git = "https://github.com/bnjbvr/rouille.git" }
 
 [workspace]
 members = ["fhe-core", "seal-lib", "fhe-operations", "zama-lib"]
