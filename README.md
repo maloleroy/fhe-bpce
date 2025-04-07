@@ -21,6 +21,7 @@ It is designed to be easy to use and to provide a high-level interface to the un
 
 The library currently supports the following schemes:
 - BFV (Seal)
+- BGV (Seal)
 - CKKS (Seal)
 - TFHE (Zama)
 
@@ -60,11 +61,16 @@ Implements complex operations on ciphered data:
 
 ### seal-lib
 
-Implements `CryptoSystem` for systems backed by Microsoft SEAL (BFV and CKKS).
+Implements `CryptoSystem` for systems backed by Microsoft SEAL (BFV, BGV and CKKS).
+
+It relies on an external crate, `sealy`. This crate provides convenient wrappers around Rust bindings of Microsoft SEAL.
+As this crate is no longer maintained and ships an outdated version of Microsoft SEAL,
+an updated version of the crate is provided in `seal-lib/sealy`. It is licensed under MIT.
 
 ### zama-lib
 
 Implements `CryptoSystem` for systems backed by Zama (TFHE).
 
-Note that currently, the underlying crate (`tfhe`) fails to build its documentation.
+It relies on an external crate, `tfhe`. This crate provides a Rust implementation of the TFHE cryptosystem.
+Note that currently, the underlying crate fails to build its documentation.
 Please use `cargo doc --open --no-deps -p zama-lib`
