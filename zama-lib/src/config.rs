@@ -57,6 +57,11 @@ impl<Context> Decode<Context> for ServerKey {
 
 #[derive(Clone)]
 /// A context for TFHE operations.
+/// 
+/// When building a new context, one should use `ZamaTfheContext::new()`.
+/// When building a context on a server, one should reuse the server key used by the client.
+/// To do so, use `ZamaTfheContext::from_server_key(server_key)` with the server key
+/// received from the client.
 pub struct ZamaTfheContext {
     config: Config,
     server_key: Option<ServerKey>,
@@ -71,6 +76,11 @@ impl Default for ZamaTfheContext {
 impl ZamaTfheContext {
     #[must_use]
     /// Create a new TFHE context.
+    /// 
+    /// Typically, this function would be used on a client to generate a new context.
+    /// As the server requires to use the same server key as the client, one should get
+    /// the current server key and send it to the server.
+    /// The server may now use `ZamaTfheContext::from_server_key(server_key)` to create a context
     pub fn new() -> Self {
         Self {
             config: ConfigBuilder::default().build(),
@@ -80,6 +90,8 @@ impl ZamaTfheContext {
 
     #[must_use]
     /// Create a TFHE scheme knowing the server key.
+    /// 
+    /// This is what should be used on a server.
     pub fn from_server_key(server_key: ServerKey) -> Self {
         Self {
             config: ConfigBuilder::default().build(),
@@ -93,16 +105,19 @@ impl ZamaTfheContext {
     ///
     /// # Panics
     ///
-    /// Panics if the server key is not set (the configuration is new).
-    pub const fn server_key(&self) -> Option<&ServerKey> {
+    /// Panics if the server key is not set (i.e. if the configuration is new).
+    const fn server_key(&self) -> Option<&ServerKey> {
         self.server_key.as_ref()
     }
 
     #[must_use]
     #[inline]
-    /// Generate a set of secret, public and relinearization keys.
+    /// Generate a set of secret and public keys.
+    /// 
+    /// If the context has been initialized with a server key, this one will be returned
+    /// with no client key. Otherwise, both are generated.
     pub fn generate_keys(&self) -> (Option<ClientKey>, ServerKey) {
-        self.server_key.as_ref().map_or_else(
+        self.server_key().map_or_else(
             || {
                 let (client_key, server_key) = generate_keys(self.config);
                 (Some(client_key), ServerKey(server_key))
