@@ -6,13 +6,6 @@ rust_stable:
   tags:
     - docker
   image: fluteur/rust-cli:latest
-  cache:
-    key: rust-cache
-    paths:
-      - /usr/local/cargo/registry
-      - /usr/local/cargo/git
-      - /usr/local/cargo/bin
-      - target
   script:
     - git submodule update --init --recursive
     - cargo check --all-features --locked
