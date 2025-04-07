@@ -7,7 +7,7 @@
 extern crate alloc;
 
 use bincode::{Decode, Encode, serde::Compat};
-use core::ops::{Add, Div, Mul, Neg, Rem, Sub};
+use core::ops::{Add, BitAnd, BitOr, BitXor, Div, Mul, Neg, Not, Rem, Sub};
 use fhe_core::api::{Arity1Operation, Arity2Operation, CryptoSystem, Operation};
 use fhe_operations::selectable_collection::SelectableCS;
 use serde::{Deserialize, Serialize};
@@ -16,7 +16,13 @@ use tfhe::{
     prelude::{FheDecrypt, FheEncrypt},
     set_server_key,
 };
-pub use tfhe::{FheUint8, FheUint16, FheUint32, FheUint64, FheUint128};
+pub use tfhe::{
+    FheInt8, FheInt16, FheInt32, FheInt64, FheInt128, FheInt256, FheInt512, FheInt1024, FheInt2048,
+};
+pub use tfhe::{
+    FheUint8, FheUint16, FheUint32, FheUint64, FheUint128, FheUint256, FheUint512, FheUint1024,
+    FheUint2048,
+};
 
 pub mod config;
 
@@ -72,17 +78,19 @@ impl<T, I: FheEncrypt<T, tfhe::ClientKey>> ZamaTfheUintCS<T, I> {
     }
 }
 
-impl<
-    T: Copy,
-    I: FheEncrypt<T, ClientKey> + FheDecrypt<T> + Add + Mul + Neg + Div + Rem + Sub + Clone,
-> CryptoSystem for ZamaTfheUintCS<T, I>
+impl<T: Copy, I: FheEncrypt<T, ClientKey> + FheDecrypt<T> + Clone> CryptoSystem
+    for ZamaTfheUintCS<T, I>
 where
     I: Add<Output = I>
         + Mul<Output = I>
         + Neg<Output = I>
         + Div<Output = I>
         + Rem<Output = I>
-        + Sub<Output = I>,
+        + Sub<Output = I>
+        + Not<Output = I>
+        + BitAnd<Output = I>
+        + BitOr<Output = I>
+        + BitXor<Output = I>,
 {
     type Ciphertext = Ciphertext<T, I>;
     type Plaintext = T;
@@ -105,6 +113,13 @@ where
         match operation {
             TfheHOperation1::Neg => {
                 let result = -lhs.value.clone();
+                Ciphertext {
+                    value: result,
+                    _phantom: core::marker::PhantomData,
+                }
+            }
+            TfheHOperation1::Not => {
+                let result = !lhs.value.clone();
                 Ciphertext {
                     value: result,
                     _phantom: core::marker::PhantomData,
@@ -155,6 +170,27 @@ where
                     _phantom: core::marker::PhantomData,
                 }
             }
+            TfheHOperation2::And => {
+                let result = lhs.value.clone() & rhs.value.clone();
+                Ciphertext {
+                    value: result,
+                    _phantom: core::marker::PhantomData,
+                }
+            }
+            TfheHOperation2::Or => {
+                let result = lhs.value.clone() | rhs.value.clone();
+                Ciphertext {
+                    value: result,
+                    _phantom: core::marker::PhantomData,
+                }
+            }
+            TfheHOperation2::Xor => {
+                let result = lhs.value.clone() ^ rhs.value.clone();
+                Ciphertext {
+                    value: result,
+                    _phantom: core::marker::PhantomData,
+                }
+            }
         }
     }
 
@@ -164,27 +200,47 @@ where
     }
 }
 
-impl<I: FheEncrypt<u64, ClientKey> + FheDecrypt<u64> + Add + Mul + Neg + Div + Rem + Sub + Clone>
-    SelectableCS for ZamaTfheUintCS<u64, I>
-where
-    I: Add<Output = I>
-        + Mul<Output = I>
-        + Neg<Output = I>
-        + Div<Output = I>
-        + Rem<Output = I>
-        + Sub<Output = I>,
-{
-    const ADD_OPP: Self::Operation2 = TfheHOperation2::Add;
-    const MUL_OPP: Self::Operation2 = TfheHOperation2::Mul;
+macro_rules! impl_selectable_cs {
+    ($ty:ty) => {
+        impl<I: FheEncrypt<$ty, ClientKey> + FheDecrypt<$ty> + Clone> SelectableCS
+            for ZamaTfheUintCS<$ty, I>
+        where
+            I: Add<Output = I>
+                + Mul<Output = I>
+                + Neg<Output = I>
+                + Div<Output = I>
+                + Rem<Output = I>
+                + Sub<Output = I>
+                + Not<Output = I>
+                + BitAnd<Output = I>
+                + BitOr<Output = I>
+                + BitXor<Output = I>,
+        {
+            const ADD_OPP: Self::Operation2 = TfheHOperation2::Add;
+            const MUL_OPP: Self::Operation2 = TfheHOperation2::Mul;
 
-    const NEUTRAL_ADD: Self::Plaintext = 0;
-    const NEUTRAL_MUL: Self::Plaintext = 1;
+            const NEUTRAL_ADD: Self::Plaintext = 0;
+            const NEUTRAL_MUL: Self::Plaintext = 1;
+        }
+    };
 }
+
+impl_selectable_cs!(u8);
+impl_selectable_cs!(u16);
+impl_selectable_cs!(u32);
+impl_selectable_cs!(u64);
+impl_selectable_cs!(u128);
+impl_selectable_cs!(i8);
+impl_selectable_cs!(i16);
+impl_selectable_cs!(i32);
+impl_selectable_cs!(i64);
+impl_selectable_cs!(i128);
 
 #[derive(Clone, Copy, Debug, Encode, Decode)]
 #[non_exhaustive]
 pub enum TfheHOperation1 {
     Neg,
+    Not,
     // TODO: Add more operations:
     // <https://docs.zama.ai/tfhe-rs/fhe-computation/operations>
 }
@@ -199,6 +255,9 @@ pub enum TfheHOperation2 {
     Sub,
     Div,
     Rem,
+    And,
+    Or,
+    Xor,
     // TODO: Add more operations:
     // <https://docs.zama.ai/tfhe-rs/fhe-computation/operations>
 }
@@ -213,7 +272,7 @@ mod tests {
     const CONFIG: bincode::config::Configuration = bincode::config::standard();
 
     #[test]
-    fn test_tfhe() {
+    fn test_tfhe_uint() {
         let context = ZamaTfheContext::new();
         let cs = ZamaTfheUintCS::<u8, FheUint8>::new(&context);
 
@@ -225,6 +284,23 @@ mod tests {
         let decrypted_result = cs.decipher(&result);
 
         let clear_result = 27 + 128;
+
+        assert_eq!(decrypted_result, clear_result);
+    }
+
+    #[test]
+    fn test_tfhe_int() {
+        let context = ZamaTfheContext::new();
+        let cs = ZamaTfheUintCS::<i8, FheInt8>::new(&context);
+
+        let a = cs.cipher(&27);
+        let b = cs.cipher(&127);
+
+        let result = cs.operate2(TfheHOperation2::Sub, &a, &b);
+
+        let decrypted_result = cs.decipher(&result);
+
+        let clear_result = 27 - 127;
 
         assert_eq!(decrypted_result, clear_result);
     }
