@@ -78,8 +78,7 @@ impl<T, I: FheEncrypt<T, tfhe::ClientKey>> ZamaTfheCS<T, I> {
     }
 }
 
-impl<T: Copy, I: FheEncrypt<T, ClientKey> + FheDecrypt<T> + Clone> CryptoSystem
-    for ZamaTfheCS<T, I>
+impl<T: Copy, I: FheEncrypt<T, ClientKey> + FheDecrypt<T> + Clone> CryptoSystem for ZamaTfheCS<T, I>
 where
     I: Add<Output = I>
         + Mul<Output = I>

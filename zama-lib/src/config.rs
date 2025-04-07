@@ -57,7 +57,7 @@ impl<Context> Decode<Context> for ServerKey {
 
 #[derive(Clone)]
 /// A context for TFHE operations.
-/// 
+///
 /// When building a new context, one should use `ZamaTfheContext::new()`.
 /// When building a context on a server, one should reuse the server key used by the client.
 /// To do so, use `ZamaTfheContext::from_server_key(server_key)` with the server key
@@ -76,7 +76,7 @@ impl Default for ZamaTfheContext {
 impl ZamaTfheContext {
     #[must_use]
     /// Create a new TFHE context.
-    /// 
+    ///
     /// Typically, this function would be used on a client to generate a new context.
     /// As the server requires to use the same server key as the client, one should get
     /// the current server key and send it to the server.
@@ -90,7 +90,7 @@ impl ZamaTfheContext {
 
     #[must_use]
     /// Create a TFHE scheme knowing the server key.
-    /// 
+    ///
     /// This is what should be used on a server.
     pub fn from_server_key(server_key: ServerKey) -> Self {
         Self {
@@ -113,7 +113,7 @@ impl ZamaTfheContext {
     #[must_use]
     #[inline]
     /// Generate a set of secret and public keys.
-    /// 
+    ///
     /// If the context has been initialized with a server key, this one will be returned
     /// with no client key. Otherwise, both are generated.
     pub fn generate_keys(&self) -> (Option<ClientKey>, ServerKey) {
