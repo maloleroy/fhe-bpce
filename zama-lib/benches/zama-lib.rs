@@ -1,10 +1,10 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use fhe_core::api::CryptoSystem;
-use zama_lib::{FheUint32, TfheHOperation2, ZamaTfheUintCS, config::ZamaTfheContext};
+use zama_lib::{FheUint32, TfheHOperation2, ZamaTfheCS, config::ZamaTfheContext};
 
 fn benchmark_tfhe(c: &mut Criterion) {
     let ctx = ZamaTfheContext::new();
-    let cipher = ZamaTfheUintCS::<u32, FheUint32>::new(&ctx);
+    let cipher = ZamaTfheCS::<u32, FheUint32>::new(&ctx);
 
     let input = 42;
 

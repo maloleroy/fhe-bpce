@@ -61,12 +61,12 @@ where
 }
 
 /// The TFHE CryptoSystem backed by Zama, for unsigned integers.
-pub struct ZamaTfheUintCS<T, I: FheEncrypt<T, tfhe::ClientKey>> {
+pub struct ZamaTfheCS<T, I: FheEncrypt<T, tfhe::ClientKey>> {
     client_key: Option<tfhe::ClientKey>,
     _phantom: core::marker::PhantomData<(T, I)>,
 }
 
-impl<T, I: FheEncrypt<T, tfhe::ClientKey>> ZamaTfheUintCS<T, I> {
+impl<T, I: FheEncrypt<T, tfhe::ClientKey>> ZamaTfheCS<T, I> {
     #[must_use]
     pub fn new(context: &config::ZamaTfheContext) -> Self {
         let (client_key, secret_key) = context.generate_keys();
@@ -79,7 +79,7 @@ impl<T, I: FheEncrypt<T, tfhe::ClientKey>> ZamaTfheUintCS<T, I> {
 }
 
 impl<T: Copy, I: FheEncrypt<T, ClientKey> + FheDecrypt<T> + Clone> CryptoSystem
-    for ZamaTfheUintCS<T, I>
+    for ZamaTfheCS<T, I>
 where
     I: Add<Output = I>
         + Mul<Output = I>
@@ -203,7 +203,7 @@ where
 macro_rules! impl_selectable_cs {
     ($ty:ty) => {
         impl<I: FheEncrypt<$ty, ClientKey> + FheDecrypt<$ty> + Clone> SelectableCS
-            for ZamaTfheUintCS<$ty, I>
+            for ZamaTfheCS<$ty, I>
         where
             I: Add<Output = I>
                 + Mul<Output = I>
@@ -274,7 +274,7 @@ mod tests {
     #[test]
     fn test_tfhe_uint() {
         let context = ZamaTfheContext::new();
-        let cs = ZamaTfheUintCS::<u8, FheUint8>::new(&context);
+        let cs = ZamaTfheCS::<u8, FheUint8>::new(&context);
 
         let a = cs.cipher(&27);
         let b = cs.cipher(&128);
@@ -291,7 +291,7 @@ mod tests {
     #[test]
     fn test_tfhe_int() {
         let context = ZamaTfheContext::new();
-        let cs = ZamaTfheUintCS::<i8, FheInt8>::new(&context);
+        let cs = ZamaTfheCS::<i8, FheInt8>::new(&context);
 
         let a = cs.cipher(&27);
         let b = cs.cipher(&127);
@@ -308,7 +308,7 @@ mod tests {
     #[test]
     fn test_tfhe_encode_decode() {
         let context = ZamaTfheContext::new();
-        let cs = ZamaTfheUintCS::<u8, FheUint8>::new(&context);
+        let cs = ZamaTfheCS::<u8, FheUint8>::new(&context);
 
         let a = cs.cipher(&27);
 
