@@ -23,7 +23,9 @@ toml = "0.8.20"
 [dev-dependencies]
 arrow = "54.3.1"
 criterion = "0.5.1"
+indicatif = "0.17.11"
 parquet = "54.3.0"
+zama-lib = { path = "zama-lib" }
 
 [workspace]
 members = ["fhe-core", "seal-lib", "fhe-operations", "zama-lib"]
