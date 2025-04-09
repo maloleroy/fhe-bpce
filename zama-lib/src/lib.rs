@@ -1,4 +1,3 @@
-//! Convenient wrapper around Microsoft SEAL library.
 #![no_std]
 #![forbid(unsafe_code)]
 #![warn(clippy::nursery, clippy::pedantic)]
