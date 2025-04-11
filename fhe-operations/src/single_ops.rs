@@ -3,21 +3,13 @@
 use bincode::{Decode, Encode};
 use fhe_core::api::CryptoSystem;
 
-pub struct SeqOpItem<C: CryptoSystem>
-where
-    C::Ciphertext: Encode,
-    C::Operation2: Encode,
-{
+pub struct SeqOpItem<C: CryptoSystem> {
     lhs: C::Ciphertext,
     rhs: C::Ciphertext,
     operation: C::Operation2,
 }
 
-impl<C: CryptoSystem> SeqOpItem<C>
-where
-    C::Ciphertext: Encode,
-    C::Operation2: Encode,
-{
+impl<C: CryptoSystem> SeqOpItem<C> {
     #[must_use]
     #[inline]
     /// Creates a new instance of `SingleOpItem`.
@@ -95,16 +87,9 @@ where
 #[derive(Default)]
 /// The data that will be exchanged by the client and the server, for
 /// sequential single operations.
-pub struct SeqOpsData<C: CryptoSystem>(Vec<SeqOpItem<C>>)
-where
-    C::Ciphertext: Encode,
-    C::Operation2: Encode;
+pub struct SeqOpsData<C: CryptoSystem>(Vec<SeqOpItem<C>>);
 
-impl<C: CryptoSystem> SeqOpsData<C>
-where
-    C::Ciphertext: Encode,
-    C::Operation2: Encode,
-{
+impl<C: CryptoSystem> SeqOpsData<C> {
     #[must_use]
     #[inline]
     /// Creates a new instance of `SingleOpsData`.
