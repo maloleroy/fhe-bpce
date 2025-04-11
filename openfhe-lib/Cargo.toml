@@ -1,0 +1,19 @@
+[package]
+name = "openfhe-lib"
+version = "0.1.0"
+edition = "2024"
+build = "build.rs"
+
+[dependencies]
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+link-cplusplus = "1.0.9"
+
+[build-dependencies]
+cmake = "0.1.54"
+bindgen = { git = "https://github.com/rust-lang/rust-bindgen.git", rev = "20aa65a" }
+reqwest = { version = "0.11", features = ["blocking"] }
+flate2 = "1.0"
+xz2 = "0.1.7"
+tar = "0.4"
+cc = "1.2.17"
