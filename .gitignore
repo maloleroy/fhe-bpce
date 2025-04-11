@@ -10,5 +10,6 @@ fhe.toml
 test.data
 data.parquet
 *.csv
+*.tex
 
 *.DS_Store

@@ -3,5 +3,5 @@
 #![forbid(unsafe_code)]
 
 pub mod selectable_collection;
-pub mod sign;
 pub mod seq_ops;
+pub mod sign;
