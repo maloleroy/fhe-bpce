@@ -59,7 +59,7 @@ where
     }
 }
 
-/// The TFHE CryptoSystem backed by Zama, for unsigned integers.
+/// The TFHE CryptoSystem backed by Zama, for integers.
 pub struct ZamaTfheCS<T, I: FheEncrypt<T, tfhe::ClientKey>> {
     client_key: Option<tfhe::ClientKey>,
     _phantom: core::marker::PhantomData<(T, I)>,

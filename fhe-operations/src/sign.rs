@@ -76,7 +76,7 @@ where
     const COEFFS: [i64; N] = chebyshev_coefficients::<N>();
     let mut result = cs.cipher(&0.);
     let mut x_pow_i = cs.cipher(&1.);
-    for (i, coeff) in COEFFS.iter().enumerate().take(N) {
+    for (i, coeff) in COEFFS.iter().enumerate() {
         assert!(
             i64::BITS - coeff.abs().leading_zeros() < f64::MANTISSA_DIGITS + coeff.trailing_zeros()
         );

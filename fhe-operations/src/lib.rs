@@ -4,4 +4,4 @@
 
 pub mod selectable_collection;
 pub mod sign;
-pub mod single_ops;
+pub mod seq_ops;

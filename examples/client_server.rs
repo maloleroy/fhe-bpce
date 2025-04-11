@@ -1,5 +1,5 @@
 use fhe_core::api::CryptoSystem as _;
-use fhe_operations::single_ops::{SeqOpItem, SeqOpsData};
+use fhe_operations::seq_ops::{SeqOpItem, SeqOpsData};
 use seal_lib::{
     Ciphertext, CkksHOperation2, DegreeType, SealCkksCS, SecurityLevel, context::SealCkksContext,
 };

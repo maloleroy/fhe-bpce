@@ -3,7 +3,7 @@
 use bincode::Encode;
 use csv::Reader;
 use fhe_core::api::CryptoSystem;
-use fhe_operations::single_ops::{SeqOpItem, SeqOpsData};
+use fhe_operations::seq_ops::{SeqOpItem, SeqOpsData};
 use seal_lib::BfvHOperation2; // Mock implementation tied to seal-lib (temporary)
 
 const SIZE_LIMIT: u64 = 1024 * 1024;

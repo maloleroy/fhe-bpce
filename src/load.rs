@@ -8,7 +8,7 @@ pub mod parquet;
 
 use bincode::Encode;
 use fhe_core::api::CryptoSystem;
-use fhe_operations::single_ops::SeqOpsData;
+use fhe_operations::seq_ops::SeqOpsData;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
